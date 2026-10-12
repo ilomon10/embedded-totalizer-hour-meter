@@ -145,7 +145,7 @@ function Dashboard({ state }: { state: DeviceState }) {
               ? '-'
               : v.alternator
               ? <Text color='green' bold>RUNNING</Text>
-              : <Text color='gray'>stopped</Text>}
+              : <Text color='gray'>stopped{v.altInput ? ' (input on, no engine vibration)' : ''}</Text>}
           </Text>
           <Text>Totalizer {String(v.totalCount ?? '-')} pulses = {num(v.totalUnits)} units</Text>
           <Text color='gray'>Last save {fmtEpoch(v.lastSavedEpoch, false)} #{String(v.journalSeq ?? '-')}</Text>

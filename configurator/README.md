@@ -28,7 +28,7 @@ deno task start /dev/ttyUSB0
 
 ```
 ╭──────────────────────────────────────────────────────────────────────────────╮
-│ HOUR METER                ● connected /dev/ttyUSB0        dev 1a2b3c4d fw 2.4.0│
+│ HOUR METER                ● connected /dev/ttyUSB0        dev 1a2b3c4d fw 2.5.0│
 │  1 Dashboard    2 IMU    3 Settings    4 Actions    5 Log                      │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ┌ Hour meter ──────────────────────┐┌ Motion ───────────────────────────────┐
@@ -81,6 +81,7 @@ Every Bluetooth connection starts **locked**. `--pin` (or `HOUR_METER_PIN`, or *
 hour-meter get status                  # hour | settings | status | calib
 hour-meter set telemetryIntervalMs=500 output=both
 hour-meter set bluetooth=true btPin=4821
+hour-meter set runVibMinMg=25          # count only while the engine vibrates (firmware 2.5.0; 0 = off)
 hour-meter set-time                    # PC clock as UTC
 hour-meter set-hours 1234.5            # set the hour meter to any value
 hour-meter set-units 5230.75           # set the totalizer in units (uses pulsesPerUnit)
@@ -104,6 +105,10 @@ Commands take `--port <port>` (or `$HOUR_METER_PORT`), `--pin <PIN>` for Bluetoo
 `hour-meter reset` first sends the **panic signal** (64 zero bytes: the firmware restarts at once, with no frame and no ACK; not accepted over Bluetooth). If no boot EVENT follows within 3 s and the port is a local serial port, it does a **hard reset**: the DTR/RTS lines of the USB-serial adapter pulse the ESP32 EN pin for 100 ms (like `esptool --after hard_reset`; IO0 stays high, so it boots normally). It then waits for the boot EVENT and prints one line, for example `device restarted (reset reason 1 power-on, last cause: panicSignal while serial / command)`.
 
 The hard reset talks to the adapter through libc (`ioctl`), so it needs Linux or macOS and the binary's usual `-A` permission. It is untested on real hardware on macOS Apple Silicon. On Windows use `--signal`.
+
+### Hours count with the key on but the engine off
+
+The engine-running input is on a wire that is live at ACC/ON. `hour-meter read` shows `engine ON` before the engine starts. Move the input to the alternator's L / D+ terminal or the oil-pressure warning switch ([how to find the wire](../esp32/docs/WIRING.md#pick-the-wire)). If no such wire is reachable, set `runVibMinMg` (firmware 2.5.0). The reader then shows `engine OFF (input on)` while the key is on and the engine is stopped.
 
 ### Device sends nothing over USB
 

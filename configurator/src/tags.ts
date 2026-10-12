@@ -34,6 +34,7 @@ export const tags: Record<number, TagDef> = {
   7: { name: 'journalSeq', fmt: 'u32' },
   8: { name: 'eventKind', fmt: 'u8' },
   9: { name: 'calibResult', fmt: 'u8' },
+  10: { name: 'altInput', fmt: 'bool' },
   // IMU raw
   20: { name: 'rawAccelX', fmt: 'i16', scale: 0.001, unit: 'g' },
   21: { name: 'rawAccelY', fmt: 'i16', scale: 0.001, unit: 'g' },
@@ -104,6 +105,7 @@ export const tags: Record<number, TagDef> = {
   126: { name: 'kalmanQMag', fmt: 'f32' },
   127: { name: 'bluetooth', fmt: 'bool' },
   128: { name: 'btPin', fmt: 'u16' },
+  129: { name: 'runVibMinMg', fmt: 'u16', unit: 'mg' },
   // Calibration (read-only)
   130: { name: 'calAccelBiasX', fmt: 'f32', unit: 'g' },
   131: { name: 'calAccelBiasY', fmt: 'f32', unit: 'g' },
@@ -204,6 +206,13 @@ export const SETTINGS: Record<string, SettingSpec> = {
   kalmanQMag: { tag: 126, min: 1e-7, max: 10.0, help: 'mag filter responsiveness' },
   bluetooth: { tag: 127, min: 0, max: 1, help: 'Bluetooth SPP radio on/off (applied after ACK)' },
   btPin: { tag: 128, min: 0, max: 9999, help: 'PIN to unlock a Bluetooth session (change it!)' },
+  runVibMinMg: {
+    tag: 129,
+    min: 0,
+    max: 2000,
+    unit: 'mg',
+    help: 'engine counts only while vibration RMS is above this (0 = off)',
+  },
 };
 
 /** Why the device restarted last time (tag 62), mirror of Protocol.h LastCause. */

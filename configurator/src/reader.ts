@@ -14,6 +14,12 @@ function when(msg: DecodedMessage): string {
   return msg.values.timeValid === false ? `uptime ${msg.timestamp}s` : new Date(msg.timestamp * 1000).toISOString();
 }
 
+/** Engine state; "input on" = the wire is live but runVibMinMg saw no engine vibration (firmware 2.5.0). */
+export function engineText(v: DecodedMessage['values']): string {
+  if (v.alternator) return 'ON ';
+  return v.altInput ? 'OFF (input on)' : 'OFF';
+}
+
 export function formatTelemetry(msg: DecodedMessage): string {
   const v = msg.values;
   const imu = v.roll !== undefined
@@ -21,7 +27,7 @@ export function formatTelemetry(msg: DecodedMessage): string {
     : '';
   const vib = v.vibRms !== undefined ? ` vib ${v.vibRms}/${v.vibPeak} mg` : '';
   const flags = decodeStatusFlags(Number(v.statusFlags ?? 0));
-  return `${when(msg)} #${msg.seq} engine ${v.alternator ? 'ON ' : 'OFF'} run ${Number(v.runHours).toFixed(2)} h ` +
+  return `${when(msg)} #${msg.seq} engine ${engineText(v)} run ${Number(v.runHours).toFixed(2)} h ` +
     `total ${v.totalCount}${imu}${vib}${flags.length ? ` [${flags.join(', ')}]` : ''}`;
 }
 

@@ -44,3 +44,10 @@ Deno.test('every command encodes with the tag table', () => {
     assert(packet.length > 14);
   }
 });
+
+Deno.test('engine text: input on but not confirmed by vibration', async () => {
+  const { engineText } = await import('../src/reader.ts');
+  assertEquals(engineText({ alternator: true, altInput: true }), 'ON ');
+  assertEquals(engineText({ alternator: false, altInput: true }), 'OFF (input on)');
+  assertEquals(engineText({ alternator: false }), 'OFF');
+});
