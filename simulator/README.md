@@ -5,6 +5,7 @@
 ```bash
 cd simulator
 deno task start                 # creates /tmp/ttyHourMeter (needs socat)
+deno task start --web           # same, plus a web UI at http://127.0.0.1:8080/ to set every value
 ```
 
 Then open `/tmp/ttyHourMeter` in your driver like any serial port (any baud rate, 8N1). Try it with the project's own tools:
@@ -39,7 +40,26 @@ On Windows there is no socat: use `hour-meter-sim.exe --tcp 5555`, or pair it wi
 | **Commands** | All-or-nothing validation, `rejectedTag`, setting ranges and the `imuStreamHz ≤ imuSampleHz` rule, `resetCounters` magic, `get=1…4`, a retried `seq` within 10 s replays the ACK, reboot 100 ms after the ACK |
 | **Port open** | Opening the tty reboots the device (boot EVENT, `seq` back to 0), like an ESP32 DevKit whose DTR line resets it. `--no-reset` turns this off |
 | **State** | The engine runs 40 s on / 40 s off, the hour meter and totalizer count up, and counters are saved every `persistIntervalS`. Settings and time persist across reboots, as with EEPROM and the RTC |
-| **Not simulated** | Real sensor physics (motion is a gentle sine plus noise), `i2cErrors`/`overruns` (always 0), the UART pins (the simulated port is the USB port) |
+| **Values** | Each sensor animates by itself (engine cycle, gentle tilt, engine vibration, noise) until you set it in the [web UI](#web-ui) |
+| **Not simulated** | Real sensor physics, the UART pins (the simulated port is the USB port) |
+
+## Web UI
+
+`--web [port]` starts a control page (default http://127.0.0.1:8080/) next to the serial port:
+
+![Simulator web UI](docs/web-ui.png)
+
+- **Every value the device sends:** engine and pulse rate, run hours and totalizer, roll/pitch/heading, vibration, raw and filtered accel/gyro/mag, RTC temperature and backup battery, I2C errors and overruns, the extra status flags (`imuStuck`, `imuSaturated`, `storageError`, `eepromFormatted`), and IMU/magnetometer calibration.
+- **Auto or manual, per group:** a group animates by itself (`auto`) until you touch one of its controls, then holds your values (`manual`). Click *manual · back to auto* to release it. Touching one value keeps the rest of the group where it was.
+- **Modules:** plug and unplug the EEPROM, RTC, IMU and magnetometer. "Detected" follows the firmware's timing: lost after 3 missed checks (~6 s), found within 2 s, with EVENT kind 3.
+- **Faults and power:** line noise and frame corruption (changed live; `--scenario noise/corrupt` set the starting values), reboot, watchdog reset, power cycle.
+- **Read-only views:** the settings the host wrote, the `statusFlags` word the host receives, and a frame log of everything sent and received (filter by type, pause, clear).
+
+The values reach the wire exactly as the firmware would encode them: set roll to 15° and the host decodes `roll 15°`.
+
+The page has no login. It listens on 127.0.0.1 only, unless you pass `--web-host 0.0.0.0` to open it to your LAN; do that only on a network you trust.
+
+It is a React + Tailwind app in `web/`, built with Vite (`deno task web:build`) and embedded in the release binaries. While working on the page itself, run the simulator with `deno task start --web 8080` and `deno task web:dev` side by side, which serves the page with hot reload and forwards the WebSocket.
 
 ## Options
 
@@ -60,6 +80,8 @@ Device
   --pulse-hz <n>       totalizer pulses per second while the engine runs (default 3.5)
   --device-id <n>      deviceId in every header (default 0x1a2b3c4d)
   --no-reset           do not reboot when a client opens the tty
+  --web [port]         web UI on http://127.0.0.1:<port>/ (default 8080)
+  --web-host <addr>    web UI listen address (default 127.0.0.1; 0.0.0.0 = whole LAN, no login!)
   --seed <n>           random seed for sensor noise and faults (default 1)
 
 Output
@@ -124,11 +146,14 @@ deno task start --stdio | xxd     # raw frames on stdout, logs on stderr
 ## Development
 
 ```bash
-deno task test         # 27 tests: firmware golden frames, catalog dumps, command rules, Bluetooth lock
-deno task check        # type-check
+deno task test         # 38 tests: firmware golden frames, catalog dumps, command rules, Bluetooth lock,
+                       #   inputs (auto/manual), live faults, web server + WebSocket
+deno task check        # type-check (simulator + web UI)
+deno task web:build    # build the web UI into web/dist (needed once before `start --web` from source)
+deno task web:dev      # web UI with hot reload, talking to `deno task start --web 8080`
 deno lint && deno fmt --check
 deno task gen-catalog  # print the FRAME-CATALOG.md frames after a protocol change
-deno task compile      # release binaries for all 5 platforms into dist/ (+ SHA256SUMS)
+deno task compile      # builds the web UI, then release binaries for all 5 platforms into dist/ (+ SHA256SUMS)
 ```
 
 To release: bump `SIM_VERSION` in `main.ts`, run `deno task compile`, tag `simulator-v<version>`, and attach `dist/*.tar.gz`, `dist/*.zip` and `dist/SHA256SUMS` to a GitHub release.
@@ -141,12 +166,16 @@ simulator/
 │   ├── frames.ts         frame builders, a port of esp32/lib/App/src/Telemetry.cpp (same record order)
 │   ├── commands.ts       command validation, a port of CommandHandler.cpp + SettingsSchema.cpp
 │   ├── device.ts         the simulated Application: scheduler, counters, time, modules, calibration
+│   ├── inputs.ts         sensor values per group: built-in animation (auto) or held values (manual)
+│   ├── faults.ts         line noise and frame corruption, adjustable while running
 │   ├── access-gate.ts    Bluetooth PIN lock, a port of AccessGate.h
-│   ├── scenarios.ts      fault injection
+│   ├── scenarios.ts      --scenario: modules, RTC battery, engine cycle, reboots, starting faults
 │   ├── splitter.ts       bytes → frames (split on 0x00, COBS, CRC)
 │   ├── clock.ts          injected clock + seeded RNG
 │   ├── log.ts            human log on stderr
-│   └── transport/        pty (socat), tcp, stdio
+│   ├── transport/        pty (socat), tcp, stdio
+│   └── web/              web UI server (static files + WebSocket) and its message types
+├── web/                  the web UI: React + Tailwind (Vite); src/panels/ holds one file per panel
 ├── tools/                catalog.ts + gen-catalog.ts (FRAME-CATALOG.md frames), compile.ts (release binaries)
 └── test/
 ```

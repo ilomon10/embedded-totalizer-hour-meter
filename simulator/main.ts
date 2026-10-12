@@ -16,14 +16,17 @@ import { FrameLog, type Verbosity } from './src/log.ts';
 import { Device, FIRMWARE_VERSION } from './src/protocol.ts';
 import { parseScenario, type Scenario, scenarioHelp } from './src/scenarios.ts';
 import { FrameSplitter } from './src/splitter.ts';
+import { Faults } from './src/faults.ts';
+import { startWebServer, WebHub } from './src/web/server.ts';
 import type { Transport } from './src/transport/link.ts';
 import { PtyTransport } from './src/transport/pty.ts';
 import { StdioTransport } from './src/transport/stdio.ts';
 import { TcpTransport } from './src/transport/tcp.ts';
 
 /** Simulator release version (tags: simulator-v<version>). The protocol version is FIRMWARE_VERSION. */
-export const SIM_VERSION = '1.0.0';
+export const SIM_VERSION = '1.1.0';
 const POLL_MS = 10;
+const DEFAULT_WEB_PORT = 8080;
 
 const HELP = `Hour meter simulator: a fake device on a virtual serial port.
 
@@ -48,6 +51,10 @@ Device:
 Faults (repeatable: --scenario a --scenario b=1,2):
 ${scenarioHelp()}
 
+Web UI (set every simulated value from the browser):
+  --web [port]         serve the web UI on http://127.0.0.1:<port>/ (default 8080)
+  --web-host <addr>    listen address (default 127.0.0.1; 0.0.0.0 = whole LAN, no login!)
+
 Output:
   -v, --verbose        log every frame with all its records
   -q, --quiet          log nothing but errors
@@ -62,12 +69,22 @@ interface Cli {
   engine?: boolean;
   device: DeviceOptions;
   scenarios: Scenario[];
+  faults: Faults;
+  web?: { port: number; hostname: string };
   verbosity: Verbosity;
+}
+
+/** `--web` may come without a port: give it the default so parseArgs sees a value. */
+function withWebPort(argv: string[]): string[] {
+  return argv.flatMap((arg, i) => {
+    const next = argv[i + 1];
+    return arg === '--web' && (next === undefined || next.startsWith('-')) ? [arg, String(DEFAULT_WEB_PORT)] : [arg];
+  });
 }
 
 function parseCli(argv: string[]): Cli {
   const { values } = parseArgs({
-    args: argv,
+    args: withWebPort(argv),
     options: {
       pty: { type: 'string' },
       tcp: { type: 'string' },
@@ -80,6 +97,8 @@ function parseCli(argv: string[]): Cli {
       'pulse-hz': { type: 'string' },
       'device-id': { type: 'string' },
       'no-reset': { type: 'boolean' },
+      web: { type: 'string' },
+      'web-host': { type: 'string' },
       seed: { type: 'string' },
       scenario: { type: 'string', multiple: true },
       verbose: { type: 'boolean', short: 'v' },
@@ -113,13 +132,21 @@ function parseCli(argv: string[]): Cli {
   if (values.engine === undefined) scenarios.unshift(parseScenario('engine-cycle', random));
   else if (values.engine !== 'on' && values.engine !== 'off') throw new Error('--engine must be on or off');
   for (const s of scenarios) s.configure?.(device);
+  const faults = new Faults(random);
+  for (const s of scenarios) if (s.faults) faults.set(s.faults);
   const transport = pickTransport(values.pty, values.tcp, values.stdio);
+  const web = values.web === undefined && values['web-host'] === undefined ? undefined : {
+    port: int(values.web, DEFAULT_WEB_PORT, 0, 65535, '--web'),
+    hostname: values['web-host'] ?? '127.0.0.1',
+  };
   return {
     transport,
     resetOnOpen: transport instanceof PtyTransport && !values['no-reset'] && !values.bt, // DTR reset is USB-only
     engine: values.engine === undefined ? undefined : values.engine === 'on',
     device,
     scenarios,
+    faults,
+    web,
     verbosity: values.quiet ? 'quiet' : values.verbose ? 'verbose' : 'normal',
   };
 }
@@ -143,36 +170,51 @@ function pickTransport(pty: string | undefined, tcp: string | undefined, stdio: 
 async function main(): Promise<void> {
   const cli = parseCli(Deno.args[0] === '--' ? Deno.args.slice(1) : Deno.args); // `deno task start -- ...` keeps the --
   const log = new FrameLog(cli.verbosity);
-  const { transport, scenarios } = cli;
+  const { transport, scenarios, faults } = cli;
+  let hub: WebHub | undefined;
 
   const device = new SimDevice(cli.device, realClock, (frame, msg, periodic) => {
     const delivered = transport.connected() && (!periodic || device.liveDataAllowed());
     log.sent(msg, delivered);
+    hub?.sent(msg, delivered);
     if (!delivered) return;
-    transport.write(scenarios.reduce((bytes, s) => s.mangle?.(bytes) ?? bytes, frame));
+    transport.write(faults.mangle(frame));
   });
+  if (cli.web) {
+    hub = new WebHub({ device, faults, version: SIM_VERSION, deviceId: cli.device.deviceId, transport });
+  }
   if (cli.engine !== undefined) device.setEngine(cli.engine);
   const splitter = new FrameSplitter(
     (cmd) => {
       log.received(cmd);
+      hub?.received(cmd);
       device.onCommand(cmd);
     },
-    (err) => log.info(`<- dropped a bad frame (${err.message})`),
+    (err) => {
+      log.info(`<- dropped a bad frame (${err.message})`);
+      hub?.info('error', `dropped a bad frame from the host (${err.message})`);
+    },
   );
 
   await transport.start({
     onConnect: () => {
       log.info(`client connected on ${transport.label}`);
+      hub?.info('connect', `client connected on ${transport.label}`);
       device.clientConnected();
       if (cli.resetOnOpen) device.reset(ResetReason.powerOn); // DTR/RTS auto-reset, like a real DevKit
     },
-    onDisconnect: () => log.info('client disconnected'),
+    onDisconnect: () => {
+      log.info('client disconnected');
+      hub?.info('disconnect', 'client disconnected');
+    },
     onData: (bytes) => splitter.push(bytes),
   });
 
   log.info(`hour meter simulator: open ${transport.label} (115200 8N1, any baud works)`);
   log.info(cli.device.bluetoothSession ? `Bluetooth session: send unlock=${cli.device.btPin} first` : 'wired session');
   for (const s of scenarios) log.info(`scenario: ${s.label}`);
+  const web = hub && cli.web ? startWebServer(hub, cli.web) : undefined;
+  if (web) log.info(`web UI: ${web.url}`);
   device.powerOn();
   setInterval(() => {
     const nowMs = realClock.nowMs();
@@ -182,6 +224,7 @@ async function main(): Promise<void> {
 
   // Ctrl+C, kill, closed terminal: stop socat too, or it outlives us and keeps the tty link.
   const shutdown = async () => {
+    await web?.close();
     await transport.close();
     Deno.exit(0);
   };

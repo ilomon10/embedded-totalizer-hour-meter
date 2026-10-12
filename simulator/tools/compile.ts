@@ -3,8 +3,9 @@
 //   deno task compile              # every target into dist/
 //   deno task compile linux-x64    # one target
 //
-// The codec is loaded at runtime through createRequire, so it must be listed
-// with --include or the binary cannot find it.
+// The codec is loaded at runtime through createRequire, and the web UI is read
+// from web/dist, so both must be listed with --include or the binary cannot find
+// them. The web UI is built first (deno task web:build).
 import { SIM_VERSION } from '../main.ts';
 
 const TARGETS: Record<string, string> = {
@@ -14,7 +15,7 @@ const TARGETS: Record<string, string> = {
   'macos-arm64': 'aarch64-apple-darwin',
   'windows-x64': 'x86_64-pc-windows-msvc',
 };
-const INCLUDES = ['../sensorframe/js/index.js', '../sensorframe/js/src'];
+const INCLUDES = ['../sensorframe/js/index.js', '../sensorframe/js/src', 'web/dist'];
 const PERMISSIONS = ['--allow-read', '--allow-run=socat', '--allow-net'];
 const OUT = 'dist';
 
@@ -47,6 +48,7 @@ async function sha256(path: string): Promise<string> {
 const only = Deno.args[0];
 const chosen = Object.entries(TARGETS).filter(([name]) => !only || name === only);
 if (chosen.length === 0) throw new Error(`unknown target '${only}' (use: ${Object.keys(TARGETS).join(', ')})`);
+await run('deno', ['task', 'web:build']);
 await Deno.remove(OUT, { recursive: true }).catch(() => {});
 const archives: string[] = [];
 for (const [name, target] of chosen) archives.push(await build(name, target));

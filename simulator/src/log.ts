@@ -12,6 +12,15 @@ const MSG_NAME: Record<number, string> = {
 };
 const EVENT_NAME: Record<number, string> = { 1: 'boot', 2: 'calibration done', 3: 'modules changed' };
 
+export function msgName(msgType: number): string {
+  return MSG_NAME[msgType] ?? `msg ${msgType}`;
+}
+
+/** [name, value] for every record, values as text (tag names from the shared tag table). */
+export function recordPairs(records: { tag: number; value: unknown }[]): [string, string][] {
+  return records.map((r) => [TAGS[r.tag]?.name ?? `tag_${r.tag}`, String(r.value)]);
+}
+
 function time(): string {
   return new Date().toISOString().slice(11, 23);
 }
@@ -21,7 +30,7 @@ function line(text: string): void {
 }
 
 function recordsText(records: { tag: number; value: unknown }[]): string {
-  return records.map((r) => `${TAGS[r.tag]?.name ?? `tag_${r.tag}`}=${String(r.value)}`).join(' ');
+  return recordPairs(records).map(([name, value]) => `${name}=${value}`).join(' ');
 }
 
 function flagsText(flags: number): string {
@@ -44,7 +53,7 @@ export class FrameLog {
   sent(msg: Message & { seq: number }, delivered: boolean): void {
     const periodic = msg.msgType === MSG.TELEMETRY || msg.msgType === MSG.IMU;
     if (this.verbosity === 'quiet' || (periodic && this.verbosity !== 'verbose')) return;
-    const name = MSG_NAME[msg.msgType] ?? `msg ${msg.msgType}`;
+    const name = msgName(msg.msgType);
     const note = delivered ? '' : ' (not delivered: no client / locked / output setting)';
     line(`-> ${name} #${msg.seq} ${this.summary(msg)}${note}`);
   }

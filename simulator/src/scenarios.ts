@@ -4,9 +4,10 @@
 //   --scenario <name>[=args]   (repeatable)
 //
 // A scenario can change the device before power-on (configure), act on it over
-// time (tick), or damage the bytes on the wire (mangle). Randomness comes from
-// the seeded RNG, so a run with the same --seed fails the same way.
+// time (tick), or set the starting wire faults (faults, see faults.ts). Randomness
+// comes from the seeded RNG, so a run with the same --seed fails the same way.
 import type { DeviceOptions, SimDevice } from './device.ts';
+import type { FaultSettings } from './faults.ts';
 import { ResetReason } from './device.ts';
 import { Device } from './protocol.ts';
 
@@ -14,7 +15,7 @@ export interface Scenario {
   label: string;
   configure?(opts: DeviceOptions): void;
   tick?(nowMs: number, dev: SimDevice): void;
-  mangle?(frame: Uint8Array): Uint8Array;
+  faults?: Partial<FaultSettings>;
 }
 
 type Factory = (args: string[], random: () => number) => Scenario;
@@ -111,35 +112,16 @@ const SCENARIOS: Record<string, { help: string; make: Factory }> = {
   },
   'noise': {
     help: 'noise[=probability]      random junk bytes (zeros included) before some frames (default 0.2)',
-    make: ([p], random) => {
-      const probability = Math.min(1, num(p, 0.2, 'noise probability'));
-      return {
-        label: `line noise before ${Math.round(probability * 100)} % of frames`,
-        mangle: (frame) => {
-          if (random() >= probability) return frame;
-          const junk = Uint8Array.from({ length: 1 + Math.floor(random() * 16) }, () => Math.floor(random() * 256));
-          const out = new Uint8Array(junk.length + frame.length);
-          out.set(junk);
-          out.set(frame, junk.length);
-          return out;
-        },
-      };
+    make: ([p]) => {
+      const noise = Math.min(1, num(p, 0.2, 'noise probability'));
+      return { label: `line noise before ${Math.round(noise * 100)} % of frames`, faults: { noise } };
     },
   },
   'corrupt': {
     help: 'corrupt[=N]              flip one byte in 1 of every N frames (default 10) -> CRC errors',
-    make: ([n], random) => {
-      const every = Math.round(num(n, 10, 'corrupt N'));
-      return {
-        label: `1 in ${every} frames corrupted`,
-        mangle: (frame) => {
-          if (frame.length < 2 || random() * every >= 1) return frame;
-          const out = frame.slice();
-          const at = Math.floor(random() * (out.length - 1)); // never the trailing 0x00
-          out[at] ^= 1 + Math.floor(random() * 255);
-          return out;
-        },
-      };
+    make: ([n]) => {
+      const corruptEvery = Math.round(num(n, 10, 'corrupt N'));
+      return { label: `1 in ${corruptEvery} frames corrupted`, faults: { corruptEvery } };
     },
   },
 };

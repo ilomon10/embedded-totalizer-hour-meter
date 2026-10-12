@@ -28,9 +28,17 @@ import {
   type ImuOutput,
   type Settings,
   StreamMode,
-  type Vec3,
   type VibrationLevel,
 } from './frames.ts';
+import {
+  defaultInputs,
+  effectiveInputs,
+  type Group,
+  type Inputs,
+  type InputValues,
+  setAuto,
+  setManual,
+} from './inputs.ts';
 import { Ack, codec, type DecodedMessage, Device, Flag, frameBytes, type Message, MSG } from './protocol.ts';
 
 /** Factory defaults, esp32/lib/Storage/src/Settings.cpp (tag order 110..128). */
@@ -125,6 +133,9 @@ export class SimDevice {
   private due = { telemetry: 0, stream: 0, presence: 0 };
   private lastCmd: { seq: number; atMs: number; ack: Uint8Array; msg: Message & { seq: number } } | null = null;
   private rebootAtMs: number | null = null;
+  private inputState: Inputs = defaultInputs();
+  /** This moment's sensor values (auto or manual per group), refreshed on every poll. */
+  private current: InputValues;
 
   constructor(private readonly opts: DeviceOptions, private readonly clock: Clock, private readonly send: SendFn) {
     this.fitted = opts.fitted;
@@ -137,6 +148,9 @@ export class SimDevice {
     };
     if (opts.bluetoothSession) this.settings.bluetooth = true;
     this.settings.btPin = opts.btPin;
+    this.inputState.manual.pulses.perSecond = opts.pulsesPerSecond;
+    this.inputState.manual.rtc.battery = opts.rtcBattery;
+    this.current = this.computeInputs(clock.nowMs());
   }
 
   // ------------------------------------------------------------ lifecycle ----
@@ -163,6 +177,7 @@ export class SimDevice {
     this.rebootAtMs = null;
     this.lastCmd = null;
     this.gate.lock();
+    this.current = this.computeInputs(nowMs);
     this.bootTime(nowMs, powerCut);
     this.bootCounters(nowMs);
     this.imuSinceMs = nowMs;
@@ -173,7 +188,7 @@ export class SimDevice {
 
   private bootTime(nowMs: number, powerCut: boolean): void {
     const hasRtc = (this.fitted & Device.rtc) !== 0;
-    if (hasRtc && powerCut && !this.opts.rtcBattery) {
+    if (hasRtc && powerCut && !this.current.rtc.battery) {
       // The journal says the last save had a valid time (a used machine), so the loss is reported.
       this.bootFlags |= Flag.rtcBatteryLost;
       this.rtcHasTime = false;
@@ -210,12 +225,68 @@ export class SimDevice {
 
   // -------------------------------------------------------- scenario hooks ----
 
+  /** Engine state for auto mode (--engine, engine-cycle scenario). A manual engine ignores it. */
   setEngine(on: boolean): void {
     this.engineOn = on;
   }
 
   engineRunning(): boolean {
-    return this.engineOn;
+    return this.current.engine.running;
+  }
+
+  // -------------------------------------------------------- web UI hooks ----
+
+  inputs(): Inputs {
+    return this.inputState;
+  }
+
+  /** Hold a group at manual values (the rest of the group keeps its current value). */
+  setInput<G extends Group>(group: G, patch: Partial<InputValues[G]>): void {
+    this.inputState = setManual(this.inputState, group, this.current[group], patch);
+    this.current = this.computeInputs(this.clock.nowMs());
+  }
+
+  /** Give a group back to the built-in animation. */
+  setAutoInput(group: Group): void {
+    this.inputState = setAuto(this.inputState, group);
+    this.current = this.computeInputs(this.clock.nowMs());
+  }
+
+  /** Set the counters like a preset command would (saved to EEPROM if fitted), without a COMMAND. */
+  presetCounters(runSeconds: number | null, totalCount: number | null): void {
+    this.preset(runSeconds, totalCount, this.clock.nowMs());
+  }
+
+  /** Mark the IMU (bit 0) and magnetometer (bit 1) as calibrated or not. */
+  setCalibrationFlags(flags: number): void {
+    this.cal = flags & 1 ? { ...this.cal, ...measuredImuCalibration(), flags } : { ...this.cal, flags };
+  }
+
+  /** Everything the web UI shows. */
+  snapshot(): SimSnapshot {
+    return {
+      hourMeter: this.hourMeter(),
+      status: this.status(),
+      settings: { ...this.settings },
+      calibrationFlags: this.cal.flags,
+      calibrating: this.calib !== null,
+      fitted: this.fitted,
+      inputs: this.inputState,
+      values: this.current,
+      liveData: this.liveDataAllowed(),
+      bluetoothSession: this.opts.bluetoothSession,
+      nextSeq: this.seq,
+    };
+  }
+
+  private computeInputs(nowMs: number): InputValues {
+    return effectiveInputs(this.inputState, {
+      t: (nowMs - this.bootMs) / 1000,
+      engineOn: this.engineOn,
+      pulsesPerSecond: this.opts.pulsesPerSecond,
+      rtcBattery: this.opts.rtcBattery,
+      random: this.opts.random,
+    });
   }
 
   /** Physically plug or unplug a module. The device notices at its next presence checks. */
@@ -241,6 +312,7 @@ export class SimDevice {
   poll(): void {
     const nowMs = this.clock.nowMs();
     if (this.rebootAtMs !== null && nowMs >= this.rebootAtMs) return this.reset(ResetReason.software);
+    this.current = this.computeInputs(nowMs);
     this.runInputs(nowMs);
     this.runCalibration(nowMs);
     if (nowMs >= this.due.presence) this.runPresence(nowMs);
@@ -251,15 +323,16 @@ export class SimDevice {
   private runInputs(nowMs: number): void {
     const elapsedMs = nowMs - this.lastInputMs;
     this.lastInputMs = nowMs;
-    if (this.engineOn && elapsedMs > 0) {
+    if (this.current.engine.running && elapsedMs > 0) {
       this.runMsRemainder += elapsedMs;
       const whole = Math.floor(this.runMsRemainder / 1000);
       this.runSeconds = (this.runSeconds + whole) >>> 0;
       this.runMsRemainder -= whole * 1000;
-      this.pulseRemainder += (elapsedMs / 1000) * this.opts.pulsesPerSecond;
-      const pulses = Math.floor(this.pulseRemainder);
+      // Counted in pulse-milliseconds so 0.1-pulse steps cannot drift (exact for whole and half rates).
+      this.pulseRemainder += elapsedMs * Math.max(0, this.current.pulses.perSecond);
+      const pulses = Math.floor(this.pulseRemainder / 1000);
       this.totalCount = (this.totalCount + pulses) >>> 0;
-      this.pulseRemainder -= pulses;
+      this.pulseRemainder -= pulses * 1000;
       this.dirty = this.dirty || whole > 0 || pulses > 0;
     }
     if (this.dirty && nowMs - this.lastPersistMs >= Number(this.settings.persistIntervalS) * 1000) {
@@ -312,12 +385,12 @@ export class SimDevice {
     const mode = Number(this.settings.streamMode);
     if (Number(this.settings.imuStreamHz) === 0 || mode === StreamMode.off) return;
     if ((this.devices & Device.imu) === 0) return;
-    this.emit(buildImuStream(this.status(), this.imuOutput(nowMs), mode), true);
+    this.emit(buildImuStream(this.status(), this.imuOutput(), mode), true);
   }
 
   private runTelemetry(nowMs: number): void {
     this.due.telemetry = nowMs + this.telemetryPeriodMs();
-    const imu = (this.devices & Device.imu) !== 0 ? this.imuOutput(nowMs) : null;
+    const imu = (this.devices & Device.imu) !== 0 ? this.imuOutput() : null;
     const vib = imu && nowMs - this.imuSinceMs >= Number(this.settings.vibrationWindowMs) ? this.vibration() : null;
     this.emit(buildTelemetry(this.hourMeter(), this.status(), imu, vib), true);
   }
@@ -462,7 +535,7 @@ export class SimDevice {
     return {
       runSeconds: this.runSeconds,
       totalCount: this.totalCount,
-      running: this.engineOn,
+      running: this.current.engine.running,
       pulsesPerUnit: Number(this.settings.pulsesPerUnit),
       lastSavedEpoch: this.lastSavedEpoch,
       journalSeq: this.journalSeq,
@@ -484,18 +557,24 @@ export class SimDevice {
     if ((this.cal.flags & 1) === 0) f |= Flag.imuNotCalibrated;
     if (has(Device.mag) && (this.cal.flags & 2) === 0) f |= Flag.magNotCalibrated;
     if (this.calib) f |= Flag.calibrating;
+    const { errors, flags, rtc } = this.current;
+    if (errors.i2cErrors > 0) f |= Flag.i2cErrors;
+    if (flags.storageError) f |= Flag.storageError;
+    if (flags.eepromFormatted) f |= Flag.eepromFormatted;
+    if (has(Device.imu) && flags.imuStuck) f |= Flag.imuStuck;
+    if (has(Device.imu) && flags.imuSaturated) f |= Flag.imuSaturated;
     return {
       timeValid: this.time.valid,
       epoch: this.epochNow(nowMs),
       uptimeS: Math.floor((nowMs - this.bootMs) / 1000),
       devices: d,
-      i2cErrors: 0,
-      overruns: 0,
+      i2cErrors: errors.i2cErrors >>> 0,
+      overruns: errors.overruns >>> 0,
       resetReason: this.resetReason,
       settingsSource: 1,
       btState: this.btState(),
       rtcTempValid: has(Device.rtc),
-      rtcTempQuarterC: 117, // 29.25 C
+      rtcTempQuarterC: Math.max(-32768, Math.min(32767, Math.round(rtc.tempC * 4))), // x0.25 C
       flags: f >>> 0,
     };
   }
@@ -513,34 +592,26 @@ export class SimDevice {
     return output === 1 || output === 3; // the simulated port is the USB port
   }
 
-  private imuOutput(nowMs: number): ImuOutput {
-    const t = (nowMs - this.bootMs) / 1000;
-    const shake = this.engineOn ? 0.04 : 0.003;
-    const n = (scale: number) => (this.opts.random() - 0.5) * scale;
+  private imuOutput(): ImuOutput {
+    const { imu, motion } = this.current;
     const hasMag = (this.devices & Device.mag) !== 0;
-    const rollDeg = 1.5 + Math.sin(t / 7);
-    const pitchDeg = -0.8 + Math.cos(t / 9);
-    const accel: Vec3 = { x: n(shake), y: n(shake), z: 1 + n(shake) };
-    const gyro: Vec3 = { x: n(0.3), y: n(0.3), z: n(0.3) };
-    const mag: Vec3 = { x: 30 + n(0.5), y: -5 + n(0.5), z: -40 + n(0.5) };
     return {
-      rawAccelG: jitter(accel, n, 0.05),
-      rawGyroDps: jitter(gyro, n, 2),
-      rawMagUt: jitter(mag, n, 3),
-      accelG: accel,
-      gyroDps: gyro,
-      magUt: mag,
-      rollDeg,
-      pitchDeg,
-      headingDeg: (t * 3) % 360,
+      rawAccelG: imu.rawAccelG,
+      rawGyroDps: imu.rawGyroDps,
+      rawMagUt: imu.rawMagUt,
+      accelG: imu.accelG,
+      gyroDps: imu.gyroDps,
+      magUt: imu.magUt,
+      rollDeg: motion.rollDeg,
+      pitchDeg: motion.pitchDeg,
+      headingDeg: ((motion.headingDeg % 360) + 360) % 360,
       headingValid: hasMag,
       hasMag,
     };
   }
 
   private vibration(): VibrationLevel {
-    const rmsMg = this.engineOn ? 35 + this.opts.random() * 8 : 2 + this.opts.random();
-    return { rmsMg, peakMg: rmsMg * 2.8 };
+    return this.current.vibration;
   }
 
   // ------------------------------------------------------------------ send ----
@@ -555,8 +626,21 @@ export class SimDevice {
   }
 }
 
-function jitter(v: Vec3, n: (s: number) => number, scale: number): Vec3 {
-  return { x: v.x + n(scale), y: v.y + n(scale), z: v.z + n(scale) };
+/** Everything the web UI shows (see src/web/messages.ts). */
+export interface SimSnapshot {
+  hourMeter: HourMeterSnapshot;
+  status: DeviceStatus;
+  settings: Settings;
+  calibrationFlags: number;
+  calibrating: boolean;
+  /** Modules physically plugged in (Device bits); status.devices is what the firmware has detected. */
+  fitted: number;
+  inputs: Inputs;
+  /** This moment's values, auto or manual. */
+  values: InputValues;
+  liveData: boolean;
+  bluetoothSession: boolean;
+  nextSeq: number;
 }
 
 /** Uncalibrated device: no bias, typical MPU9250 noise, mag offset 0 / scale 1. */

@@ -41,3 +41,5 @@ simulator/dist/
 
 # Configurator release builds (deno task compile)
 configurator/dist/
+# Simulator web UI build (deno task web:build)
+simulator/web/dist/

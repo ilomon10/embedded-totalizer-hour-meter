@@ -28,7 +28,7 @@ Firmware version: **2.3.0** (see `kFirmwareVersion` in [`Protocol.h`](esp32/lib/
 | [`sensorframe/`](sensorframe/README.md) | The wire format: [SPEC.md](sensorframe/SPEC.md), header-only C++ library (`arduino/`), zero-dependency npm package (`js/`), shared golden test vectors |
 | [`schematic/hour-meter-esp32/`](schematic/hour-meter-esp32/README.md) | Carrier PCB rev A (KiCad): schematic, 2-layer THT board, JLCPCB Gerbers + BOM in `production/`, generator scripts `tools-*.py` |
 | `schematic/totalizator-hour-meter-schematic/` | Early KiCad draft (DevKit pin headers only), superseded by `hour-meter-esp32/` |
-| [`simulator/`](simulator/README.md) | Deno device simulator: the real protocol on a virtual serial port (socat), TCP or stdio, with fault scenarios and the Bluetooth lock. For driver development without hardware |
+| [`simulator/`](simulator/README.md) | Deno device simulator: the real protocol on a virtual serial port (socat), TCP or stdio, with fault scenarios, the Bluetooth lock, and a web UI (`--web`) to set every value live. For driver development without hardware |
 | `canbus/` | `can.sh`: CANable2 (slcan) helper for can-utils: `up [rate] [--tx]`, `down`, `scan [seconds]`, `status`. Listen-only by default |
 
 ## Hardware at a glance
