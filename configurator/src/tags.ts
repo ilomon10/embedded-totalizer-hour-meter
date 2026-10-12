@@ -73,6 +73,8 @@ export const tags: Record<number, TagDef> = {
   59: { name: 'rejectedTag', fmt: 'u8' },
   60: { name: 'settingsSource', fmt: 'u8' },
   61: { name: 'btState', fmt: 'u8' },
+  62: { name: 'lastCause', fmt: 'u8' },
+  63: { name: 'lastStage', fmt: 'u8' },
   // Commands (host -> device)
   100: { name: 'setTime', fmt: 'u32' },
   101: { name: 'get', fmt: 'u8' },
@@ -160,6 +162,7 @@ export const STATUS_FLAGS: readonly string[] = Object.freeze([
   'rtcBatteryLost',
   'timeNotBackedUp',
   'settingsNotSaved',
+  'safeMode',
 ]);
 
 export const GET: Readonly<Record<string, number>> = Object.freeze({ hour: 1, settings: 2, status: 3, calib: 4 });
@@ -202,6 +205,36 @@ export const SETTINGS: Record<string, SettingSpec> = {
   bluetooth: { tag: 127, min: 0, max: 1, help: 'Bluetooth SPP radio on/off (applied after ACK)' },
   btPin: { tag: 128, min: 0, max: 9999, help: 'PIN to unlock a Bluetooth session (change it!)' },
 };
+
+/** Why the device restarted last time (tag 62), mirror of Protocol.h LastCause. */
+export const LAST_CAUSE: readonly string[] = Object.freeze([
+  'none',
+  'watchdog',
+  'i2cStuck',
+  'usbStalled',
+  'panicSignal',
+  'rebootCommand',
+  'crash',
+]);
+
+/** What the device was doing when it restarted (tag 63), mirror of Protocol.h Stage. */
+export const LAST_STAGE: readonly string[] = Object.freeze([
+  'unknown',
+  'boot',
+  'opening USB',
+  'starting I2C',
+  'EEPROM',
+  'opening UART',
+  'RTC',
+  'IMU',
+  'serial / command',
+  'inputs',
+  'telemetry',
+  'presence check',
+]);
+
+/** The panic signal: this many 0x00 bytes in a row on a wired port restart the device (no frame, no ACK). */
+export const PANIC_ZERO_RUN = 64;
 
 export const BT_STATE: readonly string[] = Object.freeze([
   'off',

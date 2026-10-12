@@ -6,6 +6,7 @@
 //                   (by default it does: needed when the RTC has no backup battery)
 import { connect, connectHelp, DEFAULT_PORT, env, takeFlag, takeOption } from './cli.ts';
 import type { DecodedMessage, SensorFrameError } from './sensorframe.ts';
+import { bootText } from './restart.ts';
 import { decodeStatusFlags, EVENT_KIND, MSG } from './tags.ts';
 
 // Header timestamp is UTC epoch when timeValid, otherwise seconds since boot.
@@ -46,7 +47,9 @@ export async function run(argv: string[]): Promise<number> {
   dev.on('frame', (msg: DecodedMessage) => {
     if (msg.msgType === MSG.TELEMETRY) console.log(formatTelemetry(msg));
     else if (msg.msgType === MSG.EVENT) {
-      console.log(`${when(msg)} EVENT ${EVENT_KIND[Number(msg.values.eventKind)] ?? msg.values.eventKind}`, msg.values);
+      const kind = EVENT_KIND[Number(msg.values.eventKind)] ?? msg.values.eventKind;
+      const cause = kind === 'boot' ? ` (${bootText(msg.values)})` : '';
+      console.log(`${when(msg)} EVENT ${kind}${cause}`, msg.values);
     } else if (msg.msgType === MSG.IMU && imu.value) console.log(`${when(msg)} IMU`, msg.values);
   });
   dev.on('frameError', (err: SensorFrameError) => console.warn('dropped frame:', err.code ?? err.message));

@@ -7,6 +7,7 @@
 import { render } from 'ink';
 
 import { connect, connectHelp, DEFAULT_PORT, env, takeFlag, takeOption } from '../cli.ts';
+import { hardReset, isLocalSerial } from '../reset.ts';
 import { App, type Client } from './App.tsx';
 import { initialState } from './state.ts';
 
@@ -22,8 +23,14 @@ export async function run(argv: string[]): Promise<number> {
     });
   if (!noSync.value) client.enableAutoTimeSync(); // RTC without battery: device asks, we answer with UTC
 
+  const wired = isLocalSerial(port, demo.value) && Deno.build.os !== 'windows';
   const app = render(
-    <App client={client as Client} initial={initialState(demo.value ? 'simulated' : port, demo.value)} />,
+    <App
+      client={client as Client}
+      initial={initialState(demo.value ? 'simulated' : port, demo.value)}
+      hardReset={wired ? () => hardReset(port) : undefined}
+      hardResetNote={wired ? undefined : 'Hard reset needs a local USB serial port (not --demo, tcp:// or Bluetooth).'}
+    />,
   );
   await app.waitUntilExit();
   client.close();

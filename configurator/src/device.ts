@@ -86,6 +86,11 @@ export class DeviceClient extends EventEmitter {
     throw new Error(`no ACK after ${retries + 1} attempts`);
   }
 
+  /** Write raw bytes (no frame, no ACK): the panic signal. */
+  async sendRaw(bytes: Uint8Array): Promise<void> {
+    await this.link.write(bytes);
+  }
+
   /** Unlock a Bluetooth session (harmless on USB/UART). Rejects with BadPin / Locked. */
   unlock(pin: string | number): Promise<DecodedMessage> {
     return this.request({ unlock: Number(pin) });

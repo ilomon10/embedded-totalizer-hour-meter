@@ -4,7 +4,7 @@
 //
 // All device I/O goes through the DeviceClient passed in; the screen is a pure
 // function of DeviceState (see state.ts).
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 
@@ -18,6 +18,7 @@ import {
   tags,
   unitsToPulses,
 } from '../tags.ts';
+import { causeText } from '../restart.ts';
 import {
   activeFlags,
   addLog,
@@ -28,6 +29,7 @@ import {
   type DeviceState,
   formatFirmware,
   type Level,
+  noDataBanner,
   type Value,
 } from './state.ts';
 
@@ -44,7 +46,15 @@ export interface Client {
 const TABS = ['Dashboard', 'IMU', 'Settings', 'Actions', 'Log'] as const;
 type Tab = (typeof TABS)[number];
 const LEVEL_COLOR: Record<Level, string> = { info: 'white', ok: 'green', warn: 'yellow', error: 'red' };
-const SERIOUS = new Set(['eepromMissing', 'storageError', 'timeInvalid', 'rtcBatteryLost', 'imuStuck', 'i2cErrors']);
+const SERIOUS = new Set([
+  'eepromMissing',
+  'storageError',
+  'timeInvalid',
+  'rtcBatteryLost',
+  'imuStuck',
+  'i2cErrors',
+  'safeMode',
+]);
 
 // ------------------------------------------------------------------ helpers --
 
@@ -122,6 +132,7 @@ function Panel({ title, children, width }: { title: string; children: React.Reac
 function Dashboard({ state }: { state: DeviceState }) {
   const v = state.values;
   const flags = activeFlags(state);
+  const lastRestart = causeText(v);
   return (
     <Box flexDirection='column'>
       <Box>
@@ -174,6 +185,10 @@ function Dashboard({ state }: { state: DeviceState }) {
             {flags.map((f) => <Text key={f} color={SERIOUS.has(f) ? 'red' : 'yellow'}>▲ {f}</Text>)}
           </Box>
         )}
+        {lastRestart ? <Text color='gray'>Last restart: {lastRestart}</Text> : null}
+        {flags.includes('safeMode')
+          ? <Text color='red'>Safe mode: I2C is off after repeated restarts. Power-cycle or reboot to leave it.</Text>
+          : null}
       </Panel>
     </Box>
   );
@@ -269,34 +284,37 @@ const ACTIONS = [
   { id: 'calMag', label: 'Calibrate magnetometer (rotate in all directions, 20 s)' },
   { id: 'unlock', label: 'Unlock Bluetooth session', prompt: 'PIN' },
   { id: 'reboot', label: 'Reboot device' },
+  { id: 'hardReset', label: 'Hard reset (USB)' },
   { id: 'refresh', label: 'Refresh everything (get hour/settings/status/calibration)' },
 ] as const;
 
 /** Current value shown next to the counter actions, so you see what you are changing. */
-function currentValue(id: string, state: DeviceState): string {
+function currentValue(id: string, state: DeviceState, hardResetNote?: string): string {
   const v = state.values;
   const ppu = state.settings.pulsesPerUnit ?? 1;
   if (id === 'hours' || id === 'resetHours') return `now ${num(v.runHours)} h`;
   if (id === 'units' || id === 'resetTotal') return `now ${num(v.totalUnits)} units (${String(ppu)} pulses/unit)`;
   if (id === 'count') return `now ${String(v.totalCount ?? '-')} pulses`;
   if (id === 'reset') return `now ${num(v.runHours)} h, ${num(v.totalUnits)} units`;
+  if (id === 'hardReset') return hardResetNote ?? 'pulses EN through the USB adapter (key H)';
   return '';
 }
 
-function ActionsView({ state, cursor, editing, draft, setDraft, onSubmit }: {
+function ActionsView({ state, cursor, editing, draft, setDraft, onSubmit, hardResetNote }: {
   state: DeviceState;
   cursor: number;
   editing: boolean;
   draft: string;
   setDraft: (s: string) => void;
   onSubmit: (s: string) => void;
+  hardResetNote?: string;
 }) {
   return (
     <Panel title='Actions   ↑↓ select   Enter run'>
       {ACTIONS.map((a, i) => (
         <Box key={a.id} gap={1}>
           <Text inverse={i === cursor}>{` ${a.label} `}</Text>
-          <Text color='gray'>{currentValue(a.id, state)}</Text>
+          <Text color='gray'>{currentValue(a.id, state, hardResetNote)}</Text>
           {i === cursor && editing && 'prompt' in a
             ? (
               <Text>
@@ -323,7 +341,16 @@ function LogView({ state }: { state: DeviceState }) {
 
 // --------------------------------------------------------------------- app --
 
-export function App({ client, initial }: { client: Client; initial: DeviceState }) {
+/**
+ * `hardReset` pulses EN through the USB adapter; it is only given for a local serial port.
+ * `hardResetNote` says why it is missing (shown instead).
+ */
+export function App({ client, initial, hardReset, hardResetNote }: {
+  client: Client;
+  initial: DeviceState;
+  hardReset?: () => Promise<void>;
+  hardResetNote?: string;
+}) {
   const { exit } = useApp();
   const [state, setState] = useState(initial);
   const [tab, setTab] = useState<Tab>('Dashboard');
@@ -332,6 +359,7 @@ export function App({ client, initial }: { client: Client; initial: DeviceState 
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [, setTick] = useState(0);
+  const startMs = useRef(Date.now()).current;
 
   const log = useCallback((level: Level, text: string) => setState((s) => addLog(s, level, text, Date.now())), []);
 
@@ -430,8 +458,20 @@ export function App({ client, initial }: { client: Client; initial: DeviceState 
         return (await send('unlock', { unlock: Number(input) })) ? refresh() : undefined;
       case 'reboot':
         return send('reboot', { reboot: 1 });
+      case 'hardReset':
+        return runHardReset();
       default:
         return refresh();
+    }
+  };
+
+  const runHardReset = async () => {
+    if (!hardReset) return log('warn', `hard reset: ${hardResetNote ?? 'not available'}`);
+    log('info', 'hard reset: pulsing EN over USB...');
+    try {
+      await hardReset();
+    } catch (err) {
+      log('error', (err as Error).message);
     }
   };
 
@@ -459,6 +499,7 @@ export function App({ client, initial }: { client: Client; initial: DeviceState 
     if (key.upArrow && count) setCursor((c) => (c + count - 1) % count);
     if (key.downArrow && count) setCursor((c) => (c + 1) % count);
     if (input === 'g') void refresh();
+    if (input === 'H' || input === 'h') void runHardReset();
     if (tab === 'IMU') {
       const mode = { r: STREAM_MODE.raw, f: STREAM_MODE.filtered, b: STREAM_MODE.both, o: STREAM_MODE.off }[input];
       if (mode !== undefined) void send('stream mode', { streamMode: mode });
@@ -498,9 +539,13 @@ export function App({ client, initial }: { client: Client; initial: DeviceState 
   };
 
   const lastLog = state.log[state.log.length - 1];
+  const banner = state.connection === 'demo'
+    ? undefined
+    : noDataBanner(state.lastFrameMs, startMs, Date.now(), hardReset ? undefined : hardResetNote);
   return (
     <Box flexDirection='column'>
       <Header state={state} tab={tab} />
+      {banner ? <Text color='yellow' bold>▲ {banner}</Text> : null}
       {tab === 'Dashboard' && <Dashboard state={state} />}
       {tab === 'IMU' && <ImuView state={state} />}
       {tab === 'Settings' && (
@@ -522,11 +567,12 @@ export function App({ client, initial }: { client: Client; initial: DeviceState 
           draft={draft}
           setDraft={setDraft}
           onSubmit={submitAction}
+          hardResetNote={hardReset ? undefined : hardResetNote}
         />
       )}
       {tab === 'Log' && <LogView state={state} />}
       <Box paddingX={1}>
-        <Text color='gray'>1-5/Tab switch g refresh q quit</Text>
+        <Text color='gray'>1-5/Tab switch g refresh H hard reset q quit</Text>
         {lastLog ? <Text color={LEVEL_COLOR[lastLog.level]}>{lastLog.text}</Text> : null}
       </Box>
     </Box>

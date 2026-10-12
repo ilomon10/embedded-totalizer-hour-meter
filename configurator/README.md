@@ -28,7 +28,7 @@ deno task start /dev/ttyUSB0
 
 ```
 ╭──────────────────────────────────────────────────────────────────────────────╮
-│ HOUR METER                ● connected /dev/ttyUSB0        dev 1a2b3c4d fw 2.3.0│
+│ HOUR METER                ● connected /dev/ttyUSB0        dev 1a2b3c4d fw 2.4.0│
 │  1 Dashboard    2 IMU    3 Settings    4 Actions    5 Log                      │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ┌ Hour meter ──────────────────────┐┌ Motion ───────────────────────────────┐
@@ -49,6 +49,9 @@ deno task start /dev/ttyUSB0
 | `4` | Actions | Set time from the PC; set the hour meter (hours) or totalizer (units or pulses) to any value, showing the current value; reset hour meter only, totalizer only, or both (type `RESET`); calibrate; unlock Bluetooth; reboot |
 | `5` | Log | Device events (boot, modules plugged/unplugged, calibration results), command results, errors |
 | `Tab`, `g`, `q` | | Next screen, refresh everything, quit |
+| `H` | any | Hard-reset the board over USB (also *Actions → Hard reset (USB)*). Local serial ports only |
+
+If no frame arrives for 5 s (from connecting, or after the last frame), a banner says **"No data from the device. Press H to hard-reset."**. The reset is only ever offered, never automatic. A boot is logged with its cause, for example `device restarted: watchdog while IMU (reset reason 6)`, and the Dashboard shows the last restart cause and a **safeMode** warning.
 
 **Automatic time sync** is on: whenever the device reports an unknown time (for example an RTC without battery after a power cut), the TUI sends the PC clock as UTC. Disable with `--no-time-sync`.
 
@@ -87,11 +90,27 @@ hour-meter reset-totalizer --yes       # totalizer only -> 0
 hour-meter calibrate gyro              # or mag
 hour-meter reset-counters --yes        # both -> 0
 hour-meter reboot
+hour-meter reset                       # restart a stuck device: panic signal, then USB hard reset if silent
+hour-meter reset --signal              # panic signal only (also over tcp://)
+hour-meter reset --hard                # pulse EN through the USB adapter only (serial ports only)
 hour-meter read /dev/ttyUSB0 [--imu]   # scrolling live view, auto time sync
 hour-meter --help                      # everything, with all flags
 ```
 
 Commands take `--port <port>` (or `$HOUR_METER_PORT`), `--pin <PIN>` for Bluetooth, and `--demo`. `read` and the TUI take the port as their first argument.
+
+### Restarting a device that does not answer
+
+`hour-meter reset` first sends the **panic signal** (64 zero bytes: the firmware restarts at once, with no frame and no ACK; not accepted over Bluetooth). If no boot EVENT follows within 3 s and the port is a local serial port, it does a **hard reset**: the DTR/RTS lines of the USB-serial adapter pulse the ESP32 EN pin for 100 ms (like `esptool --after hard_reset`; IO0 stays high, so it boots normally). It then waits for the boot EVENT and prints one line, for example `device restarted (reset reason 1 power-on, last cause: panicSignal while serial / command)`.
+
+The hard reset talks to the adapter through libc (`ioctl`), so it needs Linux or macOS and the binary's usual `-A` permission. It is untested on real hardware on macOS Apple Silicon. On Windows use `--signal`.
+
+### Device sends nothing over USB
+
+1. Try `hour-meter reset` (or press `H` in the TUI). The device restarts and the boot EVENT says why it was stuck.
+2. Check the `output` setting is not UART-only: `hour-meter get settings` over the UART pins (or Bluetooth) shows `output`. `uart` keeps the USB port silent; set `output=both`.
+3. After a restart, `lastCause` and `lastStage` (in `get status`, the boot EVENT and the TUI Dashboard) say what happened: `watchdog`, `i2cStuck`, `usbStalled`, `panicSignal`, `rebootCommand` or `crash`, and what the firmware was doing (IMU, RTC, EEPROM...).
+4. **Safe mode:** after 3 unplanned restarts in a row the device boots without I2C (flag `safeMode`; no RTC, IMU or EEPROM). It leaves safe mode on a power-cycle, a hard reset, or `hour-meter reboot`. Fix the bus fault (a loose or shorted I2C module) first, or it will come back.
 
 ## Library
 
@@ -123,6 +142,8 @@ configurator/
 │   │                   the simulator imports it too)
 │   ├── sensorframe.ts  the only bridge to ../sensorframe/js (codec, frame splitter)
 │   ├── device.ts       DeviceClient: request/ACK matching, retries, auto time sync
+│   ├── reset.ts        panic signal and USB hard reset (EN pulse through libc ioctl)
+│   ├── restart.ts      boot EVENT cause/stage text
 │   ├── links.ts        serial (Deno.open + stty), TCP, in-memory link pair
 │   ├── demo.ts         --demo: the simulator's device in-process
 │   ├── cli.ts          shared flags and connect()

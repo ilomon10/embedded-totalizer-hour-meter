@@ -1,5 +1,6 @@
 // state.ts: the TUI's view of the device, built from incoming frames.
 // Pure functions only (no I/O), so it is unit-tested in state.test.ts.
+import { bootText, causeText } from '../restart.ts';
 import { ACK_STATUS, decodeStatusFlags, EVENT_KIND, MSG, SETTINGS } from '../tags.ts';
 
 export type Value = number | boolean | bigint | Uint8Array;
@@ -72,7 +73,7 @@ function describeEvent(values: Record<string, Value>): { level: Level; text: str
     return { level: 'warn', text: `modules changed: ${list}` };
   }
   if (kind === 'boot') {
-    return { level: 'info', text: `device booted (reset reason ${String(values.resetReason)})` };
+    return { level: causeText(values) ? 'warn' : 'info', text: bootText(values) };
   }
   return { level: 'info', text: kind };
 }
@@ -109,4 +110,15 @@ export function applyMessage(state: DeviceState, msg: DecodedMessage, nowMs: num
     next = addLog(next, level, text, nowMs);
   }
   return next;
+}
+
+/** Banner when nothing has arrived for 5 s (since connecting, or since the last frame). */
+export function noDataBanner(
+  lastFrameMs: number | undefined,
+  startMs: number,
+  nowMs: number,
+  hardResetNote?: string,
+): string | undefined {
+  if (nowMs - (lastFrameMs ?? startMs) < 5000) return undefined;
+  return `No data from the device. ${hardResetNote ?? 'Press H to hard-reset.'}`;
 }

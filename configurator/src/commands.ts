@@ -2,7 +2,9 @@
 //
 // buildRequest() turns the words into command values and is pure (test/commands.test.ts);
 // run() connects, sends, prints the ACK, and for counters shows the value before and after.
-import { connect, connectHelp, DEFAULT_PORT, env, takeFlag, takeOption } from './cli.ts';
+import { connect, connectHelp, DEFAULT_PORT, env, takeFlag, takeOption, type Target } from './cli.ts';
+import { hardReset, isLocalSerial, NO_HARD_RESET, panicPayload } from './reset.ts';
+import { resetResultText } from './restart.ts';
 import type { CommandValues } from './device.ts';
 import type { DecodedMessage } from './sensorframe.ts';
 import {
@@ -30,7 +32,9 @@ export const USAGE = `Commands (add --port <port|tcp://host:port>, --pin <PIN> f
   hour-meter reset-totalizer --yes     totalizer only -> 0
   hour-meter reset-counters --yes      both -> 0
   hour-meter calibrate gyro|mag
-  hour-meter reboot`;
+  hour-meter reboot
+  hour-meter reset [--hard|--signal]   restart a device that does not answer: panic signal, then USB hard reset
+                                       (--signal: panic signal only, also over tcp://; --hard: EN pulse only)`;
 
 export const COMMANDS = new Set([
   'get',
@@ -44,6 +48,7 @@ export const COMMANDS = new Set([
   'reset-totalizer',
   'reset-counters',
   'reboot',
+  'reset',
 ]);
 
 const SETTING_NAMES = Object.keys(SETTINGS); // all of 110..128, including bluetooth and btPin
@@ -133,19 +138,84 @@ function printAck(ack: DecodedMessage): void {
   if (Object.keys(data).length) console.log(data);
 }
 
+export type ResetMode = 'auto' | 'signal' | 'hard';
+
+/** Words after `reset`: [] (signal, then hard reset if it stays silent), --signal, or --hard. */
+export function parseResetArgs(rest: string[]): ResetMode {
+  const unknown = rest.filter((a) => a !== '--hard' && a !== '--signal');
+  if (unknown.length) throw new Error(`reset [--hard|--signal]: unexpected '${unknown[0]}'`);
+  if (rest.includes('--hard') && rest.includes('--signal')) throw new Error('reset: use --hard or --signal, not both');
+  return rest.includes('--hard') ? 'hard' : rest.includes('--signal') ? 'signal' : 'auto';
+}
+
+const EVENT_BOOT = 1; // eventKind 1, see EVENT_KIND
+const BOOT_WAIT_MS = 3000;
+
+/** `hour-meter reset`: restart the device and wait for its boot EVENT. Returns the exit code. */
+async function runReset(mode: ResetMode, target: Target): Promise<number> {
+  const wired = isLocalSerial(target.port, target.demo);
+  if (mode === 'hard' && !wired) {
+    throw new Error(
+      target.demo
+        ? '--hard needs a real serial port, not --demo'
+        : `--hard needs a local serial port, not ${target.port} (try --signal)`,
+    );
+  }
+  if (mode === 'hard' && Deno.build.os === 'windows') throw new Error(NO_HARD_RESET);
+  // No PIN: the panic signal is not accepted over Bluetooth anyway, and a hung device cannot answer an unlock.
+  const dev = await connect({ ...target, pin: undefined }, 1500).catch((err) => {
+    throw new Error(`${(err as Error).message}\n${connectHelp()}`);
+  });
+  const waitBoot = () => {
+    const boot = dev.waitForEvent(EVENT_BOOT, BOOT_WAIT_MS);
+    boot.catch(() => {}); // reported by the caller's await, not as an unhandled rejection
+    return boot;
+  };
+  try {
+    let boot: Promise<DecodedMessage> | undefined;
+    if (mode !== 'hard') {
+      boot = waitBoot();
+      console.log(`sending the panic signal (${panicPayload().length} zero bytes)...`);
+      await dev.sendRaw(panicPayload());
+      try {
+        return report(await boot);
+      } catch {
+        if (mode === 'signal' || !wired) throw new Error(`no boot EVENT within ${BOOT_WAIT_MS / 1000} s`);
+        console.log('no answer to the panic signal, pulsing EN over USB...');
+      }
+    }
+    boot = waitBoot();
+    await hardReset(target.port);
+    try {
+      return report(await boot);
+    } catch {
+      throw new Error(`no boot EVENT within ${BOOT_WAIT_MS / 1000} s after the hard reset`);
+    }
+  } finally {
+    dev.close();
+  }
+}
+
+function report(boot: DecodedMessage): number {
+  console.log(resetResultText(boot.values));
+  return 0;
+}
+
 /** `hour-meter <command> ...`: returns the process exit code. */
 export async function run(argv: string[]): Promise<number> {
   const port = takeOption(argv, '--port');
   const pin = takeOption(port.rest, '--pin');
   const demo = takeFlag(pin.rest, '--demo');
   const args = demo.rest;
-  buildRequest(args, { pulsesPerUnit: 1 }); // validate the words before touching the device
+  const resetMode = args[0] === 'reset' ? parseResetArgs(args.slice(1)) : undefined;
+  if (!resetMode) buildRequest(args, { pulsesPerUnit: 1 }); // validate the words before touching the device
 
   const target = {
     demo: demo.value,
     port: port.value ?? env('HOUR_METER_PORT') ?? DEFAULT_PORT,
     pin: pin.value ?? env('HOUR_METER_PIN'),
   };
+  if (resetMode) return await runReset(resetMode, target);
   const dev = await connect(target).catch((err) => {
     throw new Error(`${(err as Error).message}\n${connectHelp()}`);
   });
