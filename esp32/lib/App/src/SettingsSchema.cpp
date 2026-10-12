@@ -26,10 +26,11 @@ const SettingSpec kSpecs[] = {
     {126, "kalmanQMag", SF_F32, 1e-7, 10.0},
     {127, "bluetooth", SF_BOOL, 0, 1},
     {128, "btPin", SF_U16, 0, 9999},
+    {129, "runVibMinMg", SF_U16, 0, 2000},
 };
 const size_t kCount = sizeof(kSpecs) / sizeof(kSpecs[0]);
 static_assert(sizeof(kSpecs) / sizeof(kSpecs[0]) == tag::kSettingLast - tag::kSettingFirst + 1,
-              "every tag in 110..126 needs a spec row");
+              "every tag in kSettingFirst..kSettingLast needs a spec row");
 
 namespace {
 constexpr uint32_t kBauds[] = {9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600};
@@ -74,6 +75,7 @@ double read(const Settings& s, uint8_t t) {
     case 126: return s.kalmanQMag;
     case 127: return s.bluetooth;
     case 128: return s.btPin;
+    case 129: return s.runVibMinMg;
     default: return 0;
   }
 }
@@ -99,6 +101,7 @@ bool write(Settings& s, uint8_t t, double v) {
     case 126: s.kalmanQMag = static_cast<float>(v); return true;
     case 127: s.bluetooth = static_cast<uint8_t>(v); return true;
     case 128: s.btPin = static_cast<uint16_t>(v); return true;
+    case 129: s.runVibMinMg = static_cast<uint16_t>(v); return true;
     default: return false;
   }
 }

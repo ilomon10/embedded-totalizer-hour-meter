@@ -19,6 +19,7 @@ Settings defaultSettings() {
   s.pulsesPerUnit = 1;
   s.bluetooth = 0;   // off until enabled over USB / TUI
   s.btPin = 1234;    // CHANGE at installation
+  s.runVibMinMg = 0; // off: the alternator input alone decides
   s.kalmanQAccel = 0.0005f;
   s.kalmanQGyro = 0.01f;
   s.kalmanQMag = 0.05f;

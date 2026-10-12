@@ -277,7 +277,9 @@ void Application::loop() {
 
 void Application::runInputs(uint32_t nowMs) {
   meter_.addPulses(inputs_.takePulses());
-  const bool engineStopped = meter_.update(nowMs, inputs_.alternatorHigh());
+  const bool confirmed = runConfirm_.update((devices_ & device_bit::kImu) != 0, pipeline_.hasVibration(),
+                                            pipeline_.vibration().rmsMg, settings_.runVibMinMg);
+  const bool engineStopped = meter_.update(nowMs, inputs_.alternatorHigh(), confirmed);
   if (engineStopped || meter_.persistDue(nowMs)) {
     persistCounters(nowMs, 0);
   }

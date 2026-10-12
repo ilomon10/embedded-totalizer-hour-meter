@@ -40,7 +40,8 @@ bool appendHourMeter(FrameWriter& w, const HourMeterSnapshot& hm, bool withPersi
   const uint32_t runHoursX100 = hm.runSeconds / 36UL;  // 3600 s / 100
   const uint32_t unitsX100 = static_cast<uint32_t>((static_cast<uint64_t>(hm.totalCount) * 100ULL) / ppu);
   bool ok = w.addU32(tag::kRunSeconds, hm.runSeconds) && w.addU32(tag::kTotalCount, hm.totalCount) &&
-            w.addBool(tag::kAlternator, hm.running) && w.addU32(tag::kRunHours, runHoursX100) &&
+            w.addBool(tag::kAlternator, hm.running) && w.addBool(tag::kAltInput, hm.inputActive) &&
+            w.addU32(tag::kRunHours, runHoursX100) &&
             w.addU32(tag::kTotalUnits, unitsX100);
   if (withPersistInfo) {
     ok = ok && w.addU32(tag::kLastSavedEpoch, hm.lastSavedEpoch) && w.addU32(tag::kJournalSeq, hm.journalSeq);

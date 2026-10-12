@@ -1,7 +1,7 @@
 # Frame Catalog: every frame, byte for byte
 
 **Audience:** developers writing their own driver (any language) who want to see exactly what goes over the wire.
-**Covers:** firmware **2.4.0**, SensorFrame v1. For each frame: when it is sent, the records in wire order, which records are optional, and a real hex dump you can feed to your decoder.
+**Covers:** firmware **2.5.0**, SensorFrame v1. For each frame: when it is sent, the records in wire order, which records are optional, and a real hex dump you can feed to your decoder.
 **Read with:** [INTEGRATION-GUIDE.md](INTEGRATION-GUIDE.md) for ports, commands and flows, and [SensorFrame SPEC.md](../../sensorframe/SPEC.md) for the encoding rules. This page does not repeat them.
 
 > **No hardware?** The [simulator](../../simulator/README.md) sends these same frames on a virtual serial port and answers your commands. Start it with `cd simulator && deno task start`, then point your driver at `/tmp/ttyHourMeter`.
@@ -30,7 +30,7 @@ Every hex dump below comes from fixed inputs (`simulator/tools/catalog.ts`). The
   - `timestamp` is UTC Unix seconds when the time is valid, otherwise seconds since boot. Any value below `946684800` is uptime.
 - **Record:** `tag (u8)`, `fmt (u8)`, then the value: 1 byte (`u8`, `bool`), 2 bytes (`u16`, `i16`), or 4 bytes (`u32`, `f32`).
 - **Raw values are scaled integers.** The tables below give the raw wire value and its meaning. Scales and units come from the [tag dictionary](INTEGRATION-GUIDE.md#5-tag-dictionary).
-- **Order:** firmware 2.4.0 always writes records in the order shown here. **Decode by tag, not by position.** Later firmware may add records or optional ones may be missing, and unknown tags must be skipped (their size follows from `fmt`).
+- **Order:** firmware 2.5.0 always writes records in the order shown here. **Decode by tag, not by position.** Later firmware may add records or optional ones may be missing, and unknown tags must be skipped (their size follows from `fmt`).
 
 fmt codes used by this device: `01` u8 · `03` u16 · `04` i16 · `05` u32 · `07` f32 · `08` bool.
 
@@ -69,7 +69,8 @@ The device's ACK to a `setTime` command (Section [6](#6-ack-msgtype-4)), as 23 b
 |---:|---|---|---|---:|---|
 | 1 | `runSeconds` | u32 | always | 4500000 | engine run time, s |
 | 2 | `totalCount` | u32 | always | 15000 | totalizer pulses |
-| 3 | `alternator` | bool | always | 1 | engine running now |
+| 3 | `alternator` | bool | always | 1 | engine running now: the input is active and, if `runVibMinMg` > 0, the vibration confirms it |
+| 10 | `altInput` | bool | always | 1 | raw engine-running input (before the vibration check) |
 | 4 | `runHours` | u32 | always | 125000 | 1250.00 h (×0.01) |
 | 5 | `totalUnits` | u32 | always | 1500000 | 15000.00 units (×0.01, pulses ÷ `pulsesPerUnit`) |
 | 50 | `timeValid` | bool | always | 1 | header timestamp is UTC |
@@ -80,15 +81,15 @@ The device's ACK to a `setTime` command (Section [6](#6-ack-msgtype-4)), as 23 b
 | 43 | `vibRms` | u16 | after the first vibration window | 37 | 37 mg |
 | 44 | `vibPeak` | u16 | after the first vibration window | 103 | 103 mg |
 
-Example with every record (seq 120, 70-byte packet):
+Example with every record (seq 120, 73-byte packet):
 
 <!-- frame:telemetry -->
 ```text
 04 01 01 78 0e 4d 3c 2b 1a 70 3c c6 6a 01 05 20
-aa 44 05 02 05 98 3a 01 09 03 08 01 04 05 48 e8
-01 06 05 05 60 e3 16 06 32 08 01 35 05 01 01 01
-04 28 04 fa 0c 29 04 d0 ff 2a 03 16 0d 2b 03 25
-04 2c 03 67 03 c4 c6 00
+aa 44 05 02 05 98 3a 01 0c 03 08 01 0a 08 01 04
+05 48 e8 01 06 05 05 60 e3 16 06 32 08 01 35 05
+01 01 01 04 28 04 fa 0c 29 04 d0 ff 2a 03 16 0d
+2b 03 25 04 2c 03 67 03 9b a6 00
 ```
 
 Without an IMU, the frame stops after tag 53, and `statusFlags` = 24 (`imuMissing` + `magMissing`):
@@ -96,9 +97,9 @@ Without an IMU, the frame stops after tag 53, and `statusFlags` = 24 (`imuMissin
 <!-- frame:telemetry-no-imu -->
 ```text
 04 01 01 78 0e 4d 3c 2b 1a 70 3c c6 6a 01 05 20
-aa 44 05 02 05 98 3a 01 09 03 08 01 04 05 48 e8
-01 06 05 05 60 e3 16 07 32 08 01 35 05 18 01 01
-03 3d 53 00
+aa 44 05 02 05 98 3a 01 0c 03 08 01 0a 08 01 04
+05 48 e8 01 06 05 05 60 e3 16 07 32 08 01 35 05
+18 01 01 03 88 e6 00
 ```
 
 ---
@@ -114,7 +115,7 @@ The first record is always tag 8 `eventKind`. Switch on it.
 | Tag | Name | Type | Present | Example raw | Meaning |
 |---:|---|---|---|---:|---|
 | 8 | `eventKind` | u8 | always | 1 | boot |
-| 1–5 | hour meter | | always | | as in [TELEMETRY](#3-telemetry-msgtype-1): the counters restored from EEPROM |
+| 1–5, 10 | hour meter | | always | | as in [TELEMETRY](#3-telemetry-msgtype-1): the counters restored from EEPROM |
 | 6 | `lastSavedEpoch` | u32 | always | 1791376440 | UTC s of the last EEPROM save (0 = never) |
 | 7 | `journalSeq` | u32 | always | 812 | EEPROM journal record number |
 | 50 | `timeValid` | bool | always | 1 | |
@@ -129,19 +130,19 @@ The first record is always tag 8 `eventKind`. Switch on it.
 | 61 | `btState` | u8 | always | 0 | 0 off, 1 on, 2 client locked, 3 client unlocked |
 | 62 | `lastCause` | u8 | always | 0 | why the previous run ended: 0 none, 1 watchdog, 2 i2cStuck, 3 usbStalled, 4 panicSignal, 5 rebootCommand, 6 crash |
 | 63 | `lastStage` | u8 | always | 0 | what the device was doing then (breadcrumb, 0 unknown, 7 IMU, 8 serial / command) |
-| 241 | `fwVersion` | u32 | always | 132096 | 0x00020400 = 2.4.0 |
+| 241 | `fwVersion` | u32 | always | 132352 | 0x00020500 = 2.5.0 |
 | 54 | `rtcTemp` | i16 | RTC fitted | 117 | 29.25 °C (×0.25) |
 
 <!-- frame:event-boot -->
 ```text
 03 01 02 01 11 4d 3c 2b 1a 70 3c c6 6a 08 01 01
-01 05 20 aa 44 05 02 05 98 3a 01 09 03 08 01 04
-05 48 e8 01 06 05 05 60 e3 16 0b 06 05 38 3c c6
-6a 07 05 2c 03 01 06 32 08 01 35 05 01 01 01 0b
-33 05 70 3c c6 6a 34 05 10 0e 01 06 37 01 0f 38
-05 01 01 01 03 39 05 01 01 01 09 3a 01 01 3c 01
-01 3d 01 03 3e 01 03 3f 01 03 f1 05 03 04 02 04
-36 04 75 03 9a e4 00
+01 05 20 aa 44 05 02 05 98 3a 01 0c 03 08 01 0a
+08 01 04 05 48 e8 01 06 05 05 60 e3 16 0b 06 05
+38 3c c6 6a 07 05 2c 03 01 06 32 08 01 35 05 01
+01 01 0b 33 05 70 3c c6 6a 34 05 10 0e 01 06 37
+01 0f 38 05 01 01 01 03 39 05 01 01 01 09 3a 01
+01 3c 01 01 3d 01 03 3e 01 03 3f 01 03 f1 05 03
+05 02 04 36 04 75 03 69 b3 00
 ```
 
 ### 4.2 Calibration done (`eventKind` 2)
@@ -193,7 +194,7 @@ A failed magnetometer calibration has only the first three records (`calibrate` 
 32 08 01 35 05 18 01 01 0b 33 05 70 3c c6 6a 34
 05 10 0e 01 06 37 01 03 38 05 01 01 01 03 39 05
 01 01 01 09 3a 01 01 3c 01 01 3d 01 03 3e 01 03
-3f 01 03 f1 05 03 04 02 04 36 04 75 03 70 04 00
+3f 01 03 f1 05 03 05 02 04 36 04 75 03 11 bc 00
 ```
 
 ---
@@ -285,19 +286,20 @@ Bluetooth session not unlocked yet: `Locked` (9), `rejectedTag` 107 (`unlock`):
 
 ### 6.1 ACK to get=1 (hour meter)
 
-`ackSeq`, `ackStatus`, then tags **1, 2, 3, 4, 5, 6, 7**, with the same meaning as in the [boot EVENT](#41-boot-eventkind-1).
+`ackSeq`, `ackStatus`, then tags **1, 2, 3, 10, 4, 5, 6, 7**, with the same meaning as in the [boot EVENT](#41-boot-eventkind-1).
 
 <!-- frame:ack-get-hour -->
 ```text
 04 01 04 84 0c 4d 3c 2b 1a 70 3c c6 6a f2 03 2b
-03 f3 01 06 01 05 20 aa 44 05 02 05 98 3a 01 09
-03 08 01 04 05 48 e8 01 06 05 05 60 e3 16 0b 06
-05 38 3c c6 6a 07 05 2c 03 01 03 8b 83 00
+03 f3 01 06 01 05 20 aa 44 05 02 05 98 3a 01 0c
+03 08 01 0a 08 01 04 05 48 e8 01 06 05 05 60 e3
+16 0b 06 05 38 3c c6 6a 07 05 2c 03 01 03 04 99
+00
 ```
 
 ### 6.2 ACK to get=2 (settings)
 
-`ackSeq`, `ackStatus`, then all 19 settings, tags **110 to 128** in order, with the wire types from [Settings reference](INTEGRATION-GUIDE.md#7-settings-reference). This example has the factory defaults:
+`ackSeq`, `ackStatus`, then all 20 settings, tags **110 to 129** in order, with the wire types from [Settings reference](INTEGRATION-GUIDE.md#7-settings-reference). This example has the factory defaults:
 
 | Tag | Name | Type | Default |
 |---:|---|---|---:|
@@ -320,6 +322,7 @@ Bluetooth session not unlocked yet: `Locked` (9), `rejectedTag` 107 (`unlock`):
 | 126 | `kalmanQMag` | f32 | 0.05 |
 | 127 | `bluetooth` | bool | 0 |
 | 128 | `btPin` | u16 | 1234 |
+| 129 | `runVibMinMg` | u16 | 0 |
 
 <!-- frame:ack-get-settings -->
 ```text
@@ -329,7 +332,7 @@ Bluetooth session not unlocked yet: `Locked` (9), `rejectedTag` 107 (`unlock`):
 01 76 05 03 c2 01 03 77 08 04 78 03 c8 03 79 08
 08 7a 03 e8 03 7b 03 01 15 7c 07 6f 12 03 3a 7d
 07 0a d7 23 3c 7e 07 cd cc 4c 3d 7f 08 07 80 03
-d2 04 d0 19 00
+d2 04 81 03 01 03 98 7f 00
 ```
 
 ### 6.3 ACK to get=3 (status)
@@ -342,8 +345,8 @@ d2 04 d0 19 00
 03 f3 01 06 32 08 01 35 05 01 01 01 0b 33 05 70
 3c c6 6a 34 05 10 0e 01 06 37 01 0f 38 05 01 01
 01 03 39 05 01 01 01 09 3a 01 01 3c 01 01 3d 01
-03 3e 01 03 3f 01 03 f1 05 03 04 02 04 36 04 75
-03 0a 1a 00
+03 3e 01 03 3f 01 03 f1 05 03 05 02 04 36 04 75
+03 6b a2 00
 ```
 
 ### 6.4 ACK to get=4 (calibration)
@@ -451,4 +454,4 @@ Packet sizes from "fewest optional records" to "all of them". On the wire, add 2
 
 A **256-byte receive buffer** per frame is enough for anything this device sends.
 
-Several `get` records in one COMMAND share one ACK. The groups add 39 (`get=1`), 78 (`get=2`), 55 (`get=3`) and 111 (`get=4`) bytes to the 21-byte ACK, and the total must stay within 250 bytes. For example `get=1` + `get=2` + `get=4` (249) fits, but `get=2` + `get=3` + `get=4` (265) and all four (304) do not. The device then **cuts the last group short** without an error, so split such requests over two commands.
+Several `get` records in one COMMAND share one ACK. The groups add 42 (`get=1`), 82 (`get=2`), 55 (`get=3`) and 111 (`get=4`) bytes to the 21-byte ACK, and the total must stay within 250 bytes. For example `get=1` + `get=2` + `get=3` (200) fits, but `get=1` + `get=2` + `get=4` (256), `get=2` + `get=3` + `get=4` (269) and all four (311) do not. The device then **cuts the last group short** without an error, so split such requests over two commands.

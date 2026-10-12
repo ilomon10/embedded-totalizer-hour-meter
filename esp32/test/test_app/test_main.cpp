@@ -10,6 +10,7 @@
 #include "Presence.h"
 #include "AccessGate.h"
 #include "Supervisor.h"
+#include "RunConfirm.h"
 
 
 void setUp() {}
@@ -502,12 +503,52 @@ static void assertFrameHex(FrameWriter& w, const char* expected) {
 }
 
 static const char* const kGoldenTelemetry =
-    "04 01 01 01 0e 78 56 34 12 70 3c c6 6a 01 05 20 aa 44 05 02 05 98 3a 01 09 03 08 01 04 05 48 e8 01 05 05 05 98 "
-    "3a 01 06 32 08 01 35 05 01 01 01 03 24 ae 00";
+    "04 01 01 01 0e 78 56 34 12 70 3c c6 6a 01 05 20 aa 44 05 02 05 98 3a 01 0c 03 08 01 0a 08 01 04 05 48 e8 01 05 "
+    "05 05 98 3a 01 06 32 08 01 35 05 01 01 01 03 fb 63 00";
 static const char* const kGoldenSetTime = "04 01 03 2a 01 01 01 01 01 01 01 01 09 64 05 70 3c c6 6a 05 6a 00";
 static const char* const kGoldenAckGetHour =
-    "04 01 04 02 0c 78 56 34 12 70 3c c6 6a f2 03 2b 03 f3 01 06 01 05 20 aa 44 05 02 05 98 3a 01 09 03 08 01 04 05 "
-    "48 e8 01 05 05 05 98 3a 01 0b 06 05 38 3c c6 6a 07 05 2c 03 01 03 61 1b 00";
+    "04 01 04 02 0c 78 56 34 12 70 3c c6 6a f2 03 2b 03 f3 01 06 01 05 20 aa 44 05 02 05 98 3a 01 0c 03 08 01 0a 08 "
+    "01 04 05 48 e8 01 05 05 05 98 3a 01 0b 06 05 38 3c c6 6a 07 05 2c 03 01 03 97 33 00";
+
+// ------------------------------------------------- Run confirmation --
+
+static void test_run_confirm_off_missing_imu_and_hysteresis() {
+  RunConfirm c;
+  TEST_ASSERT_TRUE(c.update(true, true, 0.0f, 0));      // setting off: input alone decides
+  TEST_ASSERT_TRUE(c.update(false, false, 0.0f, 40));   // no IMU: never lose hours
+  TEST_ASSERT_FALSE(c.update(true, false, 0.0f, 40));   // no vibration window yet
+  TEST_ASSERT_FALSE(c.update(true, true, 12.0f, 40));   // key on, engine off
+  TEST_ASSERT_TRUE(c.update(true, true, 40.0f, 40));    // idle
+  TEST_ASSERT_TRUE(c.update(true, true, 29.0f, 40));    // a quiet moment: still above 70 %
+  TEST_ASSERT_FALSE(c.update(true, true, 27.0f, 40));   // below 28 mg: engine stopped
+  TEST_ASSERT_FALSE(c.update(true, true, 35.0f, 40));   // must reach 40 again
+}
+
+static void test_hourmeter_counts_only_while_confirmed() {
+  HourMeter m;
+  m.configure(false, 200, 1, 60);
+  m.update(0, true, true);  // input inactive (active low), boot
+  // Key on: the input is active from now on, but the engine is not confirmed.
+  for (uint32_t t = 10; t <= 5000; t += 10) {
+    m.update(t, false, false);
+  }
+  TEST_ASSERT_FALSE(m.running());
+  TEST_ASSERT_TRUE(m.snapshot().inputActive);
+  TEST_ASSERT_EQUAL_UINT32(0, m.snapshot().runSeconds);
+  // Engine starts: confirmed; the debounce (200 ms) applies to the combination.
+  for (uint32_t t = 5010; t <= 15000; t += 10) {
+    m.update(t, false, true);
+  }
+  TEST_ASSERT_TRUE(m.running());
+  TEST_ASSERT_UINT32_WITHIN(1, 9, m.snapshot().runSeconds);
+  // Engine stops but the key stays on: stops counting, reports the stop edge.
+  bool stopped = false;
+  for (uint32_t t = 15010; t <= 16000; t += 10) {
+    stopped = m.update(t, false, false) || stopped;
+  }
+  TEST_ASSERT_TRUE(stopped);
+  TEST_ASSERT_FALSE(m.running());
+}
 
 // ------------------------------------------------------- Self-recovery --
 
@@ -579,6 +620,7 @@ static void test_golden_doc_examples() {
   hm.totalCount = 15000;
   hm.pulsesPerUnit = 100;
   hm.running = true;
+  hm.inputActive = true;
   hm.lastSavedEpoch = 1791376440UL;
   hm.journalSeq = 812;
 
@@ -625,6 +667,8 @@ int main() {
   RUN_TEST(test_imu_calibration_rejects_tilted_board_and_missing_mag);
   RUN_TEST(test_imu_stuck_detection_and_roll);
   RUN_TEST(test_imu_pitch_sign_matches_gyro);
+  RUN_TEST(test_run_confirm_off_missing_imu_and_hysteresis);
+  RUN_TEST(test_hourmeter_counts_only_while_confirmed);
   RUN_TEST(test_supervisor_restarts_only_after_sustained_trouble);
   RUN_TEST(test_panic_signal_needs_an_unbroken_zero_run);
   RUN_TEST(test_reset_history_classifies_and_enters_safe_mode);

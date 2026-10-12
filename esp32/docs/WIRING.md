@@ -69,13 +69,13 @@ If you also plug in USB while VIN is powered, check that your DevKit has a diode
 Both engine signals go through a **2-channel PC817 optocoupler module** (the blue/green "817 Module" board, rated 3.6–24 V input / 3.6–30 V output):
 
 ```
- Alternator D+/L (12/24 V) ──► 817 module CH1 (IN1 → V1) ──► GPIO27
+ Engine running (L / D+)   ──► 817 module CH1 (IN1 → V1) ──► GPIO27   (pick the wire: see Channel 1)
  Pulse sensor, 12/24 V     ──► 817 module CH2 (IN2 → V2) ──► GPIO26   (optional, see below)
 ```
 
 | Input | Pin | Default behaviour | Settings |
 |---|---|---|---|
-| Alternator / engine running | GPIO27 | **LOW = running** (CH1 conducts), 200 ms debounce | `altActiveHigh` (default `false`), `altDebounceMs` |
+| Engine running | GPIO27 | **LOW = running** (CH1 conducts), 200 ms debounce | `altActiveHigh` (default `false`), `altDebounceMs`, `runVibMinMg` |
 | Totalizer pulses | GPIO26 | Falling edge (= pulse start through CH2), ≥ 1 ms apart | `pulseRisingEdge`, `pulseMinIntervalUs`, `pulsesPerUnit` |
 
 **Never connect vehicle voltage directly to a GPIO.** Vehicle systems have load-dump spikes well over 40 V, and the ESP32 pins tolerate 3.6 V at most.
@@ -97,13 +97,54 @@ Both engine signals go through a **2-channel PC817 optocoupler module** (the blu
 - **V / G (output):** V is the phototransistor **collector**, G its **emitter**. When the input is on, V is pulled to G (**LOW**); when off, V floats and needs a pull-up. Most boards also have a resistor (R2/R4, about 3 kΩ) in series with V.
 - **Jumper per channel:** connects input G to output G. **Remove both jumpers.** With a jumper fitted, vehicle ground and ESP32 ground are joined and the isolation is gone.
 
-### Channel 1: alternator input
+### Channel 1: engine-running input
+
+The device counts run time while this input has voltage. So it needs a wire that is **dead with the key ON and the engine stopped**, and live only once the engine runs. Many wires near the alternator are live as soon as the key is at ACC/ON, and then the meter counts while the engine is off.
+
+#### Pick the wire
+
+| Wire | Key OFF | Key ON / ACC, engine off | Engine running | Use it? |
+|---|---|---|---|---|
+| **L** or **D+** on the alternator (thin wire to the charge-warning lamp), measured **at the alternator** | 0 V | **< 2 V** (the regulator grounds it; the lamp lights) | battery V (13–14 V / 27–28 V) | ✔ **best** |
+| Oil-pressure **warning switch** terminal (the wire between the lamp and the switch) | 0 V | **< 1 V** (the switch is closed to ground) | battery V through the lamp | ✔ good alternative |
+| The same charge-lamp wire, tapped **behind the dashboard** on the key side of the lamp | 0 V | battery V | battery V | ✘ counts at ACC |
+| **IG**, **R** or **S** in the alternator's small plug (from the key switch / sense) | 0 V | battery V | battery V | ✘ counts at ACC |
+| **B / B+** (thick output cable) | battery V | battery V | battery V | ✘ always counts |
+| **P** or **W** (phase / tachometer) | 0 V | 0 V | AC pulses, frequency follows RPM | ✘ not with this circuit (the input reads a steady level) |
+| Oil-pressure **gauge sender** (not the warning switch) | | a resistance, not a switch | | ✘ |
+
+Terminal letters differ between makers, so **measure before you connect.** With a multimeter between the candidate wire and vehicle ground (chassis), take three readings:
+
+1. **Key OFF:** about 0 V. If it reads battery voltage, it's B+: wrong wire.
+2. **Key ON / ACC, engine off:** must read **below 2 V**. Battery voltage here is the "counts at ACC" wire.
+3. **Engine running:** must read **above 10 V** on a 12 V system, **above 20 V** on 24 V.
+
+Only a wire that passes all three is right. Then confirm with the device connected: `hour-meter read` shows `engine OFF` with the key on and the engine stopped, and `engine ON` within about a second of starting.
+
+> **Oil-pressure switch:** tap the switch terminal itself, not the dashboard side of the warning lamp. The lamp (bulb or LED) must stay in the circuit, because it is what carries battery voltage to the wire once the switch opens. The 2 mA the input draws through it does not light it.
+
+#### Only a key-on wire is reachable
+
+If you can't reach L / D+ or the oil-pressure switch (sealed harness, rental machine), use the key-on wire and let the IMU confirm that the engine turns. Set `runVibMinMg`: run time then counts only while the input is on **and** the vibration RMS is at least that many mg. It is also a useful safety net with the right wire.
+
+1. Key ON, engine **off**: watch `vibRms` in `hour-meter read` (or the TUI) for 10 s and note the highest value, e.g. 8 mg.
+2. Engine at **idle**: note the lowest value, e.g. 45 mg.
+3. Set a value about halfway and at least twice the engine-off value: `hour-meter set runVibMinMg=25`.
+4. Check: with the key on and the engine off, `hour-meter read` shows `engine OFF (input on)`; at idle it shows `engine ON`.
+
+How it behaves:
+- **Starting and stopping:** the engine counts from the first vibration window above the threshold. That is at most `vibrationWindowMs` (default 1 s) after it starts. Counting stops when the RMS falls below 70 % of the threshold, so quiet moments at idle don't stop it.
+- **No IMU fitted or unplugged:** the input alone decides, so no hours are lost.
+- **Turning it off:** `0` turns the check off (the default).
+- **Mounting:** mount the board solidly to the machine. A loose or foam-mounted board under-reads vibration.
+
+#### Circuit
 
 **Input side (vehicle):**
 
 ```
                     D1               R4
- Alternator D+/L ───►|─────────────/\/\/\───────── IN1  ┐
+ L / D+ (see above) ►|─────────────/\/\/\───────── IN1  ┐
                   1N4007        1.5 kΩ 0.5 W              │ 817 module CH1
  Vehicle ground ───────────────────────────────── G    ┘ (input side)
 ```
@@ -131,6 +172,7 @@ Input current through D1 + R4 + module (≈ 3.7 V of LED drops, 3 kΩ on-board):
 | Alternator output | LED current | On-board resistor power | Result |
 |---|---:|---:|---|
 | 0–2 V (engine stopped, L lamp on) | 0 mA | — | OFF → GPIO27 HIGH → **stopped** (below the 3.7 V turn-on, so charge-lamp voltage is ignored) |
+| 12–13 V with the engine **stopped** | 1.7 mA | 0.01 W | ON → counts as **running**: this is a key-on wire, see [Pick the wire](#pick-the-wire) |
 | 12.0 V (12 V system, weak) | 1.7 mA | 0.01 W | ON → GPIO27 LOW → **running** |
 | 14.4 V (12 V system charging) | 2.2 mA | 0.01 W | ON |
 | 28.8 V (24 V system charging) | 5.4 mA | 0.09 W | ON (SMD resistor limit ≈ 0.125 W) |
@@ -149,9 +191,10 @@ If the pulse sensor is an open-collector/3.3 V-safe output, skip CH2 and wire it
 
 | Engine | IN1 to G (input side) | LED1 on module | GPIO27 to GND | Reader shows |
 |---|---|---|---|---|
-| Off | < 2 V | off | ≈ 3.3 V | `engine OFF` |
+| Key ON, engine off | < 2 V | off | ≈ 3.3 V | `engine OFF` |
 | Running | ≈ 13–14 V or 27–28 V | **on** | < 0.6 V | `engine ON`, `runHours` counting |
 
+- **Counts with the key on and the engine off (LED1 on):** the input is on a key-on wire. Move it ([Pick the wire](#pick-the-wire)) or set `runVibMinMg`.
 - **Reads the other way round:** the `altActiveHigh` setting doesn't match your wiring.
 - **LED1 lights but GPIO27 stays HIGH:** check the output wires. V1 must go to GPIO27 and the output G to ESP32 GND.
 - **GPIO27 LOW is about 0.8 V:** the pull-up is too strong. Use 47 kΩ, not 10 kΩ.

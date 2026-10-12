@@ -40,7 +40,7 @@ How raw MPU9250 readings become vibration, orientation and heading, and how to c
 | Filtered accel / gyro / mag | `Kalman1D` per axis (random-walk model) | **R** from calibration; **Q** = settings `kalmanQAccel/Gyro/Mag`. Raise Q for faster response, lower it for smoother output |
 | Roll, pitch | `KalmanAngle`: accel angle + gyro rate, state = angle + gyro bias | Built-in Q/R (0.001 / 0.003 / 0.03), the standard values for MPU-class sensors |
 | Heading | Vector method: `east = mag × up`, `north = up × east` | Needs mag calibration; `up` comes from filtered roll/pitch (tilt compensation) |
-| Vibration RMS / peak | Gravity removed by a 0.5 Hz low-pass tracker, then RMS / peak of \|a\| over a window | `vibrationWindowMs`. Uses the **unfiltered** signal on purpose |
+| Vibration RMS / peak | Gravity removed by a 0.5 Hz low-pass tracker, then RMS / peak of \|a\| over a window | `vibrationWindowMs`. Uses the **unfiltered** signal on purpose. `runVibMinMg` uses the RMS to confirm the engine runs ([how to pick it](WIRING.md#only-a-key-on-wire-is-reachable)) |
 
 ### Why the Kalman filter needs no stored history
 

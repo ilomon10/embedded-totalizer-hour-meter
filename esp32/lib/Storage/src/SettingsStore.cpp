@@ -12,19 +12,24 @@ bool SettingsStore::readCopy(uint32_t addr, SettingsRecord& out) {
   return out.magic == kMagic && out.version == kVersion && out.crc == crcOfStructWithoutTail(out);
 }
 
+void SettingsStore::fromRecord(const SettingsRecord& r, Settings& out) {
+  static_cast<StoredSettings&>(out) = r.settings;
+  out.runVibMinMg = r.runVibMinMg;
+}
+
 Status SettingsStore::load(Settings& out) {
   SettingsRecord a;
   SettingsRecord b;
   const bool okA = readCopy(layout::kSettingsAddrA, a);
   const bool okB = readCopy(layout::kSettingsAddrB, b);
   if (okA && (!okB || a.seq >= b.seq)) {
-    out = a.settings;
+    fromRecord(a, out);
     seq_ = a.seq;
     source_ = SettingsSource::CopyA;
     return Status::Ok;
   }
   if (okB) {
-    out = b.settings;
+    fromRecord(b, out);
     seq_ = b.seq;
     source_ = SettingsSource::CopyB;
     return Status::Ok;
@@ -43,7 +48,8 @@ Status SettingsStore::save(const Settings& s) {
   r.magic = kMagic;
   r.version = kVersion;
   r.seq = seq_ + 1;
-  r.settings = s;
+  r.settings = s;  // the StoredSettings part
+  r.runVibMinMg = s.runVibMinMg;
   r.crc = crcOfStructWithoutTail(r);
   // Overwrite the copy we did NOT load from (the older one).
   const bool writeB = (source_ == SettingsSource::CopyA);

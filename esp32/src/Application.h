@@ -31,6 +31,7 @@
 #include "Journal.h"
 #include "Mpu9250.h"
 #include "PeriodicTask.h"
+#include "RunConfirm.h"
 #include "Presence.h"
 #include "SettingsStore.h"
 #include "Supervisor.h"
@@ -69,6 +70,7 @@ class Application : public IDeviceControl {
   SettingsStore settingsStore_;
   Settings settings_;
   HourMeter meter_;
+  RunConfirm runConfirm_;  // optional vibration check on top of the alternator input
   ImuPipeline pipeline_;
   TimeKeeper time_;
   CommandHandler commands_;

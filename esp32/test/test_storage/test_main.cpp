@@ -5,6 +5,7 @@
 #include "FakeI2cBus.h"
 #include "Journal.h"
 #include "LayoutHeader.h"
+#include "Crc.h"
 #include "SettingsStore.h"
 
 void setUp() {}
@@ -108,6 +109,36 @@ static void test_settings_defaults_then_ab_alternation() {
   TEST_ASSERT_EQUAL(SettingsSource::CopyB, reboot.source());
 }
 
+// runVibMinMg lives in record bytes that firmware < 2.5.0 kept reserved (0): an
+// old record must load unchanged, with the new setting off.
+static void test_settings_new_field_round_trips_and_old_records_read_as_off() {
+  Rig rig;
+  SettingsStore store(rig.eeprom);
+  Settings s = defaultSettings();
+  s.pulsesPerUnit = 42;
+  s.cal.flags = calib_flags::kImu;
+  s.runVibMinMg = 35;
+  TEST_ASSERT_EQUAL(Status::Ok, store.save(s));  // -> A
+  SettingsStore reboot(rig.eeprom);
+  Settings loaded;
+  TEST_ASSERT_EQUAL(Status::Ok, reboot.load(loaded));
+  TEST_ASSERT_EQUAL_UINT16(35, loaded.runVibMinMg);
+  TEST_ASSERT_EQUAL_UINT16(42, loaded.pulsesPerUnit);
+
+  // What 2.4.0 wrote: same record, those two bytes zero, CRC over all of it.
+  SettingsRecord old;
+  TEST_ASSERT_EQUAL(Status::Ok, rig.eeprom.get(layout::kSettingsAddrA, old));
+  old.runVibMinMg = 0;
+  old.crc = crcOfStructWithoutTail(old);
+  TEST_ASSERT_EQUAL(Status::Ok, rig.eeprom.put(layout::kSettingsAddrA, old));
+  SettingsStore upgraded(rig.eeprom);
+  TEST_ASSERT_EQUAL(Status::Ok, upgraded.load(loaded));
+  TEST_ASSERT_EQUAL(SettingsSource::CopyA, upgraded.source());  // not reset to defaults
+  TEST_ASSERT_EQUAL_UINT16(0, loaded.runVibMinMg);
+  TEST_ASSERT_EQUAL_UINT16(42, loaded.pulsesPerUnit);
+  TEST_ASSERT_EQUAL_UINT8(calib_flags::kImu, loaded.cal.flags);
+}
+
 static void test_settings_corrupt_newest_uses_older_copy() {
   Rig rig;
   SettingsStore store(rig.eeprom);
@@ -152,6 +183,7 @@ int main() {
   RUN_TEST(test_journal_power_cut_during_write_falls_back);
   RUN_TEST(test_journal_reports_write_failure);
   RUN_TEST(test_settings_defaults_then_ab_alternation);
+  RUN_TEST(test_settings_new_field_round_trips_and_old_records_read_as_off);
   RUN_TEST(test_settings_corrupt_newest_uses_older_copy);
   RUN_TEST(test_layout_header_formats_foreign_eeprom_once);
   return UNITY_END();

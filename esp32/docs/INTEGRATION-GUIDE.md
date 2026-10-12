@@ -2,7 +2,7 @@
 
 **Audience:** developers building an app (desktop, mobile, server, PLC gateway) that reads data from or configures the totalizer / hour-meter device over a serial port.
 **You need:** a serial port and the ability to read bytes. No SDK and no firmware knowledge are required.
-**Protocol:** SensorFrame v1 binary frames, firmware 2.4.0. The byte-level appendix is [`sensorframe/SPEC.md`](../../sensorframe/SPEC.md).
+**Protocol:** SensorFrame v1 binary frames, firmware 2.5.0. The byte-level appendix is [`sensorframe/SPEC.md`](../../sensorframe/SPEC.md).
 **Byte-exact examples:** [FRAME-CATALOG.md](FRAME-CATALOG.md) lists every frame the device sends, with hex dumps. **No hardware?** The [simulator](../../simulator/README.md) runs a fake device on a virtual serial port.
 
 | Section | Contents |
@@ -253,7 +253,7 @@ This is a real TELEMETRY frame produced by the firmware (from its unit tests):
 
 <!-- golden:telemetry -->
 ```
-04 01 01 01 0e 78 56 34 12 70 3c c6 6a 01 05 20 aa 44 05 02 05 98 3a 01 09 03 08 01 04 05 48 e8 01 05 05 05 98 3a 01 06 32 08 01 35 05 01 01 01 03 24 ae 00
+04 01 01 01 0e 78 56 34 12 70 3c c6 6a 01 05 20 aa 44 05 02 05 98 3a 01 0c 03 08 01 0a 08 01 04 05 48 e8 01 05 05 05 98 3a 01 06 32 08 01 35 05 01 01 01 03 fb 63 00
 ```
 
 After COBS decoding:
@@ -267,11 +267,12 @@ After COBS decoding:
 01 05 20 aa 44 00 tag 1  runSeconds  u32 4500000 s
 02 05 98 3a 00 00 tag 2  totalCount  u32 15000 pulses
 03 08 01          tag 3  alternator  bool true (engine running)
+0a 08 01          tag 10 altInput    bool true (engine-running input on)
 04 05 48 e8 01 00 tag 4  runHours    u32 125000 × 0.01 = 1250.00 h
 05 05 98 3a 00 00 tag 5  totalUnits  u32 15000 × 0.01 = 150.00 units
 32 08 01          tag 50 timeValid   bool true
 35 05 00 00 00 00 tag 53 statusFlags u32 0 (all OK)
-24 ae             CRC16 0xAE24
+fb 63             CRC16 0x63FB
 ```
 
 ---
@@ -284,7 +285,7 @@ Every frame header carries `msgType`, `seq` (the device's own counter, increment
 
 | msgType | Name | When | Records |
 |---:|---|---|---|
-| 1 | **TELEMETRY** | Every `telemetryIntervalMs` (default 1 s) | Always 1, 2, 3, 4, 5, 50, 53. With an IMU: 40, 41, plus 42 when a heading is available, plus 43 and 44 after the first vibration window |
+| 1 | **TELEMETRY** | Every `telemetryIntervalMs` (default 1 s) | Always 1, 2, 3, 10, 4, 5, 50, 53. With an IMU: 40, 41, plus 42 when a heading is available, plus 43 and 44 after the first vibration window |
 | 2 | **EVENT** | Boot; calibration finished | Tag 8 (`eventKind`) says which. See below |
 | 4 | **ACK** | Reply to every COMMAND | 242 `ackSeq`, 243 `ackStatus`, 59 `rejectedTag` on error, plus the requested data |
 | 128 | **IMU stream** | Every 1/`imuStreamHz` s when `streamMode` ≠ off | Raw: 20–25 (+26–28 with magnetometer). Filtered: 30–35 (+36–38), plus 40, 41, 42 |
@@ -293,7 +294,7 @@ Every frame header carries `msgType`, `seq` (the device's own counter, increment
 
 | `eventKind` (tag 8) | Meaning | Records |
 |---:|---|---|
-| 1 | **Boot**: the device restarted | 1–7 (restored hour meter), 50, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 63, 241, plus 54 if the RTC is present |
+| 1 | **Boot**: the device restarted | 1–7 and 10 (restored hour meter), 50, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 63, 241, plus 54 if the RTC is present |
 | 2 | **Calibration finished** | 105 (which calibration), 9 (`calibResult`, an [ackStatus](#63-ackstatus-codes) code), plus 130–148 when successful |
 | 3 | **Modules changed**: a module was plugged in or lost while running | 55 `devices` (new set), 50, 51, 52, 53, 56, 57, 58, 60, 61, 62, 63, 241, plus 54 if the RTC is present |
 
@@ -311,13 +312,14 @@ A boot EVENT with `resetReason` ≠ 1 (see tag 58) means the device restarted wi
 |---:|---|---|---:|---|---|
 | 1 | `runSeconds` | u32 | 1 | s | Total engine run time. **This is the hour meter** |
 | 2 | `totalCount` | u32 | 1 | pulses | Totalizer, raw pulses |
-| 3 | `alternator` | bool | | | Engine running now (debounced) |
+| 3 | `alternator` | bool | | | Engine running now (debounced). With `runVibMinMg` set, only while the IMU also feels the engine |
 | 4 | `runHours` | u32 | 0.01 | h | `runSeconds / 3600`, two decimals, for display |
 | 5 | `totalUnits` | u32 | 0.01 | unit | `totalCount / pulsesPerUnit`, two decimals |
 | 6 | `lastSavedEpoch` | u32 | 1 | s UTC | When the counters were last written to EEPROM (0 if time was unknown) |
 | 7 | `journalSeq` | u32 | 1 | | Save counter (increases by 1 per EEPROM save) |
 | 8 | `eventKind` | u8 | | | EVENT type: 1 boot, 2 calibration finished, 3 modules changed |
 | 9 | `calibResult` | u8 | | | Result of a calibration (ackStatus code) |
+| 10 | `altInput` | bool | | | The engine-running input itself, before the vibration check. `altInput` true with `alternator` false means "wire live, no engine vibration": usually a key-on wire ([WIRING](WIRING.md#pick-the-wire)) |
 
 ### 5.2 IMU (stream, msgType 128)
 
@@ -432,14 +434,14 @@ packet: 01 03 2a 00 | 00 00 00 00 | 00 00 00 00 | 64 05 70 3c c6 6a | 05 6a
 | Tag | Command | Value | What it does | ACK contains |
 |---:|---|---|---|---|
 | 100 | `setTime` | u32 UTC epoch (2000–2099) | Sets the device clock and the RTC. Use `Math.floor(Date.now()/1000)` / `int(time.time())`. **Always UTC**. Accepted even without a working RTC; then `timeNotBackedUp` is set | status |
-| 101 | `get` | u8: 1 hour meter, 2 settings, 3 status, 4 calibration | Reads data | the requested tags (1–7 / 110–128 / 50–58, 60–63, 241 / 130–148) |
+| 101 | `get` | u8: 1 hour meter, 2 settings, 3 status, 4 calibration | Reads data | the requested tags (1–7, 10 / 110–129 / 50–58, 60–63, 241 / 130–148) |
 | 102 | `setRunSeconds` | u32 seconds | Sets the hour meter to **any value** (e.g. installing on a machine with 1250.5 h → `round(1250.5 × 3600)` = 4501800). `0` resets the hour meter only. Saved immediately | status |
 | 103 | `setTotalCount` | u32 pulses | Sets the totalizer to **any value**. To set it in units (litres…), send `round(units × pulsesPerUnit)`; read `pulsesPerUnit` with `get` 2. `0` resets the totalizer only. Saved immediately | status |
 | 104 | `resetCounters` | u32, **must be `0x5245534E`** | Sets **both** hour meter and totalizer to 0. The magic value prevents accidents. To reset only one, use 102 or 103 with `0` | status |
 | 105 | `calibrate` | u8: 1 accel+gyro, 2 magnetometer | Starts a calibration ([procedure](#calibration-procedure)). The result arrives later as EVENT kind 2 | status (= started) |
 | 106 | `reboot` | u8 any | Saves counters, sends the ACK, restarts. A boot EVENT follows (`lastCause` 5). Also leaves safe mode | status |
 | 107 | `unlock` | u16 PIN | Unlocks a Bluetooth session ([2.1](#21-bluetooth)). Accepted and ignored on USB/UART | status (`BadPin` / `Locked` on failure) |
-| 110–128 | settings | see [§7](#7-settings-reference) | Changes and saves settings | status |
+| 110–129 | settings | see [§7](#7-settings-reference) | Changes and saves settings | status |
 
 Send one `get` per command. A single ACK has room for one data set.
 
@@ -447,10 +449,10 @@ Example ACK for `get` 1 (hour meter), answering a command with seq 43:
 
 <!-- golden:ack-get-hour -->
 ```
-04 01 04 02 0c 78 56 34 12 70 3c c6 6a f2 03 2b 03 f3 01 06 01 05 20 aa 44 05 02 05 98 3a 01 09 03 08 01 04 05 48 e8 01 05 05 05 98 3a 01 0b 06 05 38 3c c6 6a 07 05 2c 03 01 03 61 1b 00
+04 01 04 02 0c 78 56 34 12 70 3c c6 6a f2 03 2b 03 f3 01 06 01 05 20 aa 44 05 02 05 98 3a 01 0c 03 08 01 0a 08 01 04 05 48 e8 01 05 05 05 98 3a 01 0b 06 05 38 3c c6 6a 07 05 2c 03 01 03 97 33 00
 ```
 
-It decodes to `ackSeq 43, ackStatus 0, runSeconds 4500000, totalCount 15000, alternator true, runHours 1250.00, totalUnits 150.00, lastSavedEpoch 1791376440, journalSeq 812`.
+It decodes to `ackSeq 43, ackStatus 0, runSeconds 4500000, totalCount 15000, alternator true, altInput true, runHours 1250.00, totalUnits 150.00, lastSavedEpoch 1791376440, journalSeq 812`.
 
 #### Calibration procedure
 
@@ -516,6 +518,7 @@ Read all settings with `get` 2. To change one or more, send their tags in a COMM
 | 126 | `kalmanQMag` | f32 | 0.05 | 1e-7–10.0 | Same, magnetometer |
 | 127 | `bluetooth` | bool | false | | Bluetooth SPP radio on/off. **Applied after the ACK** |
 | 128 | `btPin` | u16 | 1234 | 0–9999 | PIN for `unlock` on Bluetooth. **Change it at installation** |
+| 129 | `runVibMinMg` | u16 | 0 | 0–2000 mg | Engine counts as running only while `vibRms` is at least this (released below 70 %). 0 = off. Ignored without an IMU. How to pick the value: [WIRING](WIRING.md#only-a-key-on-wire-is-reachable) |
 
 **Bandwidth.** Make sure the data fits the port (about 1 byte per 10 baud):
 
@@ -680,3 +683,4 @@ The restart counter clears after 10 minutes of normal running. USB is opened bef
 | 2.2.0 | Modular: EEPROM, RTC and IMU are hot-pluggable (detected within ~2 s, lost after ~6 s, EVENT kind 3); settings work without EEPROM (`settingsNotSaved`); EEPROM attached later merges its stored hour meter |
 | 2.3.0 | Bluetooth Classic SPP (off by default, `bluetooth` / `btPin` settings, PIN-locked sessions with `unlock`, `Locked` / `BadPin` ACK codes, `btState`) |
 | 2.4.0 | Self-recovery: watchdog armed from the first instruction of boot, USB opened before I2C, restarts on a stuck I2C bus or stalled USB, the [panic signal](#64-panic-signal-restart-without-a-frame), safe mode (flag 18), `lastCause` / `lastStage` (tags 62, 63). **Fix:** `pitch` (tag 41) now follows this guide (nose up positive); 2.3.0 and older sent it with the opposite sign |
+| 2.5.0 | Engine-running confirmation by vibration: `runVibMinMg` setting (tag 129, off by default), `altInput` (tag 10) reports the raw input. Settings stored by older firmware load unchanged |

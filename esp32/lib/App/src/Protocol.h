@@ -12,7 +12,7 @@
 // One writer size for every frame we send (SensorFrame maximum).
 using FrameWriter = SensorFrameWriter<SF_MAX_PACKET>;
 
-constexpr uint32_t kFirmwareVersion = 0x00020400;  // 0x00MMmmpp -> 2.4.0
+constexpr uint32_t kFirmwareVersion = 0x00020500;  // 0x00MMmmpp -> 2.5.0
 
 namespace msg {
 constexpr uint8_t kTelemetry = SF_MSG_TELEMETRY;  // 1: periodic hour meter + status
@@ -23,7 +23,7 @@ constexpr uint8_t kImuStream = 128;               // IMU samples (raw / filtered
 }  // namespace msg
 
 namespace tag {
-// --- Hour meter 1..9 ---
+// --- Hour meter 1..10 ---
 constexpr uint8_t kRunSeconds = 1;      // u32  s
 constexpr uint8_t kTotalCount = 2;      // u32  pulses
 constexpr uint8_t kAlternator = 3;      // bool running now
@@ -33,6 +33,7 @@ constexpr uint8_t kLastSavedEpoch = 6;  // u32  UTC s
 constexpr uint8_t kJournalSeq = 7;      // u32
 constexpr uint8_t kEventKind = 8;       // u8   EventKind
 constexpr uint8_t kCalibResult = 9;     // u8   AckStatus of a finished calibration
+constexpr uint8_t kAltInput = 10;       // bool engine-running input active (before vibration confirmation)
 // --- IMU raw 20..28 / filtered 30..38 (accel mg, gyro 0.1 deg/s, mag 0.1 uT; all i16) ---
 constexpr uint8_t kRawAccelX = 20;
 constexpr uint8_t kRawGyroX = 23;
@@ -71,9 +72,9 @@ constexpr uint8_t kCmdResetCounters = 104; // u32 must equal kResetMagic
 constexpr uint8_t kCmdCalibrate = 105;     // u8  CalibKind
 constexpr uint8_t kCmdReboot = 106;        // any value
 constexpr uint8_t kCmdUnlock = 107;        // u16 PIN: unlocks a Bluetooth session (no-op on wired ports)
-// --- Settings 110..128 (see SettingsSchema.cpp for ranges) ---
+// --- Settings 110..129 (see SettingsSchema.cpp for ranges) ---
 constexpr uint8_t kSettingFirst = 110;
-constexpr uint8_t kSettingLast = 128;
+constexpr uint8_t kSettingLast = 129;
 // --- Calibration 130..148 (read-only, f32 unless noted) ---
 constexpr uint8_t kCalAccelBiasX = 130;  // g
 constexpr uint8_t kCalGyroBiasX = 133;   // deg/s

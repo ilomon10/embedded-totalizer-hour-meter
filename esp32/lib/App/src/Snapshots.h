@@ -7,7 +7,8 @@
 struct HourMeterSnapshot {
   uint32_t runSeconds = 0;
   uint32_t totalCount = 0;
-  bool running = false;
+  bool running = false;      // engine running (input, and confirmed when runVibMinMg is set)
+  bool inputActive = false;  // raw engine-running input, before confirmation
   uint16_t pulsesPerUnit = 1;
   uint32_t lastSavedEpoch = 0;
   uint32_t journalSeq = 0;

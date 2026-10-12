@@ -36,8 +36,9 @@ void HourMeter::accumulate(uint32_t elapsedMs) {
   }
 }
 
-bool HourMeter::update(uint32_t nowMs, bool pinHigh) {
-  const bool active = (pinHigh == activeHigh_);
+bool HourMeter::update(uint32_t nowMs, bool pinHigh, bool confirmed) {
+  inputActive_ = (pinHigh == activeHigh_);
+  const bool active = inputActive_ && confirmed;
   if (!started_) {
     started_ = true;
     lastUpdateMs_ = nowMs;
@@ -98,6 +99,7 @@ HourMeterSnapshot HourMeter::snapshot() const {
   s.runSeconds = runSeconds_;
   s.totalCount = totalCount_;
   s.running = running_;
+  s.inputActive = inputActive_;
   s.pulsesPerUnit = pulsesPerUnit_;
   s.lastSavedEpoch = lastSavedEpoch_;
   s.journalSeq = journalSeq_;

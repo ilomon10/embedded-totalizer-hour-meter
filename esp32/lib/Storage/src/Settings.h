@@ -29,7 +29,9 @@ struct Calibration {
   uint8_t reserved[3] = {0, 0, 0};
 };
 
-struct Settings {
+// The part of Settings stored byte for byte in EEPROM. Its layout is frozen:
+// the 128-byte settings slot is full, so it can't grow (see SettingsRecord).
+struct StoredSettings {
   // Event timing
   uint16_t telemetryIntervalMs;
   uint16_t imuSampleHz;
@@ -58,6 +60,15 @@ struct Settings {
   Calibration cal;
 };
 
-static_assert(sizeof(Settings) == 116, "Settings layout changed: bump SettingsStore::kVersion and docs");
+static_assert(sizeof(StoredSettings) == 116, "StoredSettings layout changed: bump SettingsStore::kVersion and docs");
+
+// Everything the user can configure. Fields beyond StoredSettings live in bytes
+// of SettingsRecord that older firmware kept reserved and wrote as 0, so 0 must
+// mean "off / old behaviour" for each of them.
+struct Settings : StoredSettings {
+  // Engine-running confirmation: count run time only while the IMU vibration RMS
+  // is at least this (mg). 0 = off (the alternator input alone decides).
+  uint16_t runVibMinMg;
+};
 
 Settings defaultSettings();

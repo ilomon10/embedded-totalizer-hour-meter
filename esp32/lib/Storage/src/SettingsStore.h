@@ -17,8 +17,8 @@ struct SettingsRecord {
   uint8_t version;
   uint8_t reserved;
   uint32_t seq;
-  Settings settings;
-  uint16_t reserved2;
+  StoredSettings settings;
+  uint16_t runVibMinMg;  // Settings::runVibMinMg; reserved (always 0) before firmware 2.5.0
   uint16_t crc;  // must be the last 2 bytes (checked below)
 };
 static_assert(sizeof(SettingsRecord) <= layout::kSettingsSlotSize, "SettingsRecord must fit in 128 bytes");
@@ -29,7 +29,9 @@ enum class SettingsSource : uint8_t { Defaults = 0, CopyA = 1, CopyB = 2 };
 class SettingsStore {
  public:
   static constexpr uint16_t kMagic = 0x5453;  // "ST"
-  static constexpr uint8_t kVersion = 2;  // v2: bluetooth + btPin (were reserved fields)
+  // v2: bluetooth + btPin (were reserved fields). Firmware 2.5.0 added runVibMinMg in a
+  // byte pair that v2 records already had as 0, so the version stays 2: no reset on upgrade.
+  static constexpr uint8_t kVersion = 2;
 
   explicit SettingsStore(At24c& eeprom) : eeprom_(eeprom) {}
 
@@ -46,4 +48,5 @@ class SettingsStore {
   SettingsSource source_ = SettingsSource::Defaults;
 
   bool readCopy(uint32_t addr, SettingsRecord& out);
+  static void fromRecord(const SettingsRecord& r, Settings& out);
 };

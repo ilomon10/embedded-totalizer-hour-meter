@@ -27,8 +27,11 @@ class HourMeter {
   // called at most once per boot, or counts would be added twice.
   void mergeStored(uint32_t runSeconds, uint32_t totalCount, uint32_t savedEpoch, uint32_t journalSeq);
 
-  // Feed the raw alternator level. Returns true when the engine just stopped.
-  bool update(uint32_t nowMs, bool pinHigh);
+  // Feed the raw alternator level, and whether the engine is confirmed running
+  // by other means (RunConfirm; true when that is off). The engine counts as
+  // running only when both agree; the debounce applies to the combination.
+  // Returns true when the engine just stopped.
+  bool update(uint32_t nowMs, bool pinHigh, bool confirmed = true);
 
   // Pulses counted by the interrupt since the last call.
   void addPulses(uint32_t count);
@@ -57,6 +60,7 @@ class HourMeter {
   uint32_t runMsRemainder_ = 0;
   uint32_t totalCount_ = 0;
   bool running_ = false;
+  bool inputActive_ = false;  // raw alternator input, before confirmation
   bool candidate_ = false;
   uint32_t candidateSinceMs_ = 0;
   uint32_t lastUpdateMs_ = 0;
