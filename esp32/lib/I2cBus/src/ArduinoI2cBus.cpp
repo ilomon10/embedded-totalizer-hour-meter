@@ -21,9 +21,7 @@ Status ArduinoI2cBus::write(uint8_t addr, const uint8_t* data, size_t len) {
     }
     recoverBus();
   }
-  if (s != Status::Ok) {
-    errors_++;
-  }
+  track(s);
   return s;
 }
 
@@ -38,15 +36,24 @@ Status ArduinoI2cBus::writeRead(uint8_t addr, const uint8_t* tx, size_t txLen, u
     }
     recoverBus();
   }
-  if (s != Status::Ok) {
-    errors_++;
-  }
+  track(s);
   return s;
 }
 
 Status ArduinoI2cBus::probe(uint8_t addr) {
   // No retries: a NACK here is an answer ("nobody home"), not a fault.
-  return writeOnce(addr, nullptr, 0, true);
+  const Status s = writeOnce(addr, nullptr, 0, true);
+  failing_ = isRetryable(s);
+  return s;
+}
+
+// A NACK also proves the bus works (the address phase completed cleanly), so
+// only timeouts and bus errors keep the bus marked as failing.
+void ArduinoI2cBus::track(Status s) {
+  if (s != Status::Ok) {
+    errors_++;
+  }
+  failing_ = isRetryable(s);
 }
 
 Status ArduinoI2cBus::writeOnce(uint8_t addr, const uint8_t* data, size_t len, bool sendStop) {

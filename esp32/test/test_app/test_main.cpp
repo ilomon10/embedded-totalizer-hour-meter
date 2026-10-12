@@ -9,6 +9,7 @@
 #include "TimeKeeper.h"
 #include "Presence.h"
 #include "AccessGate.h"
+#include "Supervisor.h"
 
 
 void setUp() {}
@@ -339,6 +340,24 @@ static void test_imu_calibration_rejects_tilted_board_and_missing_mag() {
   TEST_ASSERT_EQUAL(AckStatus::Failed, res);
 }
 
+// Pitch is nose-up positive, and the gyro's y rate must push the filter the same way.
+static void test_imu_pitch_sign_matches_gyro() {
+  ImuPipeline p;
+  p.configure(defaultSettings());
+  const float up = 10.0f * 0.017453292f;  // nose up 10 deg
+  for (int i = 0; i < 500; i++) {
+    p.process(sampleAt(vec3(sinf(up), 0, cosf(up)), vec3(0, 0, 0)), false, Vec3{}, 0.01f);
+  }
+  TEST_ASSERT_FLOAT_WITHIN(0.5f, 10.0f, p.output().pitchDeg);
+
+  // Now the nose drops (right-handed +y rate) while the accelerometer still says
+  // 10 deg up: the gyro must pull pitch DOWN, not up.
+  for (int i = 0; i < 5; i++) {
+    p.process(sampleAt(vec3(sinf(up), 0, cosf(up)), vec3(0, 40.0f, 0)), false, Vec3{}, 0.01f);
+  }
+  TEST_ASSERT_TRUE(p.output().pitchDeg < 9.9f);
+}
+
 static void test_imu_stuck_detection_and_roll() {
   ImuPipeline p;
   p.configure(defaultSettings());
@@ -490,6 +509,67 @@ static const char* const kGoldenAckGetHour =
     "04 01 04 02 0c 78 56 34 12 70 3c c6 6a f2 03 2b 03 f3 01 06 01 05 20 aa 44 05 02 05 98 3a 01 09 03 08 01 04 05 "
     "48 e8 01 05 05 05 98 3a 01 0b 06 05 38 3c c6 6a 07 05 2c 03 01 03 61 1b 00";
 
+// ------------------------------------------------------- Self-recovery --
+
+static void test_supervisor_restarts_only_after_sustained_trouble() {
+  Supervisor sup;
+  TEST_ASSERT_EQUAL(LastCause::None, sup.update(0, true, false));
+  TEST_ASSERT_EQUAL(LastCause::None, sup.update(Supervisor::kI2cStuckMs - 1, true, false));
+  TEST_ASSERT_EQUAL(LastCause::None, sup.update(Supervisor::kI2cStuckMs, false, false));  // one good transfer resets
+  TEST_ASSERT_EQUAL(LastCause::None, sup.update(Supervisor::kI2cStuckMs + 1, true, false));
+  TEST_ASSERT_EQUAL(LastCause::I2cStuck, sup.update(2 * Supervisor::kI2cStuckMs + 1, true, false));
+
+  Supervisor usb;
+  const uint32_t t0 = 0xFFFFF000UL;  // across the millis() wrap
+  TEST_ASSERT_EQUAL(LastCause::None, usb.update(t0, false, true));
+  TEST_ASSERT_EQUAL(LastCause::None, usb.update(t0 + Supervisor::kUsbStallMs - 1, false, true));
+  TEST_ASSERT_EQUAL(LastCause::UsbStalled, usb.update(t0 + Supervisor::kUsbStallMs, false, true));
+
+  TEST_ASSERT_FALSE(sup.healthyUptimeReached(Supervisor::kHealthyUptimeMs - 1));
+  TEST_ASSERT_TRUE(sup.healthyUptimeReached(Supervisor::kHealthyUptimeMs));
+  TEST_ASSERT_FALSE(sup.healthyUptimeReached(Supervisor::kHealthyUptimeMs + 1));  // once
+}
+
+static void test_panic_signal_needs_an_unbroken_zero_run() {
+  PanicDetector d;
+  for (int i = 0; i < kPanicZeroRun - 1; i++) {
+    TEST_ASSERT_FALSE(d.feed(0));
+  }
+  TEST_ASSERT_FALSE(d.feed(0x05));  // any other byte starts over
+  for (int i = 0; i < kPanicZeroRun - 1; i++) {
+    TEST_ASSERT_FALSE(d.feed(0));
+  }
+  TEST_ASSERT_TRUE(d.feed(0));
+
+  // Back-to-back frames (each ends with one 0x00) never come close.
+  PanicDetector frames;
+  const uint8_t traffic[] = {0x04, 0x01, 0x03, 0x2a, 0x00, 0x00, 0x05, 0x6a, 0x00};
+  for (int n = 0; n < 100; n++) {
+    for (uint8_t b : traffic) {
+      TEST_ASSERT_FALSE(frames.feed(b));
+    }
+  }
+}
+
+static void test_reset_history_classifies_and_enters_safe_mode() {
+  using namespace reset_history;
+  TEST_ASSERT_EQUAL(LastCause::None, classify(kResetPowerOn, LastCause::I2cStuck));  // RAM not trusted
+  TEST_ASSERT_EQUAL(LastCause::Watchdog, classify(kResetTaskWdt, LastCause::None));
+  TEST_ASSERT_EQUAL(LastCause::Crash, classify(kResetPanic, LastCause::None));
+  TEST_ASSERT_EQUAL(LastCause::PanicSignal, classify(3 /* software */, LastCause::PanicSignal));
+  TEST_ASSERT_EQUAL(LastCause::None, classify(kResetBrownout, LastCause::None));
+
+  uint8_t n = 0;
+  n = nextConsecutive(n, LastCause::Watchdog);
+  n = nextConsecutive(n, LastCause::I2cStuck);
+  TEST_ASSERT_FALSE(safeMode(n));
+  n = nextConsecutive(n, LastCause::Crash);
+  TEST_ASSERT_TRUE(safeMode(n));
+  TEST_ASSERT_EQUAL_UINT8(0, nextConsecutive(n, LastCause::RebootCommand));  // asked for: start over
+  TEST_ASSERT_EQUAL_UINT8(0, nextConsecutive(n, LastCause::PanicSignal));
+  TEST_ASSERT_EQUAL_UINT8(255, nextConsecutive(255, LastCause::Watchdog));
+}
+
 static void test_golden_doc_examples() {
   DeviceStatus st;
   st.timeValid = true;
@@ -544,6 +624,10 @@ int main() {
   RUN_TEST(test_imu_calibration_at_rest);
   RUN_TEST(test_imu_calibration_rejects_tilted_board_and_missing_mag);
   RUN_TEST(test_imu_stuck_detection_and_roll);
+  RUN_TEST(test_imu_pitch_sign_matches_gyro);
+  RUN_TEST(test_supervisor_restarts_only_after_sustained_trouble);
+  RUN_TEST(test_panic_signal_needs_an_unbroken_zero_run);
+  RUN_TEST(test_reset_history_classifies_and_enters_safe_mode);
   RUN_TEST(test_access_gate_pin_and_lockout);
   RUN_TEST(test_locked_ack_shape_and_unlock_is_a_noop_command);
   RUN_TEST(test_presence_needs_consecutive_failures);

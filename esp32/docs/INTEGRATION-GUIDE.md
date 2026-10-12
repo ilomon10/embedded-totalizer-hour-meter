@@ -2,7 +2,7 @@
 
 **Audience:** developers building an app (desktop, mobile, server, PLC gateway) that reads data from or configures the totalizer / hour-meter device over a serial port.
 **You need:** a serial port and the ability to read bytes. No SDK and no firmware knowledge are required.
-**Protocol:** SensorFrame v1 binary frames, firmware 2.3.0. The byte-level appendix is [`sensorframe/SPEC.md`](../../sensorframe/SPEC.md).
+**Protocol:** SensorFrame v1 binary frames, firmware 2.4.0. The byte-level appendix is [`sensorframe/SPEC.md`](../../sensorframe/SPEC.md).
 **Byte-exact examples:** [FRAME-CATALOG.md](FRAME-CATALOG.md) lists every frame the device sends, with hex dumps. **No hardware?** The [simulator](../../simulator/README.md) runs a fake device on a virtual serial port.
 
 | Section | Contents |
@@ -15,7 +15,7 @@
 | [6. Commands](#6-commands) | Read, configure and control the device |
 | [7. Settings](#7-settings-reference) | Configurable timing, ports and inputs |
 | [8. Typical flows](#8-typical-flows) | Sequence diagrams |
-| [9. Robustness rules](#9-robustness-rules-for-apps) | Errors, retries, time, RTC without battery |
+| [9. Robustness rules](#9-robustness-rules-for-apps) | Errors, retries, time, RTC without battery, a device that sends nothing |
 | [10. Versioning](#10-versioning) | Firmware version and compatibility promise |
 
 ---
@@ -293,11 +293,11 @@ Every frame header carries `msgType`, `seq` (the device's own counter, increment
 
 | `eventKind` (tag 8) | Meaning | Records |
 |---:|---|---|
-| 1 | **Boot**: the device restarted | 1–7 (restored hour meter), 50, 51, 52, 53, 55, 56, 57, 58, 60, 61, 241, plus 54 if the RTC is present |
+| 1 | **Boot**: the device restarted | 1–7 (restored hour meter), 50, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 63, 241, plus 54 if the RTC is present |
 | 2 | **Calibration finished** | 105 (which calibration), 9 (`calibResult`, an [ackStatus](#63-ackstatus-codes) code), plus 130–148 when successful |
-| 3 | **Modules changed**: a module was plugged in or lost while running | 55 `devices` (new set), 50, 51, 52, 53, 56, 57, 58, 60, 61, 241, plus 54 if the RTC is present |
+| 3 | **Modules changed**: a module was plugged in or lost while running | 55 `devices` (new set), 50, 51, 52, 53, 56, 57, 58, 60, 61, 62, 63, 241, plus 54 if the RTC is present |
 
-A boot EVENT with `resetReason` ≠ 1 (see tag 58) means the device restarted unexpectedly. Log it.
+A boot EVENT with `resetReason` ≠ 1 (see tag 58) means the device restarted without a power cut. Log it together with `lastCause` (tag 62) and `lastStage` (tag 63): they say why and during what. A watchdog restart while `IMU`, for example, points at the IMU wiring.
 
 ---
 
@@ -337,7 +337,7 @@ The **raw** values come straight from the sensor. The **filtered** values have c
 | Tag | Name | Type | Scale | Unit | Meaning |
 |---:|---|---|---:|---|---|
 | 40 | `roll` | i16 | 0.01 | ° | Rotation about x, −180…180 |
-| 41 | `pitch` | i16 | 0.01 | ° | Nose up positive, −90…90 |
+| 41 | `pitch` | i16 | 0.01 | ° | Nose up positive, −90…90. Firmware 2.3.0 and older sent the opposite sign (nose down positive); negate it if `fwVersion` < 2.4.0 |
 | 42 | `heading` | u16 | 0.01 | ° | 0 = magnetic north, clockwise. Only sent when available |
 | 43 | `vibRms` | u16 | 1 | mg | Vibration RMS over `vibrationWindowMs` (gravity removed) |
 | 44 | `vibPeak` | u16 | 1 | mg | Vibration peak in the same window |
@@ -359,7 +359,9 @@ The **raw** values come straight from the sensor. The **filtered** values have c
 | 59 | `rejectedTag` | u8 | | | In an error ACK: which tag was refused |
 | 60 | `settingsSource` | u8 | | | 0 factory defaults, 1/2 stored copy A/B |
 | 61 | `btState` | u8 | | | Bluetooth: 0 off, 1 on (no client), 2 client connected and locked, 3 client connected and unlocked |
-| 241 | `fwVersion` | u32 | | | `0x00MMmmpp`, e.g. `0x00020300` = 2.3.0 |
+| 62 | `lastCause` | u8 | | | Why the device restarted last time: 0 none (power-on, brown-out), 1 watchdog (the firmware stalled for 5 s), 2 I2C bus stuck for 30 s, 3 USB transmit stalled for 10 s, 4 [panic signal](#64-panic-signal-restart-without-a-frame), 5 `reboot` command, 6 crash |
+| 63 | `lastStage` | u8 | | | What it was doing at that moment: 0 unknown (power-on), 1 boot, 2 opening USB, 3 starting I2C, 4 EEPROM, 5 opening UART / Bluetooth, 6 RTC, 7 IMU, 8 serial / command, 9 inputs, 10 telemetry, 11 module presence check |
+| 241 | `fwVersion` | u32 | | | `0x00MMmmpp`, e.g. `0x00020400` = 2.4.0 |
 | 242 | `ackSeq` | u16 | | | In ACK: the `seq` of your command |
 | 243 | `ackStatus` | u8 | | | In ACK: result, [see 6.3](#63-ackstatus-codes) |
 
@@ -385,6 +387,7 @@ The **raw** values come straight from the sensor. The **filtered** values have c
 | 15 | `rtcBatteryLost` | The time had been set, but the RTC lost it during the last power-off: its backup battery is missing or flat. Ask the user to fit one (see [9.2](#92-running-without-an-rtc-battery)). Reported from boot until the next reboot |
 | 17 | `settingsNotSaved` | Settings were changed while no EEPROM was attached. They are active now and are saved automatically when an EEPROM is plugged in; lost if the device reboots first |
 | 16 | `timeNotBackedUp` | The time is valid but held only in the ESP32's RAM (no RTC, or the RTC could not store it). It will be lost at the next reboot; send `setTime` again after each boot EVENT |
+| 18 | `safeMode` | The device restarted itself 3 times in a row without being asked (watchdog, crash, I2C stuck, USB stalled), so it booted **without I2C**: no EEPROM, RTC or IMU, counting in RAM only. Read `lastCause` / `lastStage`, fix the wiring, then power-cycle, send `reboot` or the panic signal ([9.3](#93-the-device-sends-nothing)) |
 
 ### 5.6 Calibration values (read-only)
 
@@ -429,14 +432,14 @@ packet: 01 03 2a 00 | 00 00 00 00 | 00 00 00 00 | 64 05 70 3c c6 6a | 05 6a
 | Tag | Command | Value | What it does | ACK contains |
 |---:|---|---|---|---|
 | 100 | `setTime` | u32 UTC epoch (2000–2099) | Sets the device clock and the RTC. Use `Math.floor(Date.now()/1000)` / `int(time.time())`. **Always UTC**. Accepted even without a working RTC; then `timeNotBackedUp` is set | status |
-| 101 | `get` | u8: 1 hour meter, 2 settings, 3 status, 4 calibration | Reads data | the requested tags (1–7 / 110–126 / 50–58, 60, 241 / 130–148) |
+| 101 | `get` | u8: 1 hour meter, 2 settings, 3 status, 4 calibration | Reads data | the requested tags (1–7 / 110–128 / 50–58, 60–63, 241 / 130–148) |
 | 102 | `setRunSeconds` | u32 seconds | Sets the hour meter to **any value** (e.g. installing on a machine with 1250.5 h → `round(1250.5 × 3600)` = 4501800). `0` resets the hour meter only. Saved immediately | status |
 | 103 | `setTotalCount` | u32 pulses | Sets the totalizer to **any value**. To set it in units (litres…), send `round(units × pulsesPerUnit)`; read `pulsesPerUnit` with `get` 2. `0` resets the totalizer only. Saved immediately | status |
 | 104 | `resetCounters` | u32, **must be `0x5245534E`** | Sets **both** hour meter and totalizer to 0. The magic value prevents accidents. To reset only one, use 102 or 103 with `0` | status |
 | 105 | `calibrate` | u8: 1 accel+gyro, 2 magnetometer | Starts a calibration ([procedure](#calibration-procedure)). The result arrives later as EVENT kind 2 | status (= started) |
-| 106 | `reboot` | u8 any | Saves counters, sends the ACK, restarts. A boot EVENT follows | status |
+| 106 | `reboot` | u8 any | Saves counters, sends the ACK, restarts. A boot EVENT follows (`lastCause` 5). Also leaves safe mode | status |
 | 107 | `unlock` | u16 PIN | Unlocks a Bluetooth session ([2.1](#21-bluetooth)). Accepted and ignored on USB/UART | status (`BadPin` / `Locked` on failure) |
-| 110–126 | settings | see [§7](#7-settings-reference) | Changes and saves settings | status |
+| 110–128 | settings | see [§7](#7-settings-reference) | Changes and saves settings | status |
 
 Send one `get` per command. A single ACK has room for one data set.
 
@@ -475,6 +478,18 @@ Results are saved in the device and survive reboot. Read them with `get` 4.
 | 10 | BadPin | `unlock` with a wrong PIN | Check `btPin` (readable over USB with `get` 2) |
 
 ---
+
+### 6.4 Panic signal (restart without a frame)
+
+When the device no longer answers commands, send **64 bytes of `0x00`** on the USB port or the UART pins. The device restarts within about 100 ms, with no ACK. The boot EVENT that follows has `lastCause` 4.
+
+```js
+port.write(new Uint8Array(64)); // 64 zero bytes
+```
+
+- **Why it can't fire by accident:** a frame contains `0x00` only once, as its delimiter, so normal traffic never has two zeros in a row.
+- **Wired ports only.** Over Bluetooth it is ignored, so nobody can restart the device without the PIN.
+- **When it does not help:** if the firmware is completely frozen, the watchdog restarts it within 5 s anyway. If the port stays silent after that, use a hard reset: pulse the EN pin (on DevKit boards, RTS of the USB adapter), as `hour-meter reset --hard` does. See [9.3](#93-the-device-sends-nothing).
 
 ## 7. Settings reference
 
@@ -629,6 +644,27 @@ Many DS3231 boards are shipped or installed without a coin cell, and vehicle pow
 | RTC loses its time while running (supply dip) | Rewrites the RTC from its RAM clock at the next RTC sync (≤ `rtcSyncIntervalS`) | Nothing |
 | No app connected after a power cut | Keeps counting with uptime timestamps until an app sets the time | When you connect later, the auto-sync fixes the clock. Times before that are only known as uptime since boot (`uptime`, tag 52) |
 
+### 9.3 The device sends nothing
+
+Check these in order:
+
+1. **Wait 2 s after opening the port.** Opening it may reboot the board ([§2](#2-connecting)).
+2. **Telemetry may go elsewhere.** If the `output` setting is 2 (UART pins only), USB only answers commands. Send `get` 2 over USB and look at `output` (tag 117).
+3. **Send the panic signal** ([6.4](#64-panic-signal-restart-without-a-frame)), then wait 3 s for a boot EVENT.
+4. **Hard reset:** pulse EN (RTS on DevKit boards), or power-cycle.
+5. **Read the boot EVENT.** `lastCause` and `lastStage` say what went wrong last time. `safeMode` (flag 18) means it kept failing, usually on the I2C wiring.
+
+The device also recovers by itself:
+
+| Trouble | What the device does |
+|---|---|
+| The firmware stalls (any step, including boot) | The watchdog restarts it after 5 s (`lastCause` 1) |
+| The I2C bus keeps timing out for 30 s, even after bus recovery | Restarts (`lastCause` 2). A missing module is not trouble |
+| The USB transmit buffer does not drain for 10 s | Restarts (`lastCause` 3) |
+| 3 such restarts in a row | Boots in safe mode: USB, UART and counting work; I2C modules are skipped until a power-cycle, `reboot` or the panic signal |
+
+The restart counter clears after 10 minutes of normal running. USB is opened before any I2C access, so a stuck sensor bus can't keep USB silent.
+
 ---
 
 ## 10. Versioning
@@ -643,3 +679,4 @@ Many DS3231 boards are shipped or installed without a coin cell, and vehicle pow
 | 2.1.0 | RTC without battery: `rtcBatteryLost` and `timeNotBackedUp` flags; `setTime` works without an RTC (RAM time); RTC self-repair from the RAM clock |
 | 2.2.0 | Modular: EEPROM, RTC and IMU are hot-pluggable (detected within ~2 s, lost after ~6 s, EVENT kind 3); settings work without EEPROM (`settingsNotSaved`); EEPROM attached later merges its stored hour meter |
 | 2.3.0 | Bluetooth Classic SPP (off by default, `bluetooth` / `btPin` settings, PIN-locked sessions with `unlock`, `Locked` / `BadPin` ACK codes, `btState`) |
+| 2.4.0 | Self-recovery: watchdog armed from the first instruction of boot, USB opened before I2C, restarts on a stuck I2C bus or stalled USB, the [panic signal](#64-panic-signal-restart-without-a-frame), safe mode (flag 18), `lastCause` / `lastStage` (tags 62, 63). **Fix:** `pitch` (tag 41) now follows this guide (nose up positive); 2.3.0 and older sent it with the opposite sign |

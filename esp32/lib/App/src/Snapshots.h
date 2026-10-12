@@ -26,4 +26,6 @@ struct DeviceStatus {
   uint8_t resetReason = 0;
   uint8_t settingsSource = 0;
   uint8_t btState = 0;  // 0 off, 1 on, 2 client locked, 3 client unlocked
+  uint8_t lastCause = 0;  // LastCause of the previous run
+  uint8_t lastStage = 0;  // Stage the previous run ended in
 };

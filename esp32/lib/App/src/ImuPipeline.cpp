@@ -72,7 +72,8 @@ void ImuPipeline::updateFilters(const ImuSample& s, float dtS) {
     rollKf_.reset(accRoll);  // crossed the +-180 seam: restart instead of spinning through
   }
   out_.rollDeg = rollKf_.update(accRoll, g.x, dtS);
-  out_.pitchDeg = pitchKf_.update(orientation::pitchDeg(a), g.y, dtS);
+  // Pitch is nose-up positive; a right-handed rate about +y lowers the nose, hence -g.y.
+  out_.pitchDeg = pitchKf_.update(orientation::pitchDeg(a), -g.y, dtS);
 
   out_.hasMag = haveMag_;
   out_.headingValid = false;

@@ -58,7 +58,10 @@ static void test_kalman_angle_tracks_and_learns_gyro_bias() {
 static void test_orientation_roll_pitch_and_up_vector() {
   TEST_ASSERT_FLOAT_WITHIN(1e-3, 0.0f, orientation::rollDeg(vec3(0, 0, 1)));
   TEST_ASSERT_FLOAT_WITHIN(1e-3, 90.0f, orientation::rollDeg(vec3(0, 1, 0)));
-  TEST_ASSERT_FLOAT_WITHIN(1e-3, 30.0f, orientation::pitchDeg(vec3(-0.5f, 0, 0.8660254f)));
+  // Nose up 30 deg: the x axis points 30 deg above the horizon, so gravity's
+  // reaction (+1 g "up") has a +0.5 g component along x.
+  TEST_ASSERT_FLOAT_WITHIN(1e-3, 30.0f, orientation::pitchDeg(vec3(0.5f, 0, 0.8660254f)));
+  TEST_ASSERT_FLOAT_WITHIN(1e-3, 0.5f, orientation::upVector(0.0f, 30.0f).x);
   const Vec3 up = orientation::upVector(20.0f, -15.0f);
   TEST_ASSERT_FLOAT_WITHIN(1e-3, 20.0f, orientation::rollDeg(up));
   TEST_ASSERT_FLOAT_WITHIN(1e-3, -15.0f, orientation::pitchDeg(up));

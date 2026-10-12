@@ -3,9 +3,14 @@
 // TS mental model: the composition root of a Node service. It creates the
 // drivers, injects them into the logic classes, and polls timers:
 //
-//   setup(): bus -> EEPROM -> settings + journal -> serial -> RTC -> IMU -> boot event
+//   setup(): watchdog -> USB -> bus -> EEPROM -> settings + journal -> UART -> RTC -> IMU -> boot event
 //   loop():  serial commands | inputs (100 Hz) | IMU (imuSampleHz) | stream | telemetry
-//            | RTC sync | presence check (hot-plug of EEPROM / RTC / IMU)
+//            | RTC sync | presence check (hot-plug of EEPROM / RTC / IMU) | supervisor
+//
+// Self-recovery: a stalled loop trips the watchdog; a stuck I2C bus, a stalled
+// USB port or the panic signal restart on purpose (Supervisor.h). The next boot
+// EVENT reports why (lastCause) and where (lastStage); repeated trouble ends in
+// safe mode (no I2C) so the USB port always stays usable.
 //
 // Modular: every I2C module is optional and hot-pluggable. A missing module
 // sets a status flag, the rest keeps working, and the module is attached as
@@ -28,6 +33,7 @@
 #include "PeriodicTask.h"
 #include "Presence.h"
 #include "SettingsStore.h"
+#include "Supervisor.h"
 #include "TimeKeeper.h"
 #include "platform/ArduinoClock.h"
 #include "platform/Inputs.h"
@@ -110,9 +116,17 @@ class Application : public IDeviceControl {
   int16_t rtcTempQ_ = 0;
   bool rtcTempValid_ = false;
   bool imuSaturated_ = false;     // any clipped sample during the last telemetry period
+  // Self-recovery (see Supervisor.h, platform/ResetLog.h)
+  Supervisor supervisor_;
+  LastCause lastCause_ = LastCause::None;
+  Stage lastStage_ = Stage::Unknown;
+  bool safeMode_ = false;         // booted without I2C after repeated unplanned restarts
 
   void setDevice(uint8_t bit, bool present);
   bool attachEeprom();
+  bool attachEepromWatched();
+  void supervise(uint32_t nowMs);
+  void restart(LastCause cause);  // does not return
   void adoptStorage();
   bool attachRtc(bool atBoot);
   bool attachImu();

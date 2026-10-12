@@ -1,7 +1,7 @@
 # Frame Catalog: every frame, byte for byte
 
 **Audience:** developers writing their own driver (any language) who want to see exactly what goes over the wire.
-**Covers:** firmware **2.3.0**, SensorFrame v1. For each frame: when it is sent, the records in wire order, which records are optional, and a real hex dump you can feed to your decoder.
+**Covers:** firmware **2.4.0**, SensorFrame v1. For each frame: when it is sent, the records in wire order, which records are optional, and a real hex dump you can feed to your decoder.
 **Read with:** [INTEGRATION-GUIDE.md](INTEGRATION-GUIDE.md) for ports, commands and flows, and [SensorFrame SPEC.md](../../sensorframe/SPEC.md) for the encoding rules. This page does not repeat them.
 
 > **No hardware?** The [simulator](../../simulator/README.md) sends these same frames on a virtual serial port and answers your commands. Start it with `cd simulator && deno task start`, then point your driver at `/tmp/ttyHourMeter`.
@@ -30,7 +30,7 @@ Every hex dump below comes from fixed inputs (`simulator/tools/catalog.ts`). The
   - `timestamp` is UTC Unix seconds when the time is valid, otherwise seconds since boot. Any value below `946684800` is uptime.
 - **Record:** `tag (u8)`, `fmt (u8)`, then the value: 1 byte (`u8`, `bool`), 2 bytes (`u16`, `i16`), or 4 bytes (`u32`, `f32`).
 - **Raw values are scaled integers.** The tables below give the raw wire value and its meaning. Scales and units come from the [tag dictionary](INTEGRATION-GUIDE.md#5-tag-dictionary).
-- **Order:** firmware 2.3.0 always writes records in the order shown here. **Decode by tag, not by position.** Later firmware may add records or optional ones may be missing, and unknown tags must be skipped (their size follows from `fmt`).
+- **Order:** firmware 2.4.0 always writes records in the order shown here. **Decode by tag, not by position.** Later firmware may add records or optional ones may be missing, and unknown tags must be skipped (their size follows from `fmt`).
 
 fmt codes used by this device: `01` u8 · `03` u16 · `04` i16 · `05` u32 · `07` f32 · `08` bool.
 
@@ -127,7 +127,9 @@ The first record is always tag 8 `eventKind`. Switch on it.
 | 58 | `resetReason` | u8 | always | 1 | ESP32 reset reason: 1 power-on, 3 software, 4 panic, 5–7 watchdog, 9 brown-out |
 | 60 | `settingsSource` | u8 | always | 1 | 0 defaults, 1 copy A, 2 copy B |
 | 61 | `btState` | u8 | always | 0 | 0 off, 1 on, 2 client locked, 3 client unlocked |
-| 241 | `fwVersion` | u32 | always | 131840 | 0x00020300 = 2.3.0 |
+| 62 | `lastCause` | u8 | always | 0 | why the previous run ended: 0 none, 1 watchdog, 2 i2cStuck, 3 usbStalled, 4 panicSignal, 5 rebootCommand, 6 crash |
+| 63 | `lastStage` | u8 | always | 0 | what the device was doing then (breadcrumb, 0 unknown, 7 IMU, 8 serial / command) |
+| 241 | `fwVersion` | u32 | always | 132096 | 0x00020400 = 2.4.0 |
 | 54 | `rtcTemp` | i16 | RTC fitted | 117 | 29.25 °C (×0.25) |
 
 <!-- frame:event-boot -->
@@ -138,8 +140,8 @@ The first record is always tag 8 `eventKind`. Switch on it.
 6a 07 05 2c 03 01 06 32 08 01 35 05 01 01 01 0b
 33 05 70 3c c6 6a 34 05 10 0e 01 06 37 01 0f 38
 05 01 01 01 03 39 05 01 01 01 09 3a 01 01 3c 01
-01 3d 01 03 f1 05 03 03 02 04 36 04 75 03 ae 32
-00
+01 3d 01 03 3e 01 03 3f 01 03 f1 05 03 04 02 04
+36 04 75 03 9a e4 00
 ```
 
 ### 4.2 Calibration done (`eventKind` 2)
@@ -182,7 +184,7 @@ A failed magnetometer calibration has only the first three records (`calibrate` 
 | Tag | Name | Type | Present | Example raw | Meaning |
 |---:|---|---|---|---:|---|
 | 8 | `eventKind` | u8 | always | 3 | modules changed |
-| 50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 241 | status | | always | | as in the [boot EVENT](#41-boot-eventkind-1). Here `devices` = 3 (IMU gone) and `statusFlags` = 24 |
+| 50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 62, 63, 241 | status | | always | | as in the [boot EVENT](#41-boot-eventkind-1). Here `devices` = 3 (IMU gone) and `statusFlags` = 24 |
 | 54 | `rtcTemp` | i16 | RTC fitted | 117 | |
 
 <!-- frame:event-devices-changed -->
@@ -190,8 +192,8 @@ A failed magnetometer calibration has only the first three records (`calibrate` 
 16 01 02 2c 01 4d 3c 2b 1a 70 3c c6 6a 08 01 03
 32 08 01 35 05 18 01 01 0b 33 05 70 3c c6 6a 34
 05 10 0e 01 06 37 01 03 38 05 01 01 01 03 39 05
-01 01 01 09 3a 01 01 3c 01 01 3d 01 03 f1 05 03
-03 02 04 36 04 75 03 4d 63 00
+01 01 01 09 3a 01 01 3c 01 01 3d 01 03 3e 01 03
+3f 01 03 f1 05 03 04 02 04 36 04 75 03 70 04 00
 ```
 
 ---
@@ -332,7 +334,7 @@ d2 04 d0 19 00
 
 ### 6.3 ACK to get=3 (status)
 
-`ackSeq`, `ackStatus`, then the full status block, **50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 241**, plus **54** when an RTC is fitted, exactly as in the [boot EVENT](#41-boot-eventkind-1).
+`ackSeq`, `ackStatus`, then the full status block, **50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 62, 63, 241**, plus **54** when an RTC is fitted, exactly as in the [boot EVENT](#41-boot-eventkind-1).
 
 <!-- frame:ack-get-status -->
 ```text
@@ -340,7 +342,8 @@ d2 04 d0 19 00
 03 f3 01 06 32 08 01 35 05 01 01 01 0b 33 05 70
 3c c6 6a 34 05 10 0e 01 06 37 01 0f 38 05 01 01
 01 03 39 05 01 01 01 09 3a 01 01 3c 01 01 3d 01
-03 f1 05 03 03 02 04 36 04 75 03 da 72 00
+03 3e 01 03 3f 01 03 f1 05 03 04 02 04 36 04 75
+03 0a 1a 00
 ```
 
 ### 6.4 ACK to get=4 (calibration)

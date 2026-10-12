@@ -12,7 +12,7 @@
 // One writer size for every frame we send (SensorFrame maximum).
 using FrameWriter = SensorFrameWriter<SF_MAX_PACKET>;
 
-constexpr uint32_t kFirmwareVersion = 0x00020300;  // 0x00MMmmpp -> 2.3.0
+constexpr uint32_t kFirmwareVersion = 0x00020400;  // 0x00MMmmpp -> 2.4.0
 
 namespace msg {
 constexpr uint8_t kTelemetry = SF_MSG_TELEMETRY;  // 1: periodic hour meter + status
@@ -47,7 +47,7 @@ constexpr uint8_t kHeading = 42;  // u16 x0.01 deg, 0 = magnetic north, clockwis
 constexpr uint8_t kVibRms = 43;   // u16 mg
 constexpr uint8_t kVibPeak = 44;  // u16 mg
 constexpr uint8_t kSpeed = 45;    // RESERVED: needs a speed sensor or GPS (not from IMU)
-// --- Status 50..60 ---
+// --- Status 50..63 ---
 constexpr uint8_t kTimeValid = 50;      // bool RTC time trustworthy
 constexpr uint8_t kEpoch = 51;          // u32  UTC s
 constexpr uint8_t kUptime = 52;         // u32  s since boot
@@ -60,6 +60,8 @@ constexpr uint8_t kResetReason = 58;    // u8   ESP32 esp_reset_reason_t
 constexpr uint8_t kRejectedTag = 59;    // u8   which tag made a command fail
 constexpr uint8_t kSettingsSource = 60; // u8   0 defaults, 1 copy A, 2 copy B
 constexpr uint8_t kBtState = 61;        // u8   0 off, 1 on (no client), 2 client locked, 3 client unlocked
+constexpr uint8_t kLastCause = 62;      // u8   LastCause: why the device restarted last time
+constexpr uint8_t kLastStage = 63;      // u8   Stage: what it was doing when it restarted
 // --- Commands 100..106 (host -> device) ---
 constexpr uint8_t kCmdSetTime = 100;       // u32 UTC epoch
 constexpr uint8_t kCmdGet = 101;           // u8  GetWhat
@@ -91,6 +93,40 @@ constexpr uint32_t kResetMagic = 0x5245534E;  // "RESN": prevents accidental cou
 enum class GetWhat : uint8_t { HourMeter = 1, Settings = 2, Status = 3, Calibration = 4 };
 enum class CalibKind : uint8_t { ImuAtRest = 1, Magnetometer = 2 };
 enum class EventKind : uint8_t { Boot = 1, CalibrationDone = 2, DevicesChanged = 3 };
+
+// Why the previous run ended (tag 62). Decided at boot from esp_reset_reason()
+// and the cause the firmware recorded just before restarting on purpose.
+enum class LastCause : uint8_t {
+  None = 0,           // power-on, brown-out, or nothing to report
+  Watchdog = 1,       // loop() stalled for kWatchdogTimeoutS (see lastStage for where)
+  I2cStuck = 2,       // the I2C bus kept failing for 30 s, even after bus recovery
+  UsbStalled = 3,     // the USB serial TX buffer did not drain for 10 s
+  PanicSignal = 4,    // a host sent the panic signal (64 zero bytes on USB / UART pins)
+  RebootCommand = 5,  // the reboot command (tag 106)
+  Crash = 6,          // a firmware exception (panic handler)
+};
+
+// What the firmware was doing when the previous run ended (tag 63). A breadcrumb
+// written before each step that talks to hardware; most useful after a Watchdog.
+enum class Stage : uint8_t {
+  Unknown = 0,       // power-on: no previous run
+  Boot = 1,          // setup() started
+  UsbOpen = 2,       // opening the USB serial port
+  I2cInit = 3,       // starting the I2C bus (bus recovery)
+  Eeprom = 4,        // EEPROM: attach, format, settings, journal
+  UartOpen = 5,      // opening the UART pins / Bluetooth
+  Rtc = 6,           // RTC: attach or time sync
+  Imu = 7,           // IMU: attach or sample read
+  Serial = 8,        // reading serial links / running a command
+  Inputs = 9,        // alternator + pulse inputs, saving counters
+  Telemetry = 10,    // building and sending frames
+  Presence = 11,     // hot-plug check of the I2C modules
+};
+
+// The panic signal: this many 0x00 bytes in a row on a wired port restarts the
+// device without any frame or ACK. COBS frames contain 0x00 only as a single
+// delimiter, so normal traffic never looks like this.
+constexpr uint8_t kPanicZeroRun = 64;
 
 // ackStatus values (also used for calibResult).
 enum class AckStatus : uint8_t {
@@ -126,6 +162,7 @@ constexpr uint32_t kCalibrating = 1u << 14;
 constexpr uint32_t kRtcBatteryLost = 1u << 15;   // RTC lost a previously set time over power-off: no/flat battery
 constexpr uint32_t kTimeNotBackedUp = 1u << 16;  // time valid in RAM only (no RTC / RTC not writable): lost at reboot
 constexpr uint32_t kSettingsNotSaved = 1u << 17; // settings changed while no EEPROM: active, saved when one is attached
+constexpr uint32_t kSafeMode = 1u << 18;         // 3 unplanned restarts in a row: I2C is skipped until the next reboot
 }  // namespace status_flag
 
 namespace device_bit {

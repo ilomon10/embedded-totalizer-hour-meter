@@ -31,12 +31,20 @@ class ArduinoI2cBus : public II2cBus {
   // Total failed transfers since boot (reported in status telemetry).
   uint32_t errorCount() const { return errors_; }
 
+  // True while the last finished transfer timed out or hit a bus error (after
+  // retries and recovery). A NACK clears it: "nobody at that address" is an
+  // answer from a working bus, not a bus fault.
+  bool failing() const { return failing_; }
+
  private:
   TwoWire& wire_;
   int sda_;
   int scl_;
   uint32_t freq_;
   uint32_t errors_ = 0;
+  bool failing_ = false;
+
+  void track(Status s);
 
   Status writeOnce(uint8_t addr, const uint8_t* data, size_t len, bool sendStop);
   Status writeReadOnce(uint8_t addr, const uint8_t* tx, size_t txLen, uint8_t* rx, size_t rxLen);

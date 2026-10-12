@@ -55,6 +55,7 @@ bool appendStatus(FrameWriter& w, const DeviceStatus& st, bool full) {
          w.addU8(tag::kDevices, st.devices) && w.addU32(tag::kI2cErrors, st.i2cErrors) &&
          w.addU32(tag::kOverruns, st.overruns) && w.addU8(tag::kResetReason, st.resetReason) &&
          w.addU8(tag::kSettingsSource, st.settingsSource) && w.addU8(tag::kBtState, st.btState) &&
+         w.addU8(tag::kLastCause, st.lastCause) && w.addU8(tag::kLastStage, st.lastStage) &&
          w.addU32(tag::kFwVersion, kFirmwareVersion);
     if (st.rtcTempValid) {
       ok = ok && w.addI16(tag::kRtcTemp, st.rtcTempQuarterC);

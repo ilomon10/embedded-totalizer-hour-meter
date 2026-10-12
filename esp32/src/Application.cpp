@@ -8,6 +8,7 @@
 #include "BoardPins.h"
 #include "LayoutHeader.h"
 #include "Telemetry.h"
+#include "platform/ResetLog.h"
 
 namespace {
 uint32_t hzToUs(uint32_t hz) { return hz == 0 ? 1000000UL : 1000000UL / hz; }
@@ -27,26 +28,57 @@ Application::Application()
 
 // ---------------------------------------------------------------- setup ----
 
+// Boot order matters for recovery: the watchdog first (a hang anywhere below
+// reboots), then USB (fixed baud, needs no settings), and only then I2C. After
+// kSafeModeAfter unplanned restarts in a row, I2C is skipped entirely.
 void Application::setup() {
+  esp_task_wdt_init(app_config::kWatchdogTimeoutS, true);  // panic + reboot on stall
+  esp_task_wdt_add(nullptr);
+  const reset_log::BootInfo boot = reset_log::atBoot(static_cast<uint8_t>(esp_reset_reason()));
+  lastCause_ = boot.lastCause;
+  lastStage_ = boot.lastStage;
+  safeMode_ = boot.safeMode;
   deviceId_ = sf_device_id();
-  (void)bus_.begin();
-  if (!attachEeprom()) {  // settings must be known before serial ports open
+
+  reset_log::stage(Stage::UsbOpen);
+  link_.beginUsb(app_config::kUsbBaud);
+  link_.onCommand(onCommand, this);
+
+  bool eepromOk = false;
+  if (!safeMode_) {
+    reset_log::stage(Stage::I2cInit);
+    (void)bus_.begin();
+    eepromOk = attachEepromWatched();  // settings must be known before the UART pins open
+  }
+  if (!eepromOk) {
     bootFlags_ |= status_flag::kSettingsDefaults | status_flag::kJournalEmpty;
   }
-  link_.begin(app_config::kUsbBaud, settings_.baud, pins::kUartRx, pins::kUartTx,
-              static_cast<OutputPort>(settings_.output));
-  link_.onCommand(onCommand, this);
+  reset_log::stage(Stage::UartOpen);
+  link_.beginUart(settings_.baud, pins::kUartRx, pins::kUartTx, static_cast<OutputPort>(settings_.output));
   applyBluetooth();  // off unless the `bluetooth` setting is on
   inputs_.begin(pins::kAlternator, pins::kPulse);
-  (void)attachRtc(true);
-  (void)attachImu();
+  if (!safeMode_) {
+    reset_log::stage(Stage::Rtc);
+    (void)attachRtc(true);
+    reset_log::stage(Stage::Imu);
+    (void)attachImu();
+  }
   applyRuntimeSettings();
   presenceTask_.setPeriodUs(app_config::kPresencePeriodUs, clock_.nowUs());
   setupDone_ = true;
   devicesChanged_ = false;  // the boot event already reports the initial set
+  reset_log::stage(Stage::Telemetry);
   sendBootEvent();
-  esp_task_wdt_init(app_config::kWatchdogTimeoutS, true);  // panic + reboot on stall
-  esp_task_wdt_add(nullptr);
+}
+
+// attachEeprom() with a longer watchdog: the first-time format of a new EEPROM
+// can take a few seconds. A hang is still caught, just later.
+bool Application::attachEepromWatched() {
+  reset_log::stage(Stage::Eeprom);
+  esp_task_wdt_init(app_config::kWatchdogFormatTimeoutS, true);
+  const bool ok = attachEeprom();
+  esp_task_wdt_init(app_config::kWatchdogTimeoutS, true);
+  return ok;
 }
 
 // ------------------------------------------------------ modules (hot-plug) --
@@ -154,9 +186,7 @@ void Application::runPresence() {
       setDevice(device_bit::kEeprom, false);  // counters keep running in RAM
     }
   } else {
-    esp_task_wdt_delete(nullptr);  // first-time format of a new EEPROM can take a few seconds
-    (void)attachEeprom();
-    esp_task_wdt_add(nullptr);
+    (void)attachEepromWatched();
   }
   if (rtcPresence_.present()) {
     if (bus_.probe(i2c_addr::kRtc) == Status::Ok) {
@@ -202,18 +232,27 @@ void Application::sendBootEvent() {
 
 // ----------------------------------------------------------------- loop ----
 
+// Each step first leaves a breadcrumb (reset_log::stage): if the watchdog fires,
+// the next boot EVENT reports where (tag 63).
 void Application::loop() {
   esp_task_wdt_reset();
+  reset_log::stage(Stage::Serial);
   updateBluetoothSession();
   link_.poll();  // may run commands (see onCommand)
+  if (link_.panicRequested()) {
+    restart(LastCause::PanicSignal);
+  }
   const uint32_t nowUs = clock_.nowUs();
   const uint32_t nowMs = clock_.nowMs();
   if (inputTask_.due(nowUs)) {
+    reset_log::stage(Stage::Inputs);
     runInputs(nowMs);
   }
   if ((devices_ & device_bit::kImu) != 0 && imuTask_.due(nowUs)) {
+    reset_log::stage(Stage::Imu);
     runImu(nowUs);
   }
+  reset_log::stage(Stage::Telemetry);
   if (settings_.imuStreamHz > 0 && streamTask_.due(nowUs)) {
     runStream();
   }
@@ -221,11 +260,14 @@ void Application::loop() {
     runTelemetry();
   }
   if (rtcTask_.due(nowUs)) {
+    reset_log::stage(Stage::Rtc);
     syncRtc(nowMs);
   }
-  if (presenceTask_.due(nowUs)) {
+  if (!safeMode_ && presenceTask_.due(nowUs)) {
+    reset_log::stage(Stage::Presence);
     runPresence();
   }
+  supervise(nowMs);
   if (devicesChanged_) {
     devicesChanged_ = false;
     telemetry::buildDevicesChangedEvent(frame_, txSeq_++, deviceId_, status());
@@ -411,13 +453,33 @@ void Application::afterCommand() {
     btReconfigPending_ = false;
   }
   if (rebootRequested_) {
-    if (meter_.dirty()) {
-      persistCounters(clock_.nowMs(), 0);
-    }
-    link_.flush();
-    clock_.delayMs(app_config::kRebootDelayMs);
-    ESP.restart();
+    restart(LastCause::RebootCommand);
   }
+}
+
+// ----------------------------------------------------------- supervisor ----
+
+void Application::supervise(uint32_t nowMs) {
+  const LastCause why = supervisor_.update(nowMs, !safeMode_ && bus_.failing(), link_.usbTxBlocked());
+  if (why != LastCause::None) {
+    restart(why);
+  }
+  if (supervisor_.healthyUptimeReached(nowMs)) {
+    reset_log::clearConsecutive();  // ran long enough: earlier restarts no longer count
+  }
+}
+
+// Every deliberate restart goes through here, so the next boot can say why.
+void Application::restart(LastCause cause) {
+  reset_log::recordCause(cause);
+  if (cause != LastCause::I2cStuck && meter_.dirty()) {
+    persistCounters(clock_.nowMs(), 0);  // best effort; skipped without an EEPROM
+  }
+  if (cause == LastCause::RebootCommand) {
+    link_.flush();  // the ACK must leave first (a stalled USB is never flushed: it would block)
+  }
+  clock_.delayMs(app_config::kRebootDelayMs);
+  ESP.restart();
 }
 
 // Settings always apply immediately. Without an EEPROM they live in RAM
@@ -490,6 +552,8 @@ DeviceStatus Application::status() const {
   st.resetReason = static_cast<uint8_t>(esp_reset_reason());
   st.settingsSource = static_cast<uint8_t>(settingsStore_.source());
   st.btState = !link_.bluetoothOn() ? 0 : !btHadClient_ ? 1 : btGate_.unlocked() ? 3 : 2;
+  st.lastCause = static_cast<uint8_t>(lastCause_);
+  st.lastStage = static_cast<uint8_t>(lastStage_);
   st.rtcTempValid = rtcTempValid_;
   st.rtcTempQuarterC = rtcTempQ_;
   uint32_t f = bootFlags_;
@@ -508,6 +572,7 @@ DeviceStatus Application::status() const {
   f |= imuSaturated_ ? status_flag::kImuSaturated : 0;
   f |= st.i2cErrors > 0 ? status_flag::kI2cErrors : 0;
   f |= pipeline_.calibrating() ? status_flag::kCalibrating : 0;
+  f |= safeMode_ ? status_flag::kSafeMode : 0;
   st.flags = f;
   return st;
 }

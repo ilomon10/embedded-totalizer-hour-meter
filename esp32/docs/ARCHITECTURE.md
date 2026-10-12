@@ -10,10 +10,11 @@ How the hour-meter firmware is organised, how data flows, and where to change th
 │   main.cpp ──► Application (composition root, main loop, IDeviceControl) │
 │   platform/      ArduinoClock · Inputs (pins + pulse ISR) · SerialLink    │
 │                  (USB, UART pins, Bluetooth SPP; AccessGate PIN lock)     │
+│                  · ResetLog (breadcrumbs that survive a reset)            │
 ├──────────────────────────────────────────────────────────────────────────┤
 │ lib/App         Business logic, NO hardware access (unit-tested on PC)   │
 │   Protocol.h (all tags) · SettingsSchema · HourMeter · ImuPipeline       │
-│   CommandHandler · Telemetry · TimeKeeper · Snapshots                     │
+│   CommandHandler · Telemetry · TimeKeeper · Snapshots · Supervisor       │
 ├──────────────────────────────────────────────────────────────────────────┤
 │ lib/Storage     EEPROM layout · Journal (counters) · SettingsStore (A/B)  │
 │ lib/Filters     Kalman1D · KalmanAngle · Compass · Vibration · Stats      │
@@ -32,15 +33,19 @@ How the hour-meter firmware is organised, how data flows, and where to change th
 
 | Step | What | If it fails |
 |---|---|---|
-| 1 | I2C bus recovery + start (400 kHz) | |
-| 2 | EEPROM probe → layout header check (format if blank/foreign) → load settings (A/B) → scan journal → `HourMeter.restore()` | Run on defaults; flags `eepromMissing` / `settingsDefaults` / `journalEmpty` |
-| 3 | Open USB (115200 fixed) and UART (`uartBaud`) | |
-| 4 | Inputs: alternator pin, pulse interrupt | |
-| 5 | RTC probe, enable battery oscillator, read time | Flag `rtcMissing`; timestamps become uptime |
-| 6 | IMU WHO_AM_I, configure, magnetometer if present | Flag `imuMissing` / `magMissing` |
-| 7 | Apply settings to every component, start timers | |
-| 8 | Send boot EVENT | |
-| 9 | Enable the 5 s task watchdog | |
+| 1 | Enable the 5 s task watchdog | |
+| 2 | `ResetLog`: read why and where the last run ended (`lastCause`, `lastStage`); count unplanned restarts | 3 in a row: **safe mode**, steps 4, 5, 8, 9 are skipped |
+| 3 | Open USB (115200 fixed) | |
+| 4 | I2C bus recovery + start (400 kHz) | |
+| 5 | EEPROM probe → layout header check (format if blank/foreign; watchdog raised to 30 s) → load settings (A/B) → scan journal → `HourMeter.restore()` | Run on defaults; flags `eepromMissing` / `settingsDefaults` / `journalEmpty` |
+| 6 | Open UART (`uartBaud`), Bluetooth if enabled | |
+| 7 | Inputs: alternator pin, pulse interrupt | |
+| 8 | RTC probe, enable battery oscillator, read time | Flag `rtcMissing`; timestamps become uptime |
+| 9 | IMU WHO_AM_I, configure, magnetometer if present | Flag `imuMissing` / `magMissing` |
+| 10 | Apply settings to every component, start timers | |
+| 11 | Send boot EVENT | |
+
+Every step that can touch hardware first writes a breadcrumb (`reset_log::stage`), so a watchdog reset during, say, step 9 is reported as `lastStage` = IMU on the next boot. USB comes before I2C on purpose: a stuck sensor bus can't keep the recovery port silent.
 
 A missing chip never stops the device. The hour meter works even with no sensors attached, and every module can be plugged in later: boot uses the same `attachX()` functions as the presence check.
 
@@ -56,7 +61,10 @@ Cooperative and non-blocking. Each task is a `PeriodicTask` (a polled `setInterv
 | stream | 1/`imuStreamHz` | IMU stream frame (raw / filtered / both) |
 | telemetry | `telemetryIntervalMs` | TELEMETRY frame |
 | rtc | `rtcSyncIntervalS` | Re-read the RTC; `TimeKeeper` extrapolates with `millis()` in between; repairs an RTC that lost its time |
-| presence | 2 s | Hot-plug: probe present I2C modules (lost after 3 misses, `PresenceTracker`), try to attach missing ones (`attachEeprom/Rtc/Imu`), report changes as EVENT kind 3 |
+| presence | 2 s | Hot-plug: probe present I2C modules (lost after 3 misses, `PresenceTracker`), try to attach missing ones (`attachEeprom/Rtc/Imu`), report changes as EVENT kind 3. Not in safe mode |
+| supervisor | every loop | `Supervisor`: restart when the I2C bus has failed for 30 s or USB TX has not drained for 10 s; restart on the panic signal (64 × `0x00` on a wired port, seen by `SerialLink`). After 10 min of normal running, the restart counter clears |
+
+Every restart the firmware decides on goes through `Application::restart(cause)`: record the cause in `ResetLog`, save the counters (best effort), restart.
 
 The watchdog is fed at the top of every loop. Nothing in the loop waits for longer than one bounded I2C transfer (≤ 20 ms timeout × 3 attempts) or one EEPROM page write (≤ 10 ms).
 
