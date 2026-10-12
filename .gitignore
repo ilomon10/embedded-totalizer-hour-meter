@@ -38,3 +38,6 @@ schematic/**/routing/
 
 # Simulator release builds (deno task compile)
 simulator/dist/
+
+# Configurator release builds (deno task compile)
+configurator/dist/

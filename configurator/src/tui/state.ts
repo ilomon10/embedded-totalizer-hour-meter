@@ -1,10 +1,8 @@
 // state.ts: the TUI's view of the device, built from incoming frames.
 // Pure functions only (no I/O), so it is unit-tested in state.test.ts.
-import tagsCjs from '../tags.js';
+import { ACK_STATUS, decodeStatusFlags, EVENT_KIND, MSG, SETTINGS } from '../tags.ts';
 
-const { MSG, EVENT_KIND, ACK_STATUS, SETTINGS, decodeStatusFlags } = tagsCjs;
-
-export type Value = number | boolean | bigint | Buffer;
+export type Value = number | boolean | bigint | Uint8Array;
 export type Level = 'info' | 'ok' | 'warn' | 'error';
 
 export interface LogEntry {

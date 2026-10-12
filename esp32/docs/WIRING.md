@@ -34,7 +34,7 @@ The firmware copes with a battery-less RTC (no data is lost; see [INTEGRATION-GU
 
 - the **hour meter and totalizer are unaffected**: they continue from EEPROM after every power cut;
 - after a power cut the device reports `timeInvalid` (and `rtcBatteryLost` if the time had been set before), and uses uptime timestamps;
-- the Node reader **re-sends the PC clock automatically** (`node reader.js`; disable with `--no-time-sync`);
+- the `hour-meter` tool **re-sends the PC clock automatically** (TUI and `hour-meter read`; disable with `--no-time-sync`);
 - `setTime` works even with no RTC fitted at all (time kept in RAM until the next reboot, flag `timeNotBackedUp`).
 
 What you lose without a battery is real time **while no app is connected after a power cut**. To keep time across power cuts without an app, use one of:

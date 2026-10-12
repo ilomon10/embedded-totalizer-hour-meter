@@ -1,5 +1,0 @@
-{
-  "type": "module",
-  "private": true,
-  "description": "ESM scope for the TUI (Ink is ESM-only); the rest of node/ stays CommonJS."
-}

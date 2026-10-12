@@ -17,7 +17,7 @@ The build enforces what it can: `-Wall -Wextra -Werror`, `[[nodiscard]]` on ever
 | 7 | **Check every return value** | Fallible functions return `Status` or `Result<T>`, both `[[nodiscard]]`, so ignoring one is a compile error. An intentional ignore is written `(void)call();` |
 | 8 | **Limit the preprocessor** | Only `#pragma once`, `#include`, `#ifdef ARDUINO`, and two macros (`CHECK_ARG`, `TRY`). Constants are `constexpr` |
 | 9 | **Limit pointers** | References for required objects; raw pointers only for byte buffers and optional values. Function pointers only at the two library-callback boundaries (`SensorFrameReader`, `SerialLink`), documented there |
-| 10 | **Zero warnings, static analysis clean, tests green** before merging | `pio run`, `pio check`, `pio test -e native`, `node scripts/check-docs.js` |
+| 10 | **Zero warnings, static analysis clean, tests green** before merging | `pio run`, `pio check`, `pio test -e native`, `./scripts/check-docs.ts` |
 
 ## Project-specific rules
 
@@ -27,7 +27,7 @@ The build enforces what it can: `-Wall -Wextra -Werror`, `[[nodiscard]]` on ever
 - **No blocking in the loop** beyond one bounded transfer. Long operations (calibration) are state machines advanced by the loop.
 - **ISRs only count.** The pulse ISR increments a counter under a spinlock; everything else happens in the loop.
 - **Units in names or comments** (`intervalMs`, `accelG`, `tempQuarterC`). Wire values are scaled integers, documented in `Protocol.h`.
-- **One source of truth.** Tags live in `Protocol.h`, setting ranges in `SettingsSchema.cpp`, pins in `BoardPins.h`. Docs and Node are checked against them by `scripts/check-docs.js`.
+- **One source of truth.** Tags live in `Protocol.h`, setting ranges in `SettingsSchema.cpp`, pins in `BoardPins.h`. Docs and the host tag table (`configurator/src/tags.ts`) are checked against them by `scripts/check-docs.ts`.
 - **Time is UTC.** No timezone logic in firmware, ever.
 
 ## Style
@@ -44,5 +44,5 @@ cd esp32
 pio run -e esp32dev          # zero warnings (warnings are errors)
 pio check -e esp32dev        # zero clang-tidy defects
 pio test -e native           # all unit tests, with sanitizers
-node scripts/check-docs.js   # docs, Node tags and firmware agree
+./scripts/check-docs.ts      # docs, host tag table and firmware agree (needs Deno)
 ```

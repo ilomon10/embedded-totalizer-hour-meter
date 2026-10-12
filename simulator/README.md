@@ -10,10 +10,10 @@ deno task start                 # creates /tmp/ttyHourMeter (needs socat)
 Then open `/tmp/ttyHourMeter` in your driver like any serial port (any baud rate, 8N1). Try it with the project's own tools:
 
 ```bash
-cd node && npm install
-node reader.js /tmp/ttyHourMeter                     # live telemetry
-node commands.js get hour --port /tmp/ttyHourMeter   # one command, one ACK
-npm run tui -- /tmp/ttyHourMeter                     # full configurator
+cd configurator                                            # or the hour-meter release binary
+deno task start read /tmp/ttyHourMeter                     # live telemetry
+deno task start get hour --port /tmp/ttyHourMeter          # one command, one ACK
+deno task start /tmp/ttyHourMeter                          # full configurator (TUI)
 ```
 
 Needs [Deno](https://deno.com) 2 and, for the virtual tty, `socat` (`apt install socat` / `pacman -S socat` / `brew install socat`). Without socat, use `--tcp`.
@@ -103,7 +103,7 @@ deno task start --scenario no-rtc-battery --scenario corrupt=5
 
 ```bash
 deno task start --bt --pin 4821
-node ../node/commands.js get status --port /tmp/ttyHourMeter --pin 4821
+hour-meter get status --port /tmp/ttyHourMeter --pin 4821
 ```
 
 ## TCP and stdio
@@ -137,7 +137,7 @@ To release: bump `SIM_VERSION` in `main.ts`, run `deno task compile`, tag `simul
 simulator/
 ├── main.ts               CLI: flags → device + scenarios + transport
 ├── src/
-│   ├── protocol.ts       the only bridge to ../sensorframe/js (codec) and ../node/tags.js (tag table)
+│   ├── protocol.ts       the only bridge to ../sensorframe/js (codec) and ../configurator/src/tags.ts (tag table)
 │   ├── frames.ts         frame builders, a port of esp32/lib/App/src/Telemetry.cpp (same record order)
 │   ├── commands.ts       command validation, a port of CommandHandler.cpp + SettingsSchema.cpp
 │   ├── device.ts         the simulated Application: scheduler, counters, time, modules, calibration
@@ -151,4 +151,4 @@ simulator/
 └── test/
 ```
 
-The protocol tables are not copied: `src/protocol.ts` loads the same codec and tag table the Node tools use, and `node esp32/scripts/check-docs.js` keeps those in sync with the firmware's `Protocol.h`. When the firmware changes a frame, port the change to `src/frames.ts` / `src/device.ts`, then run `deno task test`. The golden-frame tests fail until the simulator matches again.
+The protocol tables are not copied: `src/protocol.ts` loads the same codec and tag table the `hour-meter` configurator uses, and `./esp32/scripts/check-docs.ts` keeps those in sync with the firmware's `Protocol.h`. When the firmware changes a frame, port the change to `src/frames.ts` / `src/device.ts`, then run `deno task test`. The golden-frame tests fail until the simulator matches again.

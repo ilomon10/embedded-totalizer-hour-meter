@@ -1,7 +1,7 @@
 // Protocol.h — every SensorFrame tag and code this device uses.
 //
-// SINGLE SOURCE OF TRUTH. Mirrored in node/tags.js and documented in
-// docs/INTEGRATION-GUIDE.md; scripts/check-docs.js fails if they disagree.
+// SINGLE SOURCE OF TRUTH. Mirrored in configurator/src/tags.ts and documented in
+// docs/INTEGRATION-GUIDE.md; scripts/check-docs.ts fails if they disagree.
 // Rules: never reuse a number for a different meaning; only add.
 #pragma once
 

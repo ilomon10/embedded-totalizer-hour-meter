@@ -1,11 +1,29 @@
-// Device protocol table: mirror of esp32/lib/App/src/Protocol.h and
-// esp32/lib/App/src/SettingsSchema.cpp. `node ../esp32/scripts/check-docs.js`
-// fails if this file and the firmware disagree.
+// tags.ts: the host-side protocol table, mirror of esp32/lib/App/src/Protocol.h and
+// esp32/lib/App/src/SettingsSchema.cpp. `esp32/scripts/check-docs.ts` fails if this
+// file and the firmware disagree. The simulator imports it too.
 //
 // Scales: value = raw * scale (the sensorframe codec applies them).
 
-/** @type {Record<number, {name: string, fmt: string, scale?: number, unit?: string}>} */
-const tags = {
+export interface TagDef {
+  name: string;
+  fmt: string;
+  scale?: number;
+  unit?: string;
+}
+
+export interface SettingSpec {
+  tag: number;
+  min: number;
+  max: number;
+  unit?: string;
+  help: string;
+  /** Named values for enum-like settings. */
+  options?: Record<string, number>;
+  /** The only accepted values (uartBaud). */
+  values?: number[];
+}
+
+export const tags: Record<number, TagDef> = {
   // Hour meter
   1: { name: 'runSeconds', fmt: 'u32', unit: 's' },
   2: { name: 'totalCount', fmt: 'u32', unit: 'pulses' },
@@ -107,32 +125,56 @@ const tags = {
   // 240..243 (errorCode, fwVersion, ackSeq, ackStatus) are built into sensorframe.
 };
 
-const MSG = Object.freeze({ TELEMETRY: 1, EVENT: 2, COMMAND: 3, ACK: 4, IMU: 128 });
+export const MSG = Object.freeze({ TELEMETRY: 1, EVENT: 2, COMMAND: 3, ACK: 4, IMU: 128 });
 
-const ACK_STATUS = Object.freeze([
-  'Ok', 'UnknownTag', 'InvalidValue', 'StorageError', 'DeviceMissing', 'Busy', 'BadMagic', 'Unsupported', 'Failed',
-  'Locked', 'BadPin',
+export const ACK_STATUS: readonly string[] = Object.freeze([
+  'Ok',
+  'UnknownTag',
+  'InvalidValue',
+  'StorageError',
+  'DeviceMissing',
+  'Busy',
+  'BadMagic',
+  'Unsupported',
+  'Failed',
+  'Locked',
+  'BadPin',
 ]);
 
-const STATUS_FLAGS = Object.freeze([
-  'eepromMissing', 'rtcMissing', 'timeInvalid', 'imuMissing', 'magMissing', 'imuNotCalibrated',
-  'magNotCalibrated', 'settingsDefaults', 'journalEmpty', 'storageError', 'imuStuck', 'imuSaturated',
-  'i2cErrors', 'eepromFormatted', 'calibrating', 'rtcBatteryLost', 'timeNotBackedUp', 'settingsNotSaved',
+export const STATUS_FLAGS: readonly string[] = Object.freeze([
+  'eepromMissing',
+  'rtcMissing',
+  'timeInvalid',
+  'imuMissing',
+  'magMissing',
+  'imuNotCalibrated',
+  'magNotCalibrated',
+  'settingsDefaults',
+  'journalEmpty',
+  'storageError',
+  'imuStuck',
+  'imuSaturated',
+  'i2cErrors',
+  'eepromFormatted',
+  'calibrating',
+  'rtcBatteryLost',
+  'timeNotBackedUp',
+  'settingsNotSaved',
 ]);
 
-const GET = Object.freeze({ hour: 1, settings: 2, status: 3, calib: 4 });
-const CALIB = Object.freeze({ gyro: 1, imu: 1, mag: 2 });
-const EVENT_KIND = Object.freeze({ 1: 'boot', 2: 'calibrationDone', 3: 'devicesChanged' });
-const OUTPUT = Object.freeze({ usb: 1, uart: 2, both: 3 });
-const STREAM_MODE = Object.freeze({ off: 0, raw: 1, filtered: 2, both: 3 });
-const RESET_MAGIC = 0x5245534e;
+export const GET: Readonly<Record<string, number>> = Object.freeze({ hour: 1, settings: 2, status: 3, calib: 4 });
+export const CALIB: Readonly<Record<string, number>> = Object.freeze({ gyro: 1, imu: 1, mag: 2 });
+export const EVENT_KIND: Readonly<Record<number, string>> = Object.freeze({
+  1: 'boot',
+  2: 'calibrationDone',
+  3: 'devicesChanged',
+});
+export const OUTPUT: Readonly<Record<string, number>> = Object.freeze({ usb: 1, uart: 2, both: 3 });
+export const STREAM_MODE: Readonly<Record<string, number>> = Object.freeze({ off: 0, raw: 1, filtered: 2, both: 3 });
+export const RESET_MAGIC = 0x5245534e;
 
-/**
- * Settings ranges, mirror of esp32/lib/App/src/SettingsSchema.cpp (check-docs verifies).
- * `options` maps named values for enum-like settings.
- * @type {Record<string, {tag: number, min: number, max: number, unit?: string, help: string, options?: Record<string, number>, values?: number[]}>}
- */
-const SETTINGS = {
+/** Settings ranges, mirror of esp32/lib/App/src/SettingsSchema.cpp (check-docs verifies). */
+export const SETTINGS: Record<string, SettingSpec> = {
   telemetryIntervalMs: { tag: 110, min: 100, max: 60000, unit: 'ms', help: 'TELEMETRY period' },
   imuSampleHz: { tag: 111, min: 10, max: 500, unit: 'Hz', help: 'IMU read + filter rate' },
   imuStreamHz: { tag: 112, min: 0, max: 100, unit: 'Hz', help: 'IMU stream rate (0 = off, <= imuSampleHz)' },
@@ -141,7 +183,14 @@ const SETTINGS = {
   vibrationWindowMs: { tag: 115, min: 100, max: 10000, unit: 'ms', help: 'vibration RMS/peak window' },
   rtcSyncIntervalS: { tag: 116, min: 1, max: 3600, unit: 's', help: 'RTC re-read period' },
   output: { tag: 117, min: 1, max: 3, help: 'where periodic data goes (applied after ACK)', options: OUTPUT },
-  uartBaud: { tag: 118, min: 9600, max: 921600, unit: 'baud', help: 'UART pins baud (USB stays 115200)', values: [9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600] },
+  uartBaud: {
+    tag: 118,
+    min: 9600,
+    max: 921600,
+    unit: 'baud',
+    help: 'UART pins baud (USB stays 115200)',
+    values: [9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600],
+  },
   altActiveHigh: { tag: 119, min: 0, max: 1, help: 'alternator running = HIGH? (817 module: false)' },
   altDebounceMs: { tag: 120, min: 0, max: 5000, unit: 'ms', help: 'alternator debounce' },
   pulseRisingEdge: { tag: 121, min: 0, max: 1, help: 'count rising (true) or falling (false) edges' },
@@ -154,15 +203,17 @@ const SETTINGS = {
   btPin: { tag: 128, min: 0, max: 9999, help: 'PIN to unlock a Bluetooth session (change it!)' },
 };
 
-const BT_STATE = Object.freeze(['off', 'on, no client', 'client connected (locked)', 'client connected (unlocked)']);
+export const BT_STATE: readonly string[] = Object.freeze([
+  'off',
+  'on, no client',
+  'client connected (locked)',
+  'client connected (unlocked)',
+]);
 
 const U32_MAX = 0xffffffff;
 
-/**
- * Hour meter preset: hours (decimals allowed) -> the u32 seconds sent as setRunSeconds.
- * @returns {number} seconds
- */
-function hoursToSeconds(hours) {
+/** Hour meter preset: hours (decimals allowed) -> the u32 seconds sent as setRunSeconds. */
+export function hoursToSeconds(hours: string | number): number {
   const h = Number(hours);
   if (!Number.isFinite(h) || h < 0) throw new Error(`hours must be a number >= 0, got '${hours}'`);
   const s = Math.round(h * 3600);
@@ -173,9 +224,8 @@ function hoursToSeconds(hours) {
 /**
  * Totalizer preset: units (litres, metres...; decimals allowed) -> pulses for setTotalCount,
  * using the device's pulsesPerUnit setting. Rounds to the nearest whole pulse.
- * @returns {number} pulses
  */
-function unitsToPulses(units, pulsesPerUnit) {
+export function unitsToPulses(units: string | number, pulsesPerUnit: string | number): number {
   const u = Number(units);
   const ppu = Number(pulsesPerUnit);
   if (!Number.isFinite(u) || u < 0) throw new Error(`units must be a number >= 0, got '${units}'`);
@@ -186,10 +236,6 @@ function unitsToPulses(units, pulsesPerUnit) {
 }
 
 /** Names of the bits set in a statusFlags value. */
-function decodeStatusFlags(flags) {
+export function decodeStatusFlags(flags: number): string[] {
   return STATUS_FLAGS.filter((_, bit) => (flags >>> bit) & 1);
 }
-
-module.exports = {
-  tags, MSG, ACK_STATUS, STATUS_FLAGS, GET, CALIB, EVENT_KIND, OUTPUT, STREAM_MODE, RESET_MAGIC, SETTINGS, BT_STATE, decodeStatusFlags, hoursToSeconds, unitsToPulses,
-};

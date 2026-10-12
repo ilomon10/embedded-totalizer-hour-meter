@@ -1,6 +1,6 @@
 // SettingsSchema.h — the ONE table of configurable settings: tag, name, wire
 // format and allowed range. Used to validate commands, to answer `get settings`
-// and (via scripts/check-tags.js) to keep docs + Node in sync.
+// and (via scripts/check-docs.ts) to keep docs + the host tag table in sync.
 //
 // TS mental model:
 //   const settingsSchema = [{ tag: 110, name: 'telemetryIntervalMs', fmt: 'u16', min: 100, max: 60000 }, ...] as const;

@@ -462,7 +462,7 @@ static void test_locked_ack_shape_and_unlock_is_a_noop_command() {
 }
 
 // ------------------------------------------------- Golden doc examples --
-// These exact bytes are quoted in docs/INTEGRATION-GUIDE.md (checked by scripts/check-docs.js).
+// These exact bytes are quoted in docs/INTEGRATION-GUIDE.md (checked by scripts/check-docs.ts).
 
 static void hexOf(const uint8_t* p, size_t n, char* out) {
   static const char* kHex = "0123456789abcdef";

@@ -175,7 +175,7 @@ new SerialPort({ path: '/dev/ttyUSB0', baudRate: 115200 }).on('data', (chunk) =>
 });
 ```
 
-On Node.js you can use the ready-made [`sensorframe`](../../sensorframe/js) npm package instead (`FrameStream`, `createCodec`). It applies names and scales from a tag table, and [`node/tags.js`](../../node/tags.js) is that table for this device.
+On Node.js you can use the ready-made [`sensorframe`](../../sensorframe/js) npm package instead (`FrameStream`, `createCodec`). It applies names and scales from a tag table, and [`configurator/src/tags.ts`](../../configurator/src/tags.ts) is that table for this device (as an ES module; the Node codec takes the same `{ tag: { name, fmt, scale } }` shape).
 
 ### 3.2 Reference decoder: Python 3 (no dependencies)
 
@@ -623,7 +623,7 @@ Many DS3231 boards are shipped or installed without a coin cell, and vehicle pow
 
 | Situation | What the device does | What your app should do |
 |---|---|---|
-| Power returns, RTC has no battery | Hour meter and totalizer continue from EEPROM (unaffected). `timeValid=false`, header timestamps are uptime, counter saves are stamped `lastSavedEpoch = 0` | Send `setTime` **automatically** when you see `timeValid=false` (rate-limit to about once per 30 s). The reference Node client does this: `DeviceClient.enableAutoTimeSync()` |
+| Power returns, RTC has no battery | Hour meter and totalizer continue from EEPROM (unaffected). `timeValid=false`, header timestamps are uptime, counter saves are stamped `lastSavedEpoch = 0` | Send `setTime` **automatically** when you see `timeValid=false` (rate-limit to about once per 30 s). The reference client does this: `DeviceClient.enableAutoTimeSync()` in [`configurator/src/device.ts`](../../configurator/src/device.ts) |
 | First boot after the time was lost | Also sets `rtcBatteryLost` (bit 15) | Tell the user the RTC needs a battery |
 | `setTime` received | Writes the RTC and uses the time immediately. If the RTC is missing or cannot be written, keeps the time in RAM and sets `timeNotBackedUp` (bit 16) | Nothing more; re-send after each boot EVENT while `timeNotBackedUp` is set |
 | RTC loses its time while running (supply dip) | Rewrites the RTC from its RAM clock at the next RTC sync (≤ `rtcSyncIntervalS`) | Nothing |

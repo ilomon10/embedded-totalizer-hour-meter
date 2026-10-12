@@ -74,6 +74,6 @@ The product firmware does **not** require every module:
 - Missing RTC: `setTime` still works (RAM clock, flag `timeNotBackedUp`).
 - Missing IMU: no vibration/orientation data; everything else works.
 
-So you can also bring the board up gradually: flash the product firmware with only the ESP32 fitted, watch it in the TUI (`npm run tui`), then add modules one by one and see each appear.
+So you can also bring the board up gradually: flash the product firmware with only the ESP32 fitted, watch it in the TUI (`hour-meter /dev/ttyUSB0`), then add modules one by one and see each appear.
 
 > Hot-plugging on a breadboard is fine for testing. In the vehicle, power down before plugging modules: an I2C connection made live can glitch the bus (the firmware recovers, but avoid it in production).

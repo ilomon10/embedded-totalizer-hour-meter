@@ -13,7 +13,7 @@ Engine hour meter and totalizer with persistent storage, real-time clock, and an
 | Curious how data survives power cuts | [docs/EEPROM-LAYOUT.md](docs/EEPROM-LAYOUT.md) |
 | Setting up the IMU | [docs/CALIBRATION.md](docs/CALIBRATION.md) |
 | Testing modules before soldering | [docs/TESTING-MODULES.md](docs/TESTING-MODULES.md) (bench firmware: `pio run -e bench -t upload`) |
-| Configuring / watching the device | TUI: `cd ../node && npm run tui` (or `-- --demo` without hardware), see [node/README.md](../node/README.md) |
+| Configuring / watching the device | `hour-meter` TUI (`cd ../configurator && deno task start`, or `--demo` without hardware), see [configurator/README.md](../configurator/README.md) |
 
 ## Hardware
 
@@ -24,11 +24,11 @@ ESP32 DevKit · AT24C256 EEPROM (0x50) · DS3231 RTC (0x68) · MPU9250 IMU (**0x
 ```bash
 cd esp32
 pio run -e esp32dev -t upload      # build + flash
-cd ../node && npm install
-node reader.js /dev/ttyUSB0        # live view
-node commands.js set-time          # set the RTC from the PC clock (UTC)
-node commands.js get hour          # read the hour meter
-npm run tui                        # full-screen configurator + live viewer
+cd ../configurator                 # or use the hour-meter release binary
+deno task start read /dev/ttyUSB0  # live view
+deno task start set-time           # set the RTC from the PC clock (UTC)
+deno task start get hour           # read the hour meter
+deno task start                    # full-screen configurator + live viewer
 ```
 
 Expected reader output:
@@ -37,15 +37,15 @@ Expected reader output:
 2026-10-07T12:34:56.000Z #12 engine ON  run 1250.00 h total 15000 roll 0.4° pitch -1.2° heading 87.5° vib 35/120 mg
 ```
 
-More CLI commands: `node commands.js` (see the header of [`node/commands.js`](../node/commands.js)).
+More commands: `hour-meter --help` (see [configurator/README.md](../configurator/README.md)).
 
 ## Test and check
 
 ```bash
 pio test -e native           # unit tests on the PC with fake chips (ASan + UBSan)
 pio check -e esp32dev        # clang-tidy static analysis
-node scripts/check-docs.js   # docs, Node tags and firmware tables agree; reference decoders work
-cd ../node && npm test       # host CLI / client tests
+./scripts/check-docs.ts      # docs, host tag table and firmware tables agree; reference decoders work
+cd ../configurator && deno task test   # host tool tests
 ```
 
 ## Project map
@@ -65,6 +65,6 @@ esp32/
 │   ├── Storage/          EEPROM layout, counter journal, settings A/B
 │   └── App/              protocol tags, settings schema, hour meter, IMU pipeline, commands, telemetry
 ├── test/                 fakes/ + test_drivers, test_storage, test_filters, test_app
-├── scripts/check-docs.js consistency checker
+├── scripts/check-docs.ts consistency checker (Deno)
 └── docs/                 guides listed above
 ```

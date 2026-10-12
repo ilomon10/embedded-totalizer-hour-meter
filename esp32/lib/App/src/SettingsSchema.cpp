@@ -1,5 +1,5 @@
 // SettingsSchema.cpp — see header. To add a setting: add a field to Settings,
-// a row here, a case in read()/write(), and a line in node/tags.js + docs.
+// a row here, a case in read()/write(), and a line in configurator/src/tags.ts + docs.
 #include "SettingsSchema.h"
 
 #include <math.h>

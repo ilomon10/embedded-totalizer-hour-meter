@@ -104,8 +104,8 @@ Calibration runs inside the same pipeline using running statistics (Welford): no
 | I want to… | Change |
 |---|---|
 | Move a pin / I2C address | `include/BoardPins.h` |
-| Add a setting | `Settings` struct (bump `SettingsStore::kVersion`) → `SettingsSchema.cpp` row + `read`/`write` cases → `node/tags.js` → INTEGRATION-GUIDE §7 → `node scripts/check-docs.js` |
-| Add a telemetry value | new tag in `Protocol.h` → `Telemetry.cpp` → `node/tags.js` → INTEGRATION-GUIDE §5 |
+| Add a setting | `Settings` struct (bump `SettingsStore::kVersion`) → `SettingsSchema.cpp` row + `read`/`write` cases → `configurator/src/tags.ts` → INTEGRATION-GUIDE §7 → `./scripts/check-docs.ts` |
+| Add a telemetry value | new tag in `Protocol.h` → `Telemetry.cpp` → `configurator/src/tags.ts` → INTEGRATION-GUIDE §5 (+ `simulator/src/frames.ts`) |
 | Add a command | tag in `Protocol.h` → `checkAction` + `runAction` in `CommandHandler.cpp` → `IDeviceControl` if it needs hardware → docs |
 | Change the EEPROM map | `EepromLayout.h` + bump `kLayoutVersion` (the device reformats once) → [EEPROM-LAYOUT.md](EEPROM-LAYOUT.md) |
 | Support another IMU | new driver in `lib/` producing `ImuSample`; the pipeline is chip-agnostic |

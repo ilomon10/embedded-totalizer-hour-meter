@@ -1,15 +1,16 @@
 // protocol.ts: the ONLY bridge from the simulator to the shared protocol code.
 //
-// The codec (../sensorframe/js) and the tag table (../node/tags.js) are the same
-// files the host tools use, and node/tags.js is checked against the firmware's
-// Protocol.h by esp32/scripts/check-docs.js. Reusing them means the simulator
-// cannot drift from the real device. Both are CommonJS, so they load through
-// createRequire.
+// The codec (../sensorframe/js) and the tag table (../configurator/src/tags.ts) are
+// the same files the host tools use, and the tag table is checked against the
+// firmware's Protocol.h by esp32/scripts/check-docs.ts. Reusing them means the
+// simulator cannot drift from the real device. The codec is CommonJS, so it loads
+// through createRequire (and `deno compile` needs --include for it).
 import { createRequire } from 'node:module';
+
+import * as tagTable from '../../configurator/src/tags.ts';
 
 const require = createRequire(import.meta.url);
 const sensorframe = require('../../sensorframe/js/index.js');
-const tagTable = require('../../node/tags.js');
 
 export type Fmt = 'u8' | 'u16' | 'u32' | 'i16' | 'f32' | 'bool';
 export type RawValue = number | boolean | bigint | Uint8Array;
@@ -67,7 +68,7 @@ interface Codec {
 
 /** Tag number -> definition, including the SensorFrame reserved tags 240..243. */
 export const TAGS: Record<number, TagDef> = { ...sensorframe.RESERVED_TAGS, ...tagTable.tags };
-export const MSG: { TELEMETRY: 1; EVENT: 2; COMMAND: 3; ACK: 4; IMU: 128 } = tagTable.MSG;
+export const MSG = tagTable.MSG;
 export const ACK_STATUS: readonly string[] = tagTable.ACK_STATUS;
 export const STATUS_FLAGS: readonly string[] = tagTable.STATUS_FLAGS;
 export const SETTINGS: Record<string, SettingSpec> = tagTable.SETTINGS;
@@ -81,13 +82,13 @@ const TAG_BY_NAME = new Map(Object.entries(TAGS).map(([tag, def]) => [def.name, 
 /** Build a record by tag name; fmt comes from the shared tag table. */
 export function rec(name: string, value: number | boolean): Rec {
   const tag = TAG_BY_NAME.get(name);
-  if (tag === undefined) throw new Error(`no tag named '${name}' in node/tags.js`);
+  if (tag === undefined) throw new Error(`no tag named '${name}' in configurator/src/tags.ts`);
   return { tag, fmt: TAGS[tag].fmt as Fmt, value };
 }
 
 export function tagOf(name: string): number {
   const tag = TAG_BY_NAME.get(name);
-  if (tag === undefined) throw new Error(`no tag named '${name}' in node/tags.js`);
+  if (tag === undefined) throw new Error(`no tag named '${name}' in configurator/src/tags.ts`);
   return tag;
 }
 

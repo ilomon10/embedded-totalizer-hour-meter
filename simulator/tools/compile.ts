@@ -3,8 +3,8 @@
 //   deno task compile              # every target into dist/
 //   deno task compile linux-x64    # one target
 //
-// The codec and tag table are loaded at runtime through createRequire, so they
-// must be listed with --include or the binary cannot find them.
+// The codec is loaded at runtime through createRequire, so it must be listed
+// with --include or the binary cannot find it.
 import { SIM_VERSION } from '../main.ts';
 
 const TARGETS: Record<string, string> = {
@@ -14,7 +14,7 @@ const TARGETS: Record<string, string> = {
   'macos-arm64': 'aarch64-apple-darwin',
   'windows-x64': 'x86_64-pc-windows-msvc',
 };
-const INCLUDES = ['../sensorframe/js/index.js', '../sensorframe/js/src', '../node/tags.js'];
+const INCLUDES = ['../sensorframe/js/index.js', '../sensorframe/js/src'];
 const PERMISSIONS = ['--allow-read', '--allow-run=socat', '--allow-net'];
 const OUT = 'dist';
 
