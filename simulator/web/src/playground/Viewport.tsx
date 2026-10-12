@@ -100,8 +100,8 @@ export function Viewport({ attitude, vibrationRmsMg, onChange, dark, reducedMoti
       const next: Record<string, Attitude> = {
         ArrowLeft: { ...a, rollDeg: wrapRoll(a.rollDeg - step) },
         ArrowRight: { ...a, rollDeg: wrapRoll(a.rollDeg + step) },
-        ArrowUp: { ...a, pitchDeg: clampPitch(a.pitchDeg + step) },
-        ArrowDown: { ...a, pitchDeg: clampPitch(a.pitchDeg - step) },
+        ArrowUp: { ...a, pitchDeg: clampPitch(a.pitchDeg - step) }, // nose up
+        ArrowDown: { ...a, pitchDeg: clampPitch(a.pitchDeg + step) },
         '[': { ...a, headingDeg: wrapHeading(a.headingDeg - step) },
         ']': { ...a, headingDeg: wrapHeading(a.headingDeg + step) },
       };
@@ -133,7 +133,7 @@ export function Viewport({ attitude, vibrationRmsMg, onChange, dark, reducedMoti
         onChange({
           ...s.attitude,
           rollDeg: wrapRoll(s.attitude.rollDeg + (e.clientX - s.x) * DEG_PER_PX),
-          pitchDeg: clampPitch(s.attitude.pitchDeg - (e.clientY - s.y) * DEG_PER_PX),
+          pitchDeg: clampPitch(s.attitude.pitchDeg + (e.clientY - s.y) * DEG_PER_PX), // drag up = nose up = negative pitch
         }, 'drag');
       }}
       onPointerUp={(e) => {

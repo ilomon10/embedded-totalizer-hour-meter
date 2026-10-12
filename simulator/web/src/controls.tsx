@@ -30,6 +30,16 @@ export function Panel(
 
 /** "auto" (animated) or "manual" with a button back to auto. */
 export function ModeBadge({ mode, onAuto }: { mode: Mode; onAuto?: () => void }) {
+  if (mode === 'vehicle') {
+    return (
+      <span
+        title='Driven by the vehicle on the Drive page'
+        className='rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800 dark:bg-sky-900/50 dark:text-sky-300'
+      >
+        vehicle
+      </span>
+    );
+  }
   if (mode === 'auto') {
     return (
       <span className='rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300'>

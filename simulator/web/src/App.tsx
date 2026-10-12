@@ -17,10 +17,12 @@ import { hrefOf, type Route, useRoute } from './router.ts';
 import { type Simulator, useSimulator } from './useSimulator.ts';
 
 const Playground = lazy(() => import('./playground/Playground.tsx').then((m) => ({ default: m.Playground })));
+const DrivePage = lazy(() => import('./drive/DrivePage.tsx').then((m) => ({ default: m.DrivePage })));
 
 const TABS: { route: Route; label: string }[] = [
   { route: 'panels', label: 'Panels' },
   { route: 'playground', label: 'Bench' },
+  { route: 'drive', label: 'Drive' },
 ];
 
 function Dot({ on, label, title }: { on: boolean; label: string; title?: string }) {
@@ -124,7 +126,9 @@ export function App() {
               ? <PanelsPage sim={sim} />
               : (
                 <Suspense fallback={<p className='p-8 text-center text-slate-500'>Loading the 3D view…</p>}>
-                  <Playground state={sim.state} send={sim.send} />
+                  {route === 'drive'
+                    ? <DrivePage state={sim.state} track={sim.track} send={sim.send} />
+                    : <Playground state={sim.state} send={sim.send} />}
                 </Suspense>
               )}
           </div>

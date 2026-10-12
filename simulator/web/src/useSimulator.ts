@@ -3,10 +3,11 @@
 // control messages from the panels. Reconnects on its own.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { ClientMessage, LogEntry, ServerMessage, SimState } from '../../src/web/messages.ts';
+import type { ClientMessage, LogEntry, ServerMessage, SimState, TrackPoint } from '../../src/web/messages.ts';
 
 const MAX_LOG = 1000;
 const RETRY_MS = 1000;
+const MAX_TRACK = 7200; // an hour at 2 points per second, like the simulator keeps
 
 export type Link = 'connecting' | 'open' | 'closed';
 
@@ -14,6 +15,8 @@ export interface Simulator {
   link: Link;
   state: SimState | null;
   log: LogEntry[];
+  /** Truth and estimate positions of the current vehicle, oldest first. */
+  track: TrackPoint[];
   send(msg: ClientMessage): void;
   clearLog(): void;
 }
@@ -22,6 +25,7 @@ export function useSimulator(): Simulator {
   const [link, setLink] = useState<Link>('connecting');
   const [state, setState] = useState<SimState | null>(null);
   const [log, setLog] = useState<LogEntry[]>([]);
+  const [track, setTrack] = useState<TrackPoint[]>([]);
   const socket = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -35,7 +39,8 @@ export function useSimulator(): Simulator {
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data) as ServerMessage;
         if (msg.type === 'state') setState(msg.state);
-        else setLog((old) => [...old, ...msg.entries].slice(-MAX_LOG));
+        else if (msg.type === 'log') setLog((old) => [...old, ...msg.entries].slice(-MAX_LOG));
+        else setTrack((old) => (msg.reset ? msg.points : [...old, ...msg.points]).slice(-MAX_TRACK));
       };
       ws.onclose = () => {
         setLink('closed');
@@ -55,5 +60,5 @@ export function useSimulator(): Simulator {
   }, []);
   const clearLog = useCallback(() => setLog([]), []);
 
-  return { link, state, log, send, clearLog };
+  return { link, state, log, track, send, clearLog };
 }

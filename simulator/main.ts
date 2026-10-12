@@ -18,13 +18,17 @@ import { parseScenario, type Scenario, scenarioHelp } from './src/scenarios.ts';
 import { FrameSplitter } from './src/splitter.ts';
 import { Faults } from './src/faults.ts';
 import { startWebServer, WebHub } from './src/web/server.ts';
+import type { LatLon } from './src/vehicle/geo.ts';
+import type { VehicleKind } from './src/vehicle/models.ts';
+import { VehicleSim } from './src/vehicle/sim.ts';
+import { parseTrack } from './src/vehicle/tracks.ts';
 import type { Transport } from './src/transport/link.ts';
 import { PtyTransport } from './src/transport/pty.ts';
 import { StdioTransport } from './src/transport/stdio.ts';
 import { TcpTransport } from './src/transport/tcp.ts';
 
 /** Simulator release version (tags: simulator-v<version>). The protocol version is FIRMWARE_VERSION. */
-export const SIM_VERSION = '1.1.0';
+export const SIM_VERSION = '1.2.0';
 const POLL_MS = 10;
 const DEFAULT_WEB_PORT = 8080;
 
@@ -55,6 +59,12 @@ Web UI (set every simulated value from the browser):
   --web [port]         serve the web UI on http://127.0.0.1:<port>/ (default 8080)
   --web-host <addr>    listen address (default 127.0.0.1; 0.0.0.0 = whole LAN, no login!)
 
+Drive (a vehicle carries the device; IMU data follows its motion, see the Drive tab):
+  --drive <truck|plane>  start with a vehicle (engine, motion, vibration, IMU come from it)
+  --origin <lat,lon>     where it starts (default: the route's first point)
+  --route <file>         GPX or CSV track to drive, played at once (headless testing, CI)
+  --loop                 drive the route again and again
+
 Output:
   -v, --verbose        log every frame with all its records
   -q, --quiet          log nothing but errors
@@ -70,6 +80,8 @@ interface Cli {
   device: DeviceOptions;
   scenarios: Scenario[];
   faults: Faults;
+  random: () => number;
+  drive?: { kind: VehicleKind; origin?: LatLon; route?: string; loop: boolean };
   web?: { port: number; hostname: string };
   verbosity: Verbosity;
 }
@@ -99,6 +111,10 @@ function parseCli(argv: string[]): Cli {
       'no-reset': { type: 'boolean' },
       web: { type: 'string' },
       'web-host': { type: 'string' },
+      drive: { type: 'string' },
+      origin: { type: 'string' },
+      route: { type: 'string' },
+      loop: { type: 'boolean' },
       seed: { type: 'string' },
       scenario: { type: 'string', multiple: true },
       verbose: { type: 'boolean', short: 'v' },
@@ -146,9 +162,50 @@ function parseCli(argv: string[]): Cli {
     device,
     scenarios,
     faults,
+    random,
+    drive: parseDrive(values.drive, values.origin, values.route, values.loop ?? false),
     web,
     verbosity: values.quiet ? 'quiet' : values.verbose ? 'verbose' : 'normal',
   };
+}
+
+function parseDrive(
+  kind: string | undefined,
+  origin: string | undefined,
+  route: string | undefined,
+  loop: boolean,
+): Cli['drive'] {
+  if (kind === undefined) {
+    if (origin !== undefined || route !== undefined) throw new Error('--origin and --route need --drive truck|plane');
+    return undefined;
+  }
+  if (kind !== 'truck' && kind !== 'plane') throw new Error('--drive must be truck or plane');
+  let at: LatLon | undefined;
+  if (origin !== undefined) {
+    const [lat, lon] = origin.split(',').map(Number);
+    if (!(Math.abs(lat) <= 85) || !(Math.abs(lon) <= 180)) {
+      throw new Error('--origin must be lat,lon, e.g. -1.2654,116.8312');
+    }
+    at = { lat, lon };
+  }
+  if (!at && !route) throw new Error('--drive needs --origin lat,lon or a --route to start from');
+  return { kind, origin: at, route, loop };
+}
+
+/** Attach the --drive vehicle; with --route, load the track and start driving it. */
+async function startDrive(drive: NonNullable<Cli['drive']>, device: SimDevice, random: () => number, log: FrameLog) {
+  const waypoints = drive.route ? parseTrack(drive.route, await Deno.readTextFile(drive.route)) : null;
+  const origin = drive.origin ?? (waypoints ? { lat: waypoints[0].lat, lon: waypoints[0].lon } : undefined)!;
+  const sim = new VehicleSim({ kind: drive.kind, origin, random });
+  if (waypoints) {
+    sim.setRoute({ waypoints, speed: drive.kind === 'plane' ? 55 : 12, alt: 300, loop: drive.loop });
+    sim.play();
+  }
+  device.attachVehicle(sim);
+  log.info(
+    `drive: ${drive.kind} at ${origin.lat.toFixed(5)},${origin.lon.toFixed(5)}` +
+      (waypoints ? `, route of ${waypoints.length} points${drive.loop ? ' (looping)' : ''}` : ''),
+  );
 }
 
 function int(value: string | undefined, fallback: number, min: number, max: number, flag: string): number {
@@ -181,7 +238,15 @@ async function main(): Promise<void> {
     transport.write(faults.mangle(frame));
   });
   if (cli.web) {
-    hub = new WebHub({ device, faults, version: SIM_VERSION, deviceId: cli.device.deviceId, transport });
+    hub = new WebHub({
+      device,
+      faults,
+      nowMs: () => realClock.nowMs(),
+      random: cli.random,
+      version: SIM_VERSION,
+      deviceId: cli.device.deviceId,
+      transport,
+    });
   }
   if (cli.engine !== undefined) device.setEngine(cli.engine);
   const splitter = new FrameSplitter(
@@ -216,6 +281,7 @@ async function main(): Promise<void> {
   const web = hub && cli.web ? startWebServer(hub, cli.web) : undefined;
   if (web) log.info(`web UI: ${web.url}`);
   device.powerOn();
+  if (cli.drive) await startDrive(cli.drive, device, cli.random, log);
   setInterval(() => {
     const nowMs = realClock.nowMs();
     for (const s of scenarios) s.tick?.(nowMs, device);

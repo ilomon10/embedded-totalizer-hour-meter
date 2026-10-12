@@ -2,12 +2,13 @@
 // path with index.html, so /3d works on reload and as a shared link.
 import { useCallback, useEffect, useState } from 'react';
 
-export type Route = 'panels' | 'playground';
+export type Route = 'panels' | 'playground' | 'drive';
 
-const PATHS: Record<Route, string> = { panels: '/', playground: '/3d' };
+const PATHS: Record<Route, string> = { panels: '/', playground: '/3d', drive: '/drive' };
 
 function current(): Route {
-  return location.pathname.replace(/\/+$/, '') === PATHS.playground ? 'playground' : 'panels';
+  const path = location.pathname.replace(/\/+$/, '');
+  return (Object.keys(PATHS) as Route[]).find((r) => r !== 'panels' && PATHS[r] === path) ?? 'panels';
 }
 
 export function useRoute(): [Route, (route: Route) => void] {

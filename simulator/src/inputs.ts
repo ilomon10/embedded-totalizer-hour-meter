@@ -7,7 +7,8 @@
 import { sensorVectors } from './attitude.ts';
 import type { Vec3 } from './frames.ts';
 
-export type Mode = 'auto' | 'manual';
+/** auto: built-in animation; manual: held from the web UI; vehicle: driven by a simulated vehicle. */
+export type Mode = 'auto' | 'manual' | 'vehicle';
 
 export interface EngineInput {
   running: boolean;
@@ -147,11 +148,15 @@ export function autoImu(motion: MotionInput, vibration: VibrationInput, random: 
 }
 
 /** Manual groups hold their value; auto groups take this moment's animation. */
-export function effectiveInputs(inputs: Inputs, ctx: AutoContext): InputValues {
+export function effectiveInputs(inputs: Inputs, ctx: AutoContext, vehicle: Partial<InputValues> = {}): InputValues {
   const auto = autoValues(ctx);
   type AutoGroup = Exclude<Group, 'imu'>;
   const pick = <G extends AutoGroup>(g: G): Omit<InputValues, 'imu'>[G] =>
-    inputs.modes[g] === 'manual' ? inputs.manual[g] : auto[g];
+    inputs.modes[g] === 'manual'
+      ? inputs.manual[g]
+      : inputs.modes[g] === 'vehicle'
+      ? (vehicle[g] as Omit<InputValues, 'imu'>[G] | undefined) ?? auto[g]
+      : auto[g];
   const motion = pick('motion');
   const vibration = pick('vibration');
   return {
@@ -159,7 +164,11 @@ export function effectiveInputs(inputs: Inputs, ctx: AutoContext): InputValues {
     pulses: pick('pulses'),
     motion,
     vibration,
-    imu: inputs.modes.imu === 'manual' ? inputs.manual.imu : autoImu(motion, vibration, ctx.random),
+    imu: inputs.modes.imu === 'manual'
+      ? inputs.manual.imu
+      : inputs.modes.imu === 'vehicle' && vehicle.imu
+      ? vehicle.imu
+      : autoImu(motion, vibration, ctx.random),
     rtc: pick('rtc'),
     errors: pick('errors'),
     flags: pick('flags'),
@@ -177,7 +186,7 @@ export function setManual<G extends Group>(
   current: InputValues[G],
   patch: Partial<InputValues[G]>,
 ): Inputs {
-  const base = inputs.modes[group] === 'auto' ? current : inputs.manual[group];
+  const base = inputs.modes[group] === 'manual' ? inputs.manual[group] : current;
   return {
     modes: { ...inputs.modes, [group]: 'manual' },
     manual: { ...inputs.manual, [group]: { ...base, ...patch } },
@@ -186,4 +195,14 @@ export function setManual<G extends Group>(
 
 export function setAuto(inputs: Inputs, group: Group): Inputs {
   return { modes: { ...inputs.modes, [group]: 'auto' }, manual: inputs.manual };
+}
+
+/** The groups a simulated vehicle drives. */
+export const VEHICLE_GROUPS: readonly Group[] = ['engine', 'pulses', 'motion', 'vibration', 'imu'];
+
+/** Hand the vehicle's groups to it (attach) or back to the animation (detach). */
+export function setVehicleModes(inputs: Inputs, attached: boolean): Inputs {
+  const modes = { ...inputs.modes };
+  for (const g of VEHICLE_GROUPS) modes[g] = attached ? 'vehicle' : 'auto';
+  return { modes, manual: inputs.manual };
 }

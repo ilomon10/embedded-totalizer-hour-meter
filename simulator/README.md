@@ -5,7 +5,7 @@
 ```bash
 cd simulator
 deno task start                 # creates /tmp/ttyHourMeter (needs socat)
-deno task start --web           # same, plus a web UI at http://127.0.0.1:8080/ to set every value
+deno task start --web           # same, plus a web UI at http://127.0.0.1:8080/: every value, a 3D bench, a vehicle on a map
 ```
 
 Then open `/tmp/ttyHourMeter` in your driver like any serial port (any baud rate, 8N1). Try it with the project's own tools:
@@ -61,6 +61,39 @@ The page has no login. It listens on 127.0.0.1 only, unless you pass `--web-host
 
 It is a React + Tailwind app in `web/`, built with Vite (`deno task web:build`) and embedded in the release binaries. While working on the page itself, run the simulator with `deno task start --web 8080` and `deno task web:dev` side by side, which serves the page with hot reload and forwards the WebSocket.
 
+### Bench (`/3d`)
+
+A 3D model of the carrier board. Drag to tilt it (left/right = roll, up/down = pitch), drag the compass ring to turn the heading, double-click to level; with the board focused, arrow keys and `[` `]` nudge by 1° (Shift: 10°). Custom vibration has presets and shakes the board (not under reduced motion). The IMU stream's accelerometer and magnetometer follow the attitude, so a driver that computes roll, pitch and heading itself gets the same answer as the device.
+
+## Drive: vehicles, maps, dead reckoning (`/drive`)
+
+The hour meter rides in a vehicle on a real map. The simulator turns the vehicle's motion into the IMU data the device would send: forward and centripetal acceleration, rotation rates, the earth's field, engine and road vibration. It runs those samples through **a port of the firmware's own IMU pipeline** (its Kalman filters, vibration meter and compass), so roll, pitch and heading are what the device would really report, errors in turns included.
+
+![Drive mode](docs/drive.png)
+
+- **Vehicles:** a truck (bicycle model, suspension roll and squat, tyre grip limit about 0.45 g), a plane (coordinated turns, climb, stall speed), or **your own model** (`.glb`/`.gltf`, kept in your browser) that moves like either. Turn it 90° at a time until the orange arrow under it points at its nose.
+- **Route:** click the map to add waypoints, drag to move them, double-click to delete; set speed (and height for the plane), loop, Play/Pause/Stop. Playback is driven, not drawn: a path follower steers and brakes like a driver.
+- **Live:** keyboard (W throttle, S/Space brake, A/D steer, Q/E climb, R GPS fix) or a **gamepad**. *Gamepad controls* shows every binding live: press *Assign* and move the stick, trigger or button you want; *Flip* reverses a direction; the mapping is saved in your browser. Default: right trigger throttle, left trigger brake, left stick steers (and climbs), A/cross = GPS fix. The vehicle brakes if the controls stop for 0.5 s.
+- **Replay:** drop a GPX file (`<trkpt lat lon>` with optional `<ele>` and `<time>`) or a CSV with a header naming `lat`, `lon` and optionally `alt`/`ele` and `time` (ISO 8601 or Unix seconds). With times, each stretch is driven at its recorded speed. Try [`docs/sample-loop.csv`](docs/sample-loop.csv), a lap of Jl. Medan Merdeka around Monas in Jakarta built from OpenStreetMap road geometry.
+- **Map:** OpenStreetMap tiles (© OpenStreetMap contributors). They need internet; offline, a grid with lines about 220 m apart is shown and everything else works. The tiles are OSM's free service: fine for testing, not for heavy automated use ([tile usage policy](https://operations.osmfoundation.org/policies/tiles/)).
+
+### Dead reckoning: what the numbers mean
+
+Firmware 2.3.0 sends no position or speed, so moving without GPS is the host's job, integrating the IMU stream. The page draws the **true path** (solid) and a **reference estimate** (dashed orange) built only from the IMU frames the host receives (same rate, same 1 mg / 0.1 °/s resolution), plus the error in metres. *GPS fix* re-anchors the estimate to the truth, like a real fix.
+
+- **Ground vehicles:** gravity is learned while parked, and a zero-velocity update zeroes the speed whenever the truck stands still (judged by vibration, not by the mean: a truck cruising at constant speed reads pure gravity too, but shakes far more than an idling one). Heading integrates the gyro about "up".
+- **Aircraft:** a 3D strapdown INS. In a coordinated turn the accelerometer feels no sideways force, so gravity can't be read off it (the firmware's roll even reads level while banking 45°); attitude must come from the gyro.
+- **Stream rate matters most.** The default `imuStreamHz` is 10. Set `hour-meter set imuStreamHz=100 streamMode=2` for dead reckoning: in the tests, a plane's estimate after 2.8 km is 31 m off at 100 Hz but 412 m off at 10 Hz.
+- **Expected errors a driver must live with:** suspension squat under acceleration tilts gravity onto the forward axis (an IMU can't tell it from acceleration: about 10% speed over-estimate after pulling away); the firmware's roll/pitch filter trusts the accelerometer strongly, so reported pitch absorbs braking and acceleration (don't remove gravity with it on the ground).
+- **Sign convention:** the firmware computes pitch right-handed about y, so **positive pitch is nose down** (`Orientation.h`'s formula and unit test), although its comment and the integration guide say "nose up". The simulator follows the formula, i.e. what the device actually reports.
+
+From the command line, the same without a browser (CI):
+
+```bash
+deno task start --drive truck --route docs/sample-loop.csv --loop   # starts at the track's first point
+deno task start --drive plane --origin -6.1754,106.8272 --web       # then draw a route in the browser
+```
+
 ## Options
 
 ```text
@@ -80,6 +113,9 @@ Device
   --pulse-hz <n>       totalizer pulses per second while the engine runs (default 3.5)
   --device-id <n>      deviceId in every header (default 0x1a2b3c4d)
   --no-reset           do not reboot when a client opens the tty
+  --drive <truck|plane>  a vehicle carries the device (engine, motion, vibration, IMU come from it)
+  --origin <lat,lon>     where it starts (default: the route's first point)
+  --route <file>         GPX or CSV track, driven at once (headless testing, CI); --loop repeats it
   --web [port]         web UI on http://127.0.0.1:<port>/ (default 8080)
   --web-host <addr>    web UI listen address (default 127.0.0.1; 0.0.0.0 = whole LAN, no login!)
   --seed <n>           random seed for sensor noise and faults (default 1)
@@ -146,8 +182,10 @@ deno task start --stdio | xxd     # raw frames on stdout, logs on stderr
 ## Development
 
 ```bash
-deno task test         # 38 tests: firmware golden frames, catalog dumps, command rules, Bluetooth lock,
-                       #   inputs (auto/manual), live faults, web server + WebSocket
+deno task test         # 53 tests: firmware golden frames, catalog dumps, command rules, Bluetooth lock,
+                       #   inputs (auto/manual), live faults, web server + WebSocket, attitude round trips,
+                       #   vehicle physics, the firmware filter port, route following, track parsing,
+                       #   dead reckoning (truck) and the strapdown INS (plane)
 deno task check        # type-check (simulator + web UI)
 deno task web:build    # build the web UI into web/dist (needed once before `start --web` from source)
 deno task web:dev      # web UI with hot reload, talking to `deno task start --web 8080`
@@ -166,7 +204,8 @@ simulator/
 │   ├── frames.ts         frame builders, a port of esp32/lib/App/src/Telemetry.cpp (same record order)
 │   ├── commands.ts       command validation, a port of CommandHandler.cpp + SettingsSchema.cpp
 │   ├── device.ts         the simulated Application: scheduler, counters, time, modules, calibration
-│   ├── inputs.ts         sensor values per group: built-in animation (auto) or held values (manual)
+│   ├── inputs.ts         sensor values per group: animation (auto), held (manual) or a vehicle (vehicle)
+│   ├── attitude.ts       roll/pitch/heading <-> accelerometer and magnetometer (firmware math, both ways)
 │   ├── faults.ts         line noise and frame corruption, adjustable while running
 │   ├── access-gate.ts    Bluetooth PIN lock, a port of AccessGate.h
 │   ├── scenarios.ts      --scenario: modules, RTC battery, engine cycle, reboots, starting faults
@@ -174,8 +213,12 @@ simulator/
 │   ├── clock.ts          injected clock + seeded RNG
 │   ├── log.ts            human log on stderr
 │   ├── transport/        pty (socat), tcp, stdio
+│   ├── vehicle/          Drive: geo (lat/lon <-> metres), body frame, truck/plane models, route follower,
+│   │                     track parsing, IMU synthesis, the firmware IMU pipeline port, sim (ties them
+│   │                     together), dead-reckoning (ground) and strapdown (air) reference estimators
 │   └── web/              web UI server (static files + WebSocket) and its message types
-├── web/                  the web UI: React + Tailwind (Vite); src/panels/ holds one file per panel
+├── web/                  the web UI: React + Tailwind (Vite); src/panels/ (Panels), src/playground/ (Bench),
+│                         src/drive/ (Drive: MapLibre map, three.js vehicle layer, gamepad mapping)
 ├── tools/                catalog.ts + gen-catalog.ts (FRAME-CATALOG.md frames), compile.ts (release binaries)
 └── test/
 ```

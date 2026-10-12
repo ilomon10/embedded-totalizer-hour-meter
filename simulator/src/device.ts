@@ -38,7 +38,9 @@ import {
   type InputValues,
   setAuto,
   setManual,
+  setVehicleModes,
 } from './inputs.ts';
+import type { VehicleSim } from './vehicle/sim.ts';
 import { Ack, codec, type DecodedMessage, Device, Flag, frameBytes, type Message, MSG } from './protocol.ts';
 
 /** Factory defaults, esp32/lib/Storage/src/Settings.cpp (tag order 110..128). */
@@ -134,6 +136,7 @@ export class SimDevice {
   private lastCmd: { seq: number; atMs: number; ack: Uint8Array; msg: Message & { seq: number } } | null = null;
   private rebootAtMs: number | null = null;
   private inputState: Inputs = defaultInputs();
+  private vehicleSim: VehicleSim | null = null;
   /** This moment's sensor values (auto or manual per group), refreshed on every poll. */
   private current: InputValues;
 
@@ -286,7 +289,20 @@ export class SimDevice {
       pulsesPerSecond: this.opts.pulsesPerSecond,
       rtcBattery: this.opts.rtcBattery,
       random: this.opts.random,
-    });
+    }, this.vehicleSim?.inputValues() ?? {});
+  }
+
+  // ------------------------------------------------------------- vehicle ----
+
+  /** Let a simulated vehicle drive the motion, vibration, IMU, engine and fuel groups (null = detach). */
+  attachVehicle(sim: VehicleSim | null): void {
+    this.vehicleSim = sim;
+    this.inputState = setVehicleModes(this.inputState, sim !== null);
+    this.current = this.computeInputs(this.clock.nowMs());
+  }
+
+  vehicle(): VehicleSim | null {
+    return this.vehicleSim;
   }
 
   /** Physically plug or unplug a module. The device notices at its next presence checks. */
@@ -312,6 +328,7 @@ export class SimDevice {
   poll(): void {
     const nowMs = this.clock.nowMs();
     if (this.rebootAtMs !== null && nowMs >= this.rebootAtMs) return this.reset(ResetReason.software);
+    this.vehicleSim?.advance(nowMs, this.settings, this.cal);
     this.current = this.computeInputs(nowMs);
     this.runInputs(nowMs);
     this.runCalibration(nowMs);
@@ -621,6 +638,7 @@ export class SimDevice {
     const full = { ...msg, seq: this.seq };
     this.seq = (this.seq + 1) & 0xffff;
     const bytes = frameBytes(codec.encode({ ...full, deviceId: this.opts.deviceId >>> 0 }));
+    this.vehicleSim?.onFrame(full, this.clock.nowMs());
     this.send(bytes, full, periodic);
     return { ack: bytes, msg: full };
   }

@@ -9,10 +9,11 @@ import { ResetReason, type SimDevice } from '../device.ts';
 import type { Faults } from '../faults.ts';
 import { GROUPS } from '../inputs.ts';
 import { msgName, recordPairs } from '../log.ts';
+import { VehicleSim } from '../vehicle/sim.ts';
 import type { DecodedMessage } from '../protocol.ts';
 import type { ClientMessage, LogEntry, ModuleName, ServerMessage, SimState } from './messages.ts';
 
-const PUSH_MS = 200;
+const PUSH_MS = 100; // 10 Hz: smooth enough for the moving vehicle
 const HISTORY = 500;
 const DIST = new URL('../../web/dist/', import.meta.url);
 const MODULE_BIT: Record<ModuleName, number> = {
@@ -34,6 +35,9 @@ const TYPES: Record<string, string> = {
 export interface WebContext {
   device: SimDevice;
   faults: Faults;
+  /** the device's clock (live controls are timed against it) */
+  nowMs: () => number;
+  random: () => number;
   version: string;
   deviceId: number;
   transport: { label: string; connected(): boolean };
@@ -75,6 +79,62 @@ export function applyClientMessage(msg: ClientMessage, ctx: WebContext): string 
     case 'calibration':
       device.setCalibrationFlags(msg.flags & 3);
       return null;
+    case 'vehicle': {
+      if (msg.kind === null) {
+        device.attachVehicle(null);
+        return null;
+      }
+      if (msg.kind !== 'truck' && msg.kind !== 'plane') return `unknown vehicle ${msg.kind}`;
+      const origin = msg.origin ?? device.vehicle()?.frame.origin;
+      if (!origin || !(Math.abs(origin.lat) <= 85) || !(Math.abs(origin.lon) <= 180)) return 'vehicle needs an origin';
+      const previous = device.vehicle();
+      const sim = new VehicleSim({ kind: msg.kind, origin, headingDeg: msg.headingDeg ?? 0, random: ctx.random });
+      const plan = previous?.snapshot().route;
+      if (plan && !msg.origin) sim.setRoute(plan); // same place, other vehicle: keep the route
+      device.attachVehicle(sim);
+      return null;
+    }
+    default:
+      return applyDriveMessage(msg, ctx);
+  }
+}
+
+/** Messages that need a vehicle. */
+function applyDriveMessage(msg: ClientMessage, ctx: WebContext): string | null {
+  const sim = ctx.device.vehicle();
+  if (!sim) return 'no vehicle: start one first';
+  switch (msg.type) {
+    case 'route':
+      sim.setRoute(msg.plan && msg.plan.waypoints.length >= 2 ? msg.plan : null);
+      return null;
+    case 'play':
+      if (msg.action === 'play') sim.play();
+      else if (msg.action === 'pause') sim.pause();
+      else sim.stop();
+      return null;
+    case 'drive-mode':
+      sim.setMode(msg.mode);
+      return null;
+    case 'controls': {
+      const c = msg.controls;
+      const num = (v: unknown, lo: number, hi: number) => Math.max(lo, Math.min(hi, Number(v) || 0));
+      sim.setLive({
+        throttle: num(c.throttle, 0, 1),
+        brake: num(c.brake, 0, 1),
+        steer: num(c.steer, -1, 1),
+        pitch: num(c.pitch, -1, 1),
+      }, ctx.nowMs());
+      return null;
+    }
+    case 'anchor':
+      sim.anchor();
+      return null;
+    case 'estimator':
+      sim.setHeadingSource(msg.headingSource === 'compass' ? 'compass' : 'gyro');
+      return null;
+    case 'clear-tracks':
+      sim.clearTracks();
+      return null;
     default:
       return 'unknown message';
   }
@@ -87,12 +147,16 @@ export class WebHub {
   private pending: LogEntry[] = [];
   private nextId = 1;
   private timer: ReturnType<typeof setInterval> | undefined;
+  private trackOf: VehicleSim | null = null;
+  private trackCursor = 0;
+  private trackResets = -1;
 
   constructor(private readonly ctx: WebContext) {}
 
   state(): SimState {
     return {
       ...this.ctx.device.snapshot(),
+      vehicle: this.ctx.device.vehicle()?.snapshot() ?? null,
       version: this.ctx.version,
       deviceId: this.ctx.deviceId,
       transport: this.ctx.transport.label,
@@ -125,6 +189,8 @@ export class WebHub {
     socket.onopen = () => {
       this.sockets.add(socket);
       this.sendTo(socket, { type: 'log', entries: this.history });
+      const sim = this.ctx.device.vehicle();
+      if (sim) this.sendTo(socket, { type: 'track', points: sim.trackSince(0, -2).points, reset: true });
       this.sendTo(socket, { type: 'state', state: this.state() });
     };
     socket.onclose = () => this.sockets.delete(socket);
@@ -165,11 +231,31 @@ export class WebHub {
     }
     const log: ServerMessage = { type: 'log', entries: this.pending };
     const state: ServerMessage = { type: 'state', state: this.state() };
+    const track = this.trackUpdate();
     this.pending = [];
     for (const socket of this.sockets) {
       if (log.entries.length) this.sendTo(socket, log);
+      if (track) this.sendTo(socket, track);
       this.sendTo(socket, state);
     }
+  }
+
+  /** New track points since the last push; a new vehicle or cleared tracks start over. */
+  private trackUpdate(): ServerMessage | null {
+    const sim = this.ctx.device.vehicle();
+    if (sim !== this.trackOf) {
+      this.trackOf = sim;
+      this.trackCursor = 0;
+      this.trackResets = -1;
+      if (!sim) return { type: 'track', points: [], reset: true };
+    }
+    if (!sim) return null;
+    const t = sim.trackSince(this.trackCursor, this.trackResets);
+    const first = this.trackResets === -1;
+    this.trackCursor = t.cursor;
+    this.trackResets = t.resets;
+    if (!t.reset && !first && t.points.length === 0) return null;
+    return { type: 'track', points: t.points, reset: t.reset || first };
   }
 
   private sendTo(socket: WebSocket, msg: ServerMessage): void {

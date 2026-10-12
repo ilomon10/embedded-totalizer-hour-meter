@@ -4,8 +4,24 @@
 import type { SimSnapshot } from '../device.ts';
 import type { FaultSettings } from '../faults.ts';
 import type { Group, InputValues } from '../inputs.ts';
+import type { HeadingSource } from '../vehicle/dead-reckoning.ts';
+import type { LatLon } from '../vehicle/geo.ts';
+import type { Controls, VehicleKind } from '../vehicle/models.ts';
+import type { RoutePlan, Waypoint } from '../vehicle/route.ts';
+import type { DriveMode, TrackPoint, VehicleSnapshot } from '../vehicle/sim.ts';
 
 export type { FaultSettings, Group, InputValues, SimSnapshot };
+export type {
+  Controls,
+  DriveMode,
+  HeadingSource,
+  LatLon,
+  RoutePlan,
+  TrackPoint,
+  VehicleKind,
+  VehicleSnapshot,
+  Waypoint,
+};
 export type { Inputs, Mode } from '../inputs.ts';
 export type { DeviceStatus, HourMeterSnapshot, Settings, Vec3 } from '../frames.ts';
 
@@ -34,9 +50,15 @@ export interface SimState extends SimSnapshot {
   transport: string;
   clientConnected: boolean;
   faults: FaultSettings;
+  /** null while no vehicle drives the device (Panels/Bench behaviour). */
+  vehicle: VehicleSnapshot | null;
 }
 
-export type ServerMessage = { type: 'state'; state: SimState } | { type: 'log'; entries: LogEntry[] };
+export type ServerMessage =
+  | { type: 'state'; state: SimState }
+  | { type: 'log'; entries: LogEntry[] }
+  /** New track points (truth + estimate). `reset`: drop what you have first. */
+  | { type: 'track'; points: TrackPoint[]; reset: boolean };
 
 export type ClientMessage =
   | { [G in Group]: { type: 'set'; group: G; patch: Partial<InputValues[G]> } }[Group]
@@ -45,4 +67,15 @@ export type ClientMessage =
   | { type: 'module'; module: ModuleName; fitted: boolean }
   | { type: 'faults'; patch: Partial<FaultSettings> }
   | { type: 'power'; action: PowerAction }
-  | { type: 'calibration'; flags: number };
+  | { type: 'calibration'; flags: number }
+  /** Start a vehicle at `origin` (kind null = stop driving, back to the animation). */
+  | { type: 'vehicle'; kind: VehicleKind | null; origin?: LatLon; headingDeg?: number }
+  | { type: 'route'; plan: RoutePlan | null }
+  | { type: 'play'; action: 'play' | 'pause' | 'stop' }
+  | { type: 'drive-mode'; mode: DriveMode }
+  /** Live driving: send about 20 times a second; the vehicle brakes after 500 ms without. */
+  | { type: 'controls'; controls: Controls }
+  /** A simulated GPS fix: the estimate jumps to the truth. */
+  | { type: 'anchor' }
+  | { type: 'estimator'; headingSource: HeadingSource }
+  | { type: 'clear-tracks' };

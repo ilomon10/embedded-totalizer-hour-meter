@@ -13,6 +13,8 @@ function context() {
   const ctx = {
     device: sim.device,
     faults,
+    nowMs: () => sim.clock.nowMs(),
+    random: () => 0.5,
     version: 'test',
     deviceId: 0x1a2b3c4d,
     transport: { label: '/tmp/ttyTest', connected: () => true },

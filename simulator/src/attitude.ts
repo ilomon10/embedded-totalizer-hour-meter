@@ -5,8 +5,10 @@
 // checks the round trip.
 //
 // Board frame (MPU9250): right-handed, x forward, y left, z up. A board lying
-// flat reads +1 g on z. Roll: about x. Pitch: nose up positive. Heading: the
-// board's x axis, clockwise from magnetic north.
+// flat reads +1 g on z. Roll: about x, left side up positive. Pitch: about y,
+// right-handed, so positive pitch is NOSE DOWN (that is what the firmware's
+// formula computes; its comment and INTEGRATION-GUIDE §5.3 say "nose up").
+// Heading: the board's x axis, clockwise from magnetic north.
 import type { Vec3 } from './frames.ts';
 
 const DEG = Math.PI / 180;
