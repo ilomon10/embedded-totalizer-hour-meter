@@ -1,0 +1,12 @@
+{
+  "name": "Mpu9250",
+  "version": "1.0.0",
+  "description": "MPU9250/MPU6500 accel+gyro driver with AK8963 magnetometer (bypass mode).",
+  "dependencies": {
+    "Core": "*",
+    "I2cBus": "*"
+  },
+  "build": {
+    "flags": "-Wall -Wextra -Werror"
+  }
+}

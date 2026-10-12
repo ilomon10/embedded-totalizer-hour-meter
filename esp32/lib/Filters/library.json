@@ -1,0 +1,11 @@
+{
+  "name": "Filters",
+  "version": "1.0.0",
+  "description": "Kalman filters, tilt-compensated compass, vibration RMS/peak, running statistics. Pure math, header-only.",
+  "dependencies": {
+    "Core": "*"
+  },
+  "build": {
+    "flags": "-Wall -Wextra -Werror"
+  }
+}

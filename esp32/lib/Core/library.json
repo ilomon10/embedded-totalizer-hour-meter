@@ -1,0 +1,8 @@
+{
+  "name": "Core",
+  "version": "1.0.0",
+  "description": "Status/Result types, checks, clock interface, fixed-rate task timer, Vec3.",
+  "build": {
+    "flags": "-Wall -Wextra -Werror"
+  }
+}

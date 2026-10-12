@@ -1,0 +1,14 @@
+{
+  "name": "App",
+  "version": "1.0.0",
+  "description": "Hour-meter application logic: protocol tags, settings schema, hour meter, IMU pipeline, command handler, telemetry builders. Hardware-free and unit-tested.",
+  "dependencies": {
+    "Core": "*",
+    "Filters": "*",
+    "Storage": "*",
+    "SensorFrame": "*"
+  },
+  "build": {
+    "flags": "-Wall -Wextra -Werror"
+  }
+}

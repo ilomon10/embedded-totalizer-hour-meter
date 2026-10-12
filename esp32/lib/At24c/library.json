@@ -1,0 +1,12 @@
+{
+  "name": "At24c",
+  "version": "1.0.0",
+  "description": "AT24Cxx I2C EEPROM driver: page-aware writes, ACK polling, read-back verify, typed put/get.",
+  "dependencies": {
+    "Core": "*",
+    "I2cBus": "*"
+  },
+  "build": {
+    "flags": "-Wall -Wextra -Werror"
+  }
+}

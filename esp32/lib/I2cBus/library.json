@@ -1,0 +1,11 @@
+{
+  "name": "I2cBus",
+  "version": "1.0.0",
+  "description": "I2C bus interface + Arduino Wire implementation with timeouts, bounded retries and bus recovery.",
+  "dependencies": {
+    "Core": "*"
+  },
+  "build": {
+    "flags": "-Wall -Wextra -Werror"
+  }
+}

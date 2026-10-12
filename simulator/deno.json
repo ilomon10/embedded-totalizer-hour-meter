@@ -1,0 +1,21 @@
+{
+  "tasks": {
+    "start": "deno run --allow-read --allow-run=socat --allow-net main.ts",
+    "test": "deno test --allow-read",
+    "check": "deno check main.ts src/ test/ tools/",
+    "gen-catalog": "deno run --allow-read tools/gen-catalog.ts"
+  },
+  "compilerOptions": {
+    "strict": true
+  },
+  "fmt": {
+    "lineWidth": 120,
+    "indentWidth": 2,
+    "singleQuote": true,
+    "semiColons": true,
+    "exclude": ["**/*.md"]
+  },
+  "lint": {
+    "rules": { "tags": ["recommended"] }
+  }
+}

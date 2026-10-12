@@ -1,0 +1,11 @@
+{
+  "name": "SensorFrame",
+  "version": "1.0.0",
+  "description": "Compact binary TLV frames for sensor data. CRC16 + COBS framing, header-only, zero heap. Pairs with the 'sensorframe' npm package.",
+  "keywords": "sensor, telemetry, binary, serial, rs485, cobs, crc16, tlv, esp32, esp-now, lora, mqtt",
+  "frameworks": "*",
+  "platforms": "*",
+  "headers": "SensorFrame.h",
+  "build": { "srcDir": "src", "includeDir": "src" },
+  "export": { "exclude": ["test/native_test", "test/*.o"] }
+}

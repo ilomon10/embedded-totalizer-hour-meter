@@ -1,0 +1,12 @@
+{
+  "name": "Ds3231",
+  "version": "1.0.0",
+  "description": "DS3231 RTC driver (UTC, Unix epoch, oscillator-stop detection, temperature) + pure date math.",
+  "dependencies": {
+    "Core": "*",
+    "I2cBus": "*"
+  },
+  "build": {
+    "flags": "-Wall -Wextra -Werror"
+  }
+}
