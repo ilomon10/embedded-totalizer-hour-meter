@@ -8,7 +8,7 @@
 // comes from the seeded RNG, so a run with the same --seed fails the same way.
 import type { DeviceOptions, SimDevice } from './device.ts';
 import type { FaultSettings } from './faults.ts';
-import { ResetReason } from './device.ts';
+import { LastCause, ResetReason, Stage } from './device.ts';
 import { Device } from './protocol.ts';
 
 export interface Scenario {
@@ -96,7 +96,8 @@ const SCENARIOS: Record<string, { help: string; make: Factory }> = {
     },
   },
   'reboot': {
-    help: 'reboot[=periodS]         watchdog reset every period (default 120) -> boot EVENT, resetReason 6',
+    help:
+      'reboot[=periodS]         watchdog reset every period (default 120) -> boot EVENT, resetReason 6, lastCause 1, lastStage 7',
     make: ([period]) => {
       const periodMs = num(period, 120, 'reboot period') * 1000;
       let next = periodMs;
@@ -105,10 +106,37 @@ const SCENARIOS: Record<string, { help: string; make: Factory }> = {
         tick: (nowMs, dev) => {
           if (nowMs < next) return;
           next = nowMs + periodMs;
-          dev.reset(ResetReason.taskWatchdog);
+          dev.reset(ResetReason.taskWatchdog, LastCause.watchdog, Stage.imu);
         },
       };
     },
+  },
+  'hang': {
+    help: 'hang[=afterS]            frozen MCU after afterS (default 30): sends nothing, ignores commands; ' +
+      'only the panic signal (64 zero bytes) or a restart from the web UI ends it',
+    make: ([after]) => {
+      const afterMs = num(after, 30, 'hang after') * 1000;
+      let done = false;
+      return {
+        label: `device freezes after ${afterMs / 1000} s`,
+        tick: (nowMs, dev) => {
+          if (done || nowMs < afterMs) return;
+          done = true;
+          dev.hang();
+        },
+      };
+    },
+  },
+  'safe-mode': {
+    help: 'safe-mode               boots as after 3 unplanned restarts: no I2C (devices 0, all *Missing flags + ' +
+      'safeMode), counting in RAM, no IMU stream; lastCause 1, lastStage 7; a power cycle, reboot or the panic signal leaves it',
+    make: () => ({
+      label: 'safe mode (no I2C)',
+      configure: (opts) => {
+        opts.safeMode = true;
+        opts.firstBoot = { reason: ResetReason.taskWatchdog, cause: LastCause.watchdog, stage: Stage.imu };
+      },
+    }),
   },
   'noise': {
     help: 'noise[=probability]      random junk bytes (zeros included) before some frames (default 0.2)',

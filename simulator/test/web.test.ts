@@ -38,6 +38,7 @@ Deno.test('control messages drive the device', () => {
   apply({ type: 'power', action: 'watchdog' });
   run(10);
   assertEquals(lastOf(MSG.EVENT)?.values.resetReason, 6);
+  assertEquals(lastOf(MSG.EVENT)?.values.lastCause, 1);
   assertEquals(applyClientMessage({ type: 'counters', runSeconds: -1 }, ctx), 'counters must be 0..4294967295');
 });
 

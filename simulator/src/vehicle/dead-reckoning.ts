@@ -94,7 +94,7 @@ export function readImuFrame(msg: Message): ImuReading | null {
     accel,
     gyro,
     rollDeg: v.roll !== undefined ? v.roll / 100 : Math.atan2(accel.y, accel.z) / DEG,
-    pitchDeg: v.pitch !== undefined ? v.pitch / 100 : Math.atan2(-accel.x, Math.hypot(accel.y, accel.z)) / DEG,
+    pitchDeg: v.pitch !== undefined ? v.pitch / 100 : Math.atan2(accel.x, Math.hypot(accel.y, accel.z)) / DEG,
     headingDeg: v.heading !== undefined ? v.heading / 100 : undefined,
   };
 }

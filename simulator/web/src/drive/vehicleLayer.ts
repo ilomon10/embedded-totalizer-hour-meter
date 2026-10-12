@@ -3,7 +3,7 @@
 // latitude, longitude and height, turned by its true heading, pitch and roll.
 //
 // Angles use the firmware's conventions: heading clockwise from north, pitch positive
-// = nose DOWN, roll positive = left side up. Model frame: x right, y forward, z up.
+// = nose UP, roll positive = left side up. Model frame: x right, y forward, z up.
 import maplibregl, { type CustomLayerInterface, type CustomRenderMethod, type Map as MapLibreMap } from 'maplibre-gl';
 import {
   AmbientLight,
@@ -84,9 +84,9 @@ export class VehicleLayer implements CustomLayerInterface {
     const exaggerate = Math.max(1, 40 / (8 * pxPerM));
     this.enlarged = exaggerate;
 
-    // ENU orientation: yaw (clockwise) -> pitch (nose down +) -> roll (left up +).
+    // ENU orientation: yaw (clockwise) -> pitch (nose up +) -> roll (left up +).
     this.body.quaternion.copy(
-      new Quaternion().setFromEuler(new Euler(-pose.pitchDeg * DEG, pose.rollDeg * DEG, -pose.headingDeg * DEG, 'ZXY')),
+      new Quaternion().setFromEuler(new Euler(pose.pitchDeg * DEG, pose.rollDeg * DEG, -pose.headingDeg * DEG, 'ZXY')),
     );
     this.body.scale.setScalar(exaggerate);
     // Mercator: x east, y SOUTH, z up, in mercator units: flip y and scale metres.

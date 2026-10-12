@@ -31,11 +31,14 @@ export function FaultsPanel({ state, send }: PanelProps) {
       <div className='flex flex-wrap gap-2 border-t border-slate-200 pt-3 dark:border-slate-800'>
         <Button onClick={() => send({ type: 'power', action: 'reboot' })}>Reboot</Button>
         <Button onClick={() => send({ type: 'power', action: 'watchdog' })}>Watchdog reset</Button>
+        <Button onClick={() => send({ type: 'power', action: 'panic' })}>Panic signal</Button>
+        <Button tone='danger' onClick={() => send({ type: 'power', action: 'hang' })}>Freeze</Button>
         <Button tone='danger' onClick={() => send({ type: 'power', action: 'power-cycle' })}>Power cycle</Button>
       </div>
       <p className='text-xs text-slate-500'>
-        Each sends a boot EVENT (resetReason 3, 6 or 1) and restarts seq at 0. A power cycle also loses the time when
-        the RTC has no battery.
+        Each restart sends a boot EVENT (resetReason 3, 6 or 1; lastCause 5, 1 or 0; panic signal: resetReason 3,
+        lastCause 4) and restarts seq at 0. A power cycle also loses the time when the RTC has no battery. Freeze stops
+        all output and ignores commands until the panic signal, a restart or a power cycle.
       </p>
     </Panel>
   );

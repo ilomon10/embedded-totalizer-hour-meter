@@ -1,6 +1,6 @@
 // ClockPanel.tsx: device time (UTC), RTC temperature and backup battery, reset reason.
 import { Panel, SliderField, Stat, Toggle } from '../controls.tsx';
-import { RESET_REASON, utc } from '../format.ts';
+import { LAST_CAUSE, LAST_STAGE, RESET_REASON, utc } from '../format.ts';
 import type { PanelProps } from './types.ts';
 
 export function ClockPanel({ state, send }: PanelProps) {
@@ -10,6 +10,8 @@ export function ClockPanel({ state, send }: PanelProps) {
       <Stat label='Device time (UTC)'>{status.timeValid ? utc(status.epoch) : 'unknown'}</Stat>
       <Stat label='Uptime'>{status.uptimeS} s</Stat>
       <Stat label='Reset reason'>{RESET_REASON[status.resetReason] ?? status.resetReason}</Stat>
+      <Stat label='Last cause'>{LAST_CAUSE[status.lastCause] ?? status.lastCause}</Stat>
+      <Stat label='Last stage'>{LAST_STAGE[status.lastStage] ?? status.lastStage}</Stat>
       <SliderField
         label='RTC temperature'
         value={values.rtc.tempC}

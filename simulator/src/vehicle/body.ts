@@ -2,8 +2,8 @@
 //
 // Board frame = vehicle frame (the board is mounted with x pointing forward):
 // x forward, y left, z up, right-handed. Angles follow the firmware's math
-// (Orientation.h): roll about x, left side up positive; pitch about y, right-handed,
-// so positive pitch is nose DOWN; heading = x axis clockwise from north.
+// (Orientation.h): roll about x, left side up positive; pitch positive nose up
+// (a right-handed rate about +y lowers the nose); heading = x axis clockwise from north.
 import type { Vec3 } from '../frames.ts';
 
 const DEG = Math.PI / 180;
@@ -36,7 +36,7 @@ export function axesOf(a: Attitude): Axes {
   const h = a.headingDeg * DEG;
   const p = a.pitchDeg * DEG;
   const r = a.rollDeg * DEG;
-  const forward: Vec3 = { x: Math.sin(h) * Math.cos(p), y: Math.cos(h) * Math.cos(p), z: -Math.sin(p) };
+  const forward: Vec3 = { x: Math.sin(h) * Math.cos(p), y: Math.cos(h) * Math.cos(p), z: Math.sin(p) };
   const left0: Vec3 = { x: -Math.cos(h), y: Math.sin(h), z: 0 }; // level, before roll
   const up0 = cross(forward, left0);
   return {

@@ -192,7 +192,7 @@ export class FirmwarePipeline {
     const accRoll = rollFromAccel(a);
     if (Math.abs(accRoll - this.rollKf.value()) > 180) this.rollKf.reset(accRoll); // crossed the ±180 seam
     const rollDeg = this.rollKf.update(accRoll, g.x, dtS);
-    const pitchDeg = this.pitchKf.update(pitchFromAccel(a), g.y, dtS);
+    const pitchDeg = this.pitchKf.update(pitchFromAccel(a), -g.y, dtS); // a +y rate lowers the nose (ImuPipeline.cpp)
     const m = vmul(vsub(sample.magUt, c.magOffsetUt), c.magScale);
     const magUt = smooth(this.magKf, m);
     const headingDeg = headingFromMag(magUt, upVector(rollDeg, pitchDeg));

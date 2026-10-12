@@ -5,9 +5,9 @@
 // checks the round trip.
 //
 // Board frame (MPU9250): right-handed, x forward, y left, z up. A board lying
-// flat reads +1 g on z. Roll: about x, left side up positive. Pitch: about y,
-// right-handed, so positive pitch is NOSE DOWN (that is what the firmware's
-// formula computes; its comment and INTEGRATION-GUIDE §5.3 say "nose up").
+// flat reads +1 g on z. Roll: about x, left side up positive. Pitch: nose up positive,
+// atan2(ax, hypot(ay, az)), so positive pitch is NOSE UP (firmware 2.4.0 fixed
+// the sign; 2.3.0 reported nose down).
 // Heading: the board's x axis, clockwise from magnetic north.
 import type { Vec3 } from './frames.ts';
 
@@ -31,7 +31,7 @@ const normalize = (a: Vec3): Vec3 => scale(a, 1 / Math.hypot(a.x, a.y, a.z));
 export function upVector(rollDeg: number, pitchDeg: number): Vec3 {
   const r = rollDeg * DEG;
   const p = pitchDeg * DEG;
-  return { x: -Math.sin(p), y: Math.cos(p) * Math.sin(r), z: Math.cos(p) * Math.cos(r) };
+  return { x: Math.sin(p), y: Math.cos(p) * Math.sin(r), z: Math.cos(p) * Math.cos(r) };
 }
 
 /** Firmware orientation::rollDeg / pitchDeg from a resting accelerometer. */
@@ -39,7 +39,7 @@ export function rollFromAccel(a: Vec3): number {
   return Math.atan2(a.y, a.z) / DEG;
 }
 export function pitchFromAccel(a: Vec3): number {
-  return Math.atan2(-a.x, Math.hypot(a.y, a.z)) / DEG;
+  return Math.atan2(a.x, Math.hypot(a.y, a.z)) / DEG;
 }
 
 /** Firmware compass::headingDeg: 0..360, clockwise from magnetic north. */

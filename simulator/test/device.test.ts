@@ -5,7 +5,7 @@ import { ResetReason } from '../src/device.ts';
 import { Ack, Device, Flag, MSG, RESET_MAGIC } from '../src/protocol.ts';
 import { command, makeDevice, tagsOf } from './helpers.ts';
 
-const BOOT_TAGS = [8, 1, 2, 3, 4, 5, 6, 7, 50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 241, 54];
+const BOOT_TAGS = [8, 1, 2, 3, 4, 5, 6, 7, 50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 62, 63, 241, 54];
 const TELEMETRY_TAGS = [1, 2, 3, 4, 5, 50, 53, 40, 41, 42, 43, 44];
 
 Deno.test('power-on sends the boot EVENT with the firmware record order', () => {
@@ -47,7 +47,7 @@ Deno.test('get=1..4 answers with the requested data in one ACK', () => {
   assertEquals(last().records.length, 2 + 19);
   assertEquals(last().values.btPin, 1234);
   device.onCommand(command(9, { get: 3 }));
-  assertEquals(tagsOf(last()).slice(2), [50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 241, 54]);
+  assertEquals(tagsOf(last()).slice(2), [50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 62, 63, 241, 54]);
   device.onCommand(command(10, { get: 4 }));
   assertEquals(last().records.length, 2 + 19);
 });
@@ -59,7 +59,7 @@ Deno.test('get=1..4 in one command: the last group is cut at 250 bytes, like the
   assertEquals(last().values.ackStatus, Ack.Ok);
   const tags = tagsOf(last());
   assert(tags.includes(54) && tags.includes(128), 'get=1..3 complete');
-  assertEquals(tags.filter((t) => t >= 130 && t <= 148).length, 9); // 21 + 39 + 78 + 55 = 193; 57 bytes left = 9 f32 records
+  assertEquals(tags.filter((t) => t >= 130 && t <= 148).length, 8); // 21 + 39 + 78 + 61 = 199; 51 bytes left = 8 f32 records
 });
 
 Deno.test('settings are all-or-nothing: one bad value rejects the whole command', () => {
@@ -146,6 +146,58 @@ Deno.test('reboot: ACK first, then a boot EVENT with resetReason 3 and seq resta
   run(100);
   const boot = sent.filter((s) => s.msg.msgType === MSG.EVENT).map((s) => s.msg)[1];
   assertEquals([boot.values.resetReason, boot.seq], [ResetReason.software, 0]);
+  assertEquals([boot.values.lastCause, boot.values.lastStage], [5, 8]);
+});
+
+Deno.test('panic signal: restarts at once with lastCause 4, keeps the counters, Bluetooth ignores it', () => {
+  const { device, run, sent } = makeDevice();
+  device.powerOn();
+  run(5000);
+  const before = device.hourMeter().runSeconds;
+  device.panicSignal();
+  const boots = sent.filter((s) => s.msg.msgType === MSG.EVENT).map((s) => s.msg);
+  assertEquals(boots.length, 2);
+  const v = boots[1].values;
+  assertEquals([v.resetReason, v.lastCause, v.lastStage, boots[1].seq], [3, 4, 8, 0]);
+  assertEquals(v.runSeconds, before);
+  const bt = makeDevice({ bluetoothSession: true });
+  bt.device.powerOn();
+  bt.device.panicSignal();
+  assertEquals(bt.sent.filter((s) => s.msg.msgType === MSG.EVENT).length, 1);
+});
+
+Deno.test('hang: silent and deaf until a restart', () => {
+  const { device, run, sent } = makeDevice();
+  device.powerOn();
+  device.hang();
+  const n = sent.length;
+  run(3000);
+  device.onCommand(command(1, { get: 3 }));
+  assertEquals(sent.length, n);
+  device.panicSignal();
+  assertEquals(sent.length, n + 1);
+});
+
+Deno.test('safe mode: no modules, safeMode flag, no IMU stream; a power cycle or the panic signal leaves it', () => {
+  const { device, run, sent } = makeDevice({
+    safeMode: true,
+    firstBoot: { reason: ResetReason.taskWatchdog, cause: 1, stage: 7 },
+  });
+  device.powerOn();
+  run(3000);
+  const boot = sent[0].msg.values;
+  assertEquals([boot.devices, boot.lastCause, boot.lastStage], [0, 1, 7]);
+  assertEquals((Number(boot.statusFlags) >>> 18) & 1, 1);
+  assertEquals(sent.some((s) => s.msg.msgType === MSG.IMU), false);
+  assertEquals(device.hourMeter().runSeconds > 0, true);
+  device.powerOn();
+  assertEquals(sent.filter((s) => s.msg.msgType === MSG.EVENT).pop()?.msg.values.devices, 15);
+
+  const second = makeDevice({ safeMode: true, firstBoot: { reason: ResetReason.taskWatchdog, cause: 1, stage: 7 } });
+  second.device.powerOn();
+  second.device.panicSignal(); // a restart someone asked for clears the restart count, like the firmware
+  const after = second.sent.filter((s) => s.msg.msgType === MSG.EVENT).pop()?.msg.values;
+  assertEquals([after?.devices, after?.lastCause, (Number(after?.statusFlags) >>> 18) & 1], [15, 4, 0]);
 });
 
 Deno.test('IMU calibration: calibrating flag, then EVENT kind 2 with the calibration values', () => {

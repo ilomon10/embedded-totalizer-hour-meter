@@ -26,7 +26,7 @@ export type { Inputs, Mode } from '../inputs.ts';
 export type { DeviceStatus, HourMeterSnapshot, Settings, Vec3 } from '../frames.ts';
 
 export type ModuleName = 'eeprom' | 'rtc' | 'imu' | 'mag';
-export type PowerAction = 'power-cycle' | 'watchdog' | 'reboot';
+export type PowerAction = 'power-cycle' | 'watchdog' | 'reboot' | 'panic' | 'hang';
 
 /** One line in the frame log. */
 export interface LogEntry {

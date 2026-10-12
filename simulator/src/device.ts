@@ -69,6 +69,25 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
 /** esp_reset_reason_t values the simulator uses (tag 58). */
 export const ResetReason = Object.freeze({ powerOn: 1, software: 3, taskWatchdog: 6 });
 
+/** Protocol.h LastCause (tag 62) and Stage (tag 63) values the simulator uses. */
+export const LastCause = Object.freeze({
+  none: 0,
+  watchdog: 1,
+  i2cStuck: 2,
+  usbStalled: 3,
+  panicSignal: 4,
+  rebootCommand: 5,
+  crash: 6,
+});
+export const Stage = Object.freeze({ unknown: 0, boot: 1, rtc: 6, imu: 7, serial: 8 });
+
+/** Why and where the previous run ended, reported by the next boot EVENT. */
+export interface RestartInfo {
+  reason: number;
+  cause: number;
+  stage: number;
+}
+
 const PRESENCE_PERIOD_MS = 2000;
 const LOST_AFTER_MISSES = 3;
 const DUPLICATE_WINDOW_MS = 10_000;
@@ -92,6 +111,10 @@ export interface DeviceOptions {
   btPin: number;
   /** Random source for sensor noise (seeded by main.ts). */
   random: () => number;
+  /** First boot after 3 unplanned restarts: no I2C at all, counting in RAM (safe-mode scenario). */
+  safeMode?: boolean;
+  /** What the first boot reports as the previous run's end (default: power-on, cause none). */
+  firstBoot?: RestartInfo;
 }
 
 /** Called for every frame the device sends. `periodic` frames obey `output` and the Bluetooth lock. */
@@ -111,6 +134,11 @@ export class SimDevice {
   private seq = 0;
   private bootMs = 0;
   private resetReason: number = ResetReason.powerOn;
+  private lastCause: number = LastCause.none;
+  private lastStage: number = Stage.unknown;
+  private safeMode = false;
+  private hung = false;
+  private booted = false;
   private bootFlags = 0;
   private devices = 0;
   private fitted: number;
@@ -160,21 +188,57 @@ export class SimDevice {
 
   /** Power applied: an RTC without battery has lost its time. */
   powerOn(): void {
-    this.boot(ResetReason.powerOn, true);
+    // The first boot may be a scenario's (safe mode, a watchdog restart); a later power cycle is a clean start.
+    const first = this.booted ? undefined : this.opts.firstBoot;
+    this.safeMode = !this.booted && this.opts.safeMode === true;
+    this.booted = true;
+    this.boot(first ?? { reason: ResetReason.powerOn, cause: LastCause.none, stage: Stage.unknown }, true);
   }
 
   /** Reset without a power cut (reboot command, watchdog, DTR on port open): the RTC keeps its time. */
-  reset(reason: number): void {
-    this.boot(reason, false);
+  reset(reason: number, cause: number = LastCause.none, stage: number = Stage.unknown): void {
+    this.boot({ reason, cause, stage }, false);
   }
 
-  private boot(reason: number, powerCut: boolean): void {
+  /**
+   * Restart the firmware does on purpose (Application::restart): counters are saved first, so none are lost.
+   * A restart someone asked for (reboot command, panic signal) clears the unplanned-restart count, so it also
+   * leaves safe mode (reset_history::nextConsecutive in Supervisor.h).
+   */
+  private restart(cause: number): void {
+    if (this.dirty) this.persist(this.clock.nowMs());
+    this.safeMode = false;
+    this.reset(ResetReason.software, cause, Stage.serial);
+  }
+
+  /**
+   * The panic signal (SerialLink: 64 zero bytes in a row on a wired port): restart now, no ACK.
+   * A Bluetooth session cannot send it. A frozen device honours it too (a real watchdog would reboot it anyway).
+   */
+  panicSignal(): void {
+    if (this.opts.bluetoothSession) return;
+    this.restart(LastCause.panicSignal);
+  }
+
+  /** Freeze the MCU: it sends nothing and ignores commands until a restart. */
+  hang(): void {
+    this.hung = true;
+  }
+
+  isHung(): boolean {
+    return this.hung;
+  }
+
+  private boot(info: RestartInfo, powerCut: boolean): void {
     const nowMs = this.clock.nowMs();
     this.bootMs = nowMs;
-    this.resetReason = reason;
+    this.resetReason = info.reason;
+    this.lastCause = info.cause;
+    this.lastStage = info.stage;
+    this.hung = false;
     this.seq = 0;
-    this.bootFlags = 0;
-    this.devices = this.fitted;
+    this.bootFlags = this.safeMode ? Flag.safeMode | Flag.settingsDefaults | Flag.journalEmpty : 0;
+    this.devices = this.safeMode ? 0 : this.fitted; // safe mode never touches I2C
     this.misses.clear();
     this.calib = null;
     this.rebootAtMs = null;
@@ -327,12 +391,13 @@ export class SimDevice {
   /** Run everything that is due. Call often (main.ts: every 10 ms). */
   poll(): void {
     const nowMs = this.clock.nowMs();
-    if (this.rebootAtMs !== null && nowMs >= this.rebootAtMs) return this.reset(ResetReason.software);
+    if (this.hung) return;
+    if (this.rebootAtMs !== null && nowMs >= this.rebootAtMs) return this.restart(LastCause.rebootCommand);
     this.vehicleSim?.advance(nowMs, this.settings, this.cal);
     this.current = this.computeInputs(nowMs);
     this.runInputs(nowMs);
     this.runCalibration(nowMs);
-    if (nowMs >= this.due.presence) this.runPresence(nowMs);
+    if (!this.safeMode && nowMs >= this.due.presence) this.runPresence(nowMs);
     if (nowMs >= this.due.stream) this.runStream(nowMs);
     if (nowMs >= this.due.telemetry) this.runTelemetry(nowMs);
   }
@@ -438,7 +503,7 @@ export class SimDevice {
 
   /** Handle one decoded frame from the host (main.ts splits the byte stream with FrameSplitter). */
   onCommand(cmd: DecodedMessage): void {
-    if (cmd.msgType !== MSG.COMMAND) return;
+    if (cmd.msgType !== MSG.COMMAND || this.hung) return;
     const nowMs = this.clock.nowMs();
     if (this.lastCmd && this.lastCmd.seq === cmd.seq && nowMs - this.lastCmd.atMs < DUPLICATE_WINDOW_MS) {
       return this.send(this.lastCmd.ack, this.lastCmd.msg, false); // a retry: replay the ACK, run nothing again
@@ -590,6 +655,8 @@ export class SimDevice {
       resetReason: this.resetReason,
       settingsSource: 1,
       btState: this.btState(),
+      lastCause: this.lastCause,
+      lastStage: this.lastStage,
       rtcTempValid: has(Device.rtc),
       rtcTempQuarterC: Math.max(-32768, Math.min(32767, Math.round(rtc.tempC * 4))), // x0.25 C
       flags: f >>> 0,

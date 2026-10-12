@@ -20,13 +20,13 @@ const Z = new Vector3(0, 0, 1);
 /**
  * Yaw, then pitch, then roll (intrinsic, like the firmware's aerospace angles):
  *   heading clockwise from above  = about +Y by -heading
- *   pitch: the firmware's math (Orientation.h, right-handed about device y) makes
- *          positive pitch NOSE DOWN: about +X by -pitch   (forward, -Z, dips toward -Y)
+ *   pitch: positive = nose up (Orientation.h, firmware 2.4.0):
+ *          about +X by +pitch   (forward, -Z, rises toward +Y)
  *   roll right side down (dev. x) = about +Z by -roll    (left side, -X, rises)
  */
 export function attitudeToQuaternion(a: Attitude, out = new Quaternion()): Quaternion {
   const yaw = new Quaternion().setFromAxisAngle(Y, -a.headingDeg * DEG);
-  const pitch = new Quaternion().setFromAxisAngle(X, -a.pitchDeg * DEG);
+  const pitch = new Quaternion().setFromAxisAngle(X, a.pitchDeg * DEG);
   const roll = new Quaternion().setFromAxisAngle(Z, -a.rollDeg * DEG);
   return out.copy(yaw).multiply(pitch).multiply(roll);
 }

@@ -1,5 +1,5 @@
 // main.ts: hour-meter device simulator. Speaks the real protocol (SensorFrame
-// v1, firmware 2.3.0) on a virtual serial port, so drivers can be written and
+// v1, firmware 2.4.0) on a virtual serial port, so drivers can be written and
 // tested without hardware.
 //
 //   deno task start                          # /tmp/ttyHourMeter via socat
@@ -28,7 +28,7 @@ import { StdioTransport } from './src/transport/stdio.ts';
 import { TcpTransport } from './src/transport/tcp.ts';
 
 /** Simulator release version (tags: simulator-v<version>). The protocol version is FIRMWARE_VERSION. */
-export const SIM_VERSION = '1.2.0';
+export const SIM_VERSION = '1.3.0';
 const POLL_MS = 10;
 const DEFAULT_WEB_PORT = 8080;
 
@@ -258,6 +258,12 @@ async function main(): Promise<void> {
     (err) => {
       log.info(`<- dropped a bad frame (${err.message})`);
       hub?.info('error', `dropped a bad frame from the host (${err.message})`);
+    },
+    () => {
+      if (cli.device.bluetoothSession) return log.info('<- panic signal ignored (Bluetooth session)');
+      log.info('<- panic signal: restarting');
+      hub?.info('error', 'panic signal received: device restarting');
+      device.panicSignal();
     },
   );
 

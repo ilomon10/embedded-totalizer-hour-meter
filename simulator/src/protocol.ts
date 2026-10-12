@@ -105,4 +105,4 @@ export const Flag = Object.freeze(
 /** devices mask bits (Protocol.h device_bit). */
 export const Device = Object.freeze({ eeprom: 0x01, rtc: 0x02, imu: 0x04, mag: 0x08 });
 
-export const FIRMWARE_VERSION = 0x00020300; // 2.3.0, Protocol.h kFirmwareVersion
+export const FIRMWARE_VERSION = 0x00020400; // 2.4.0, Protocol.h kFirmwareVersion

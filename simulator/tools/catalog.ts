@@ -43,6 +43,8 @@ const st: DeviceStatus = {
   resetReason: 1,
   settingsSource: 1,
   btState: 0,
+  lastCause: 0,
+  lastStage: 0,
   rtcTempValid: true,
   rtcTempQuarterC: 117, // 29.25 C
   flags: 0,

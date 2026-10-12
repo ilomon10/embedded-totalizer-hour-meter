@@ -5,7 +5,7 @@
 // It binds to 127.0.0.1 unless --web-host says otherwise. There is no login:
 // anyone who can reach the port can drive the simulated device.
 import { Device, type Message } from '../protocol.ts';
-import { ResetReason, type SimDevice } from '../device.ts';
+import { LastCause, ResetReason, type SimDevice, Stage } from '../device.ts';
 import type { Faults } from '../faults.ts';
 import { GROUPS } from '../inputs.ts';
 import { msgName, recordPairs } from '../log.ts';
@@ -74,7 +74,10 @@ export function applyClientMessage(msg: ClientMessage, ctx: WebContext): string 
       return null;
     case 'power':
       if (msg.action === 'power-cycle') device.powerOn();
-      else device.reset(msg.action === 'watchdog' ? ResetReason.taskWatchdog : ResetReason.software);
+      else if (msg.action === 'panic') device.panicSignal();
+      else if (msg.action === 'hang') device.hang();
+      else if (msg.action === 'watchdog') device.reset(ResetReason.taskWatchdog, LastCause.watchdog, Stage.imu);
+      else device.reset(ResetReason.software, LastCause.rebootCommand, Stage.serial);
       return null;
     case 'calibration':
       device.setCalibrationFlags(msg.flags & 3);

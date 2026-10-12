@@ -69,7 +69,7 @@ export function Inspector(
         />
         <AngleRow
           label='Pitch'
-          hint='drag up = nose up, which the firmware reports as negative'
+          hint='drag up = nose up = positive'
           value={attitude.pitchDeg}
           onCommit={(pitchDeg) => setAttitude({ ...attitude, pitchDeg })}
         />

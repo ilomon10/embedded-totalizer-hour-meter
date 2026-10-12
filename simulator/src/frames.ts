@@ -34,6 +34,8 @@ export interface DeviceStatus {
   resetReason: number;
   settingsSource: number;
   btState: number;
+  lastCause: number;
+  lastStage: number;
   rtcTempValid: boolean;
   rtcTempQuarterC: number;
   flags: number;
@@ -123,6 +125,8 @@ export function appendStatus(out: Rec[], st: DeviceStatus, full: boolean): void 
     rec('resetReason', st.resetReason),
     rec('settingsSource', st.settingsSource),
     rec('btState', st.btState),
+    rec('lastCause', st.lastCause),
+    rec('lastStage', st.lastStage),
     rec('fwVersion', FIRMWARE_VERSION),
   );
   if (st.rtcTempValid) out.push(rec('rtcTemp', st.rtcTempQuarterC));

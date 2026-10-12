@@ -403,8 +403,7 @@ export function DriveInspector(p: InspectorProps) {
           </dl>
           <p className='text-xs text-slate-500'>
             Roll and pitch come from the firmware's own filter, ported to the simulator: in turns and while braking they
-            differ from the truth exactly as on the real device. Pitch is positive nose down, as the firmware computes
-            it.
+            differ from the truth exactly as on the real device. Pitch is positive nose up.
           </p>
         </Section>
       )}

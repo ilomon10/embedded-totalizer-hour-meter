@@ -73,7 +73,7 @@ export function initialState(headingDeg: number, altM = 0, speed = 0): VehicleSt
 /**
  * Truck: kinematic bicycle model. Heading rate = v / L * tan(steer angle).
  * Body roll leans out of turns, pitch squats when accelerating and dives when
- * braking (firmware sign: nose down = positive pitch).
+ * braking (positive pitch = nose up, firmware 2.4.0).
  */
 export class Truck implements Vehicle {
   readonly kind = 'truck';
@@ -118,7 +118,7 @@ export class Truck implements Vehicle {
     // Suspension: about 1.2° of body roll per m/s² of lateral accel, 0.6° pitch per m/s² of braking/accel.
     // (capped: a loaded truck leans a few degrees at most before its springs bottom out)
     s.rollDeg = lag(s.rollDeg, clamp(-1.2 * this.aLat, -6, 6), 0.35); // right turn -> leans left -> negative
-    s.pitchDeg = lag(s.pitchDeg, clamp(-0.6 * this.aLong, -4, 4), 0.3); // braking (a < 0) -> nose dives -> positive
+    s.pitchDeg = lag(s.pitchDeg, clamp(0.6 * this.aLong, -4, 4), 0.3); // braking (a < 0) -> nose dives -> negative
   }
 
   vibrationMg(): number {
@@ -170,7 +170,7 @@ export class Plane implements Vehicle {
     s.n += s.vn * STEP_S;
     s.u = Math.max(0, s.u + s.vu * STEP_S);
     s.rollDeg = this.bankDeg; // right wing down = left side up = positive roll
-    s.pitchDeg = -(this.gammaDeg + Plane.AOA_DEG); // nose up = negative (firmware sign)
+    s.pitchDeg = this.gammaDeg + Plane.AOA_DEG; // nose up = positive
   }
 
   vibrationMg(): number {

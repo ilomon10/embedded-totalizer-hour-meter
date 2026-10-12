@@ -2,7 +2,7 @@
 // tag table (configurator/src/tags.ts), the same file the device tools use.
 import { decodeStatusFlags } from '../../../configurator/src/tags.ts';
 
-export { BT_STATE, SETTINGS, STATUS_FLAGS } from '../../../configurator/src/tags.ts';
+export { BT_STATE, LAST_CAUSE, LAST_STAGE, SETTINGS, STATUS_FLAGS } from '../../../configurator/src/tags.ts';
 
 export const MODULES = [
   { name: 'eeprom', label: 'EEPROM', bit: 0x01, note: 'AT24C256 · counters, settings' },

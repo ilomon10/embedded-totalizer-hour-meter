@@ -35,6 +35,8 @@ const status: DeviceStatus = {
   resetReason: 0,
   settingsSource: 0,
   btState: 0,
+  lastCause: 0,
+  lastStage: 0,
   rtcTempValid: false,
   rtcTempQuarterC: 0,
   flags: 0,
