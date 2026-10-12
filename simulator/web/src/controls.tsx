@@ -89,9 +89,9 @@ export function NumberField(
   );
 }
 
-/** Slider + exact number for one value. Every change is sent at once. */
+/** Slider + exact number for one value. Every change is sent at once. `stacked` puts the slider on its own row. */
 export function SliderField(
-  { label, value, min, max, step, unit, digits = 2, onChange }: {
+  { label, value, min, max, step, unit, digits = 2, onChange, stacked = false }: {
     label: string;
     value: number;
     min: number;
@@ -100,24 +100,43 @@ export function SliderField(
     unit?: string;
     digits?: number;
     onChange: (v: number) => void;
+    stacked?: boolean;
   },
 ) {
+  const slider = (
+    <input
+      type='range'
+      aria-label={`${label} slider`}
+      min={min}
+      max={max}
+      step={step}
+      value={Math.min(max, Math.max(min, value))}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className='w-full min-w-0 accent-sky-600'
+    />
+  );
+  const number = (
+    <span className='flex items-center gap-1'>
+      <NumberField label={label} value={round(value, digits)} step={step} onCommit={onChange} />
+      <span className='w-8 text-xs text-slate-500 sm:w-10'>{unit}</span>
+    </span>
+  );
+  if (stacked) {
+    return (
+      <div className='space-y-1.5 text-sm'>
+        <div className='flex items-center justify-between gap-3'>
+          <span className='text-slate-600 dark:text-slate-400'>{label}</span>
+          {number}
+        </div>
+        {slider}
+      </div>
+    );
+  }
   return (
     <label className='grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 text-sm sm:grid-cols-[7rem_minmax(0,1fr)_auto] sm:gap-3'>
       <span className='text-slate-600 dark:text-slate-400'>{label}</span>
-      <input
-        type='range'
-        min={min}
-        max={max}
-        step={step}
-        value={Math.min(max, Math.max(min, value))}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className='w-full min-w-0 accent-sky-600'
-      />
-      <span className='flex items-center gap-1'>
-        <NumberField label={label} value={round(value, digits)} step={step} onCommit={onChange} />
-        <span className='w-8 text-xs text-slate-500 sm:w-10'>{unit}</span>
-      </span>
+      {slider}
+      {number}
     </label>
   );
 }

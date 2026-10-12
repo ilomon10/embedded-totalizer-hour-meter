@@ -9,7 +9,12 @@
     "vite": "npm:vite@^6",
     "@vitejs/plugin-react": "npm:@vitejs/plugin-react@^4",
     "tailwindcss": "npm:tailwindcss@^4",
-    "@tailwindcss/vite": "npm:@tailwindcss/vite@^4"
+    "@tailwindcss/vite": "npm:@tailwindcss/vite@^4",
+    "three": "npm:three@0.186.1",
+    "@types/three": "npm:@types/three@0.186.0",
+    "@react-three/fiber": "npm:@react-three/fiber@9.8.1",
+    "@react-three/drei": "npm:@react-three/drei@10.7.9",
+    "@fontsource-variable/ibm-plex-sans": "npm:@fontsource-variable/ibm-plex-sans@5.3.0"
   },
   "tasks": {
     "start": "deno run --allow-read --allow-run=socat --allow-net main.ts",

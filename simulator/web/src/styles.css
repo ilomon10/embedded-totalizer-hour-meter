@@ -1,1 +1,57 @@
+@import '@fontsource-variable/ibm-plex-sans';
 @import 'tailwindcss';
+
+@theme {
+  --font-sans: 'IBM Plex Sans Variable', ui-sans-serif, system-ui, sans-serif;
+
+  /* The board: solder mask, ENIG pads, and the safety orange that marks "forward". */
+  --color-pcb: #1e6b47;
+  --color-enig: #c8a04a;
+  --color-signal: #ee6a1f;
+
+  /* Strong curves (Emil Kowalski): built-in ease-out is too weak for UI. */
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Pressable things answer the press. */
+button {
+  transition: transform 140ms var(--ease-out-strong);
+}
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Route change: a short fade, never movement (it happens often enough to stay quiet). */
+.route-enter {
+  animation: route-fade 180ms var(--ease-out-strong);
+}
+@keyframes route-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Collapsible block (vibration settings): grid rows are the one sanctioned height animation. */
+.reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 220ms var(--ease-out-strong), opacity 160ms var(--ease-out-strong);
+}
+.reveal[data-open='true'] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.reveal > * {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:active:not(:disabled) {
+    transform: none;
+  }
+  .reveal {
+    transition: opacity 160ms ease;
+  }
+}

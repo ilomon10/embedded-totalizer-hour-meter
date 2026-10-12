@@ -107,3 +107,20 @@ Deno.test('faults change live: corrupt every frame, then none', () => {
   faults.set({ noise: 0 });
   assertEquals(faults.mangle(frame), frame);
 });
+
+Deno.test('the IMU stream agrees with a manual attitude (firmware formulas decode it back)', async () => {
+  const { headingFromMag, pitchFromAccel, rollFromAccel } = await import('../src/attitude.ts');
+  const { device, run, lastOf } = makeDevice();
+  device.powerOn();
+  device.setInput('motion', { rollDeg: 25, pitchDeg: -10, headingDeg: 120 });
+  device.setInput('vibration', { rmsMg: 0, peakMg: 0 });
+  run(200);
+  const imu = lastOf(MSG.IMU);
+  assert(imu);
+  const v = imu.values as Record<string, number>; // scaled: g, uT
+  const accel = { x: v.accelX, y: v.accelY, z: v.accelZ };
+  const mag = { x: v.magX, y: v.magY, z: v.magZ };
+  assert(Math.abs(rollFromAccel(accel) - 25) < 1, `roll ${rollFromAccel(accel)}`);
+  assert(Math.abs(pitchFromAccel(accel) + 10) < 1, `pitch ${pitchFromAccel(accel)}`);
+  assert(Math.abs(headingFromMag(mag, accel) - 120) < 2, `heading ${headingFromMag(mag, accel)}`);
+});

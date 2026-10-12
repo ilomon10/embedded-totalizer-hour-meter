@@ -4,6 +4,7 @@
 // tilt, engine vibration, sensor noise) or `manual` (held at a value set from the
 // web UI). Pure functions only: device.ts asks effectiveInputs() for the values
 // of the moment and turns them into frames exactly like the firmware would.
+import { sensorVectors } from './attitude.ts';
 import type { Vec3 } from './frames.ts';
 
 export type Mode = 'auto' | 'manual';
@@ -108,44 +109,57 @@ function jitter(v: Vec3, n: (s: number) => number, scale: number): Vec3 {
   return { x: v.x + n(scale), y: v.y + n(scale), z: v.z + n(scale) };
 }
 
-/** The built-in animation (what the simulator always did before the web UI). */
-export function autoValues(ctx: AutoContext): InputValues {
+/** The built-in animation: engine cycle, a gentle tilt, a slow turn, engine vibration. */
+export function autoValues(ctx: AutoContext): Omit<InputValues, 'imu'> {
   const { t, engineOn, random } = ctx;
-  const n = (scale: number) => (random() - 0.5) * scale;
-  const shake = engineOn ? 0.04 : 0.003;
-  const accelG: Vec3 = { x: n(shake), y: n(shake), z: 1 + n(shake) };
-  const gyroDps: Vec3 = { x: n(0.3), y: n(0.3), z: n(0.3) };
-  const magUt: Vec3 = { x: 30 + n(0.5), y: -5 + n(0.5), z: -40 + n(0.5) };
   const rmsMg = engineOn ? 35 + random() * 8 : 2 + random();
   return {
     engine: { running: engineOn },
     pulses: { perSecond: ctx.pulsesPerSecond },
     motion: { rollDeg: 1.5 + Math.sin(t / 7), pitchDeg: -0.8 + Math.cos(t / 9), headingDeg: (t * 3) % 360 },
     vibration: { rmsMg, peakMg: rmsMg * 2.8 },
-    imu: {
-      accelG,
-      gyroDps,
-      magUt,
-      rawAccelG: jitter(accelG, n, 0.05),
-      rawGyroDps: jitter(gyroDps, n, 2),
-      rawMagUt: jitter(magUt, n, 3),
-    },
     rtc: { tempC: 29.25, battery: ctx.rtcBattery },
     errors: { i2cErrors: 0, overruns: 0 },
     flags: { imuStuck: false, imuSaturated: false, storageError: false, eepromFormatted: false },
   };
 }
 
+/**
+ * Auto IMU readings that agree with the orientation and vibration of the moment:
+ * gravity and the earth's field rotated into the board frame (attitude.ts),
+ * plus shake that grows with the vibration level, plus sensor noise on raw.
+ */
+export function autoImu(motion: MotionInput, vibration: VibrationInput, random: () => number): ImuInput {
+  const n = (scale: number) => (random() - 0.5) * scale;
+  const { accelG: gravity, magUt: field } = sensorVectors(motion.rollDeg, motion.pitchDeg, motion.headingDeg);
+  const shakeG = 0.003 + (Math.max(0, vibration.rmsMg) / 1000) * 2; // ±rms spread, in g
+  const accelG = jitter(gravity, n, shakeG);
+  const gyroDps: Vec3 = { x: n(0.3), y: n(0.3), z: n(0.3) };
+  const magUt = jitter(field, n, 0.5);
+  return {
+    accelG,
+    gyroDps,
+    magUt,
+    rawAccelG: jitter(accelG, n, 0.05),
+    rawGyroDps: jitter(gyroDps, n, 2),
+    rawMagUt: jitter(magUt, n, 3),
+  };
+}
+
 /** Manual groups hold their value; auto groups take this moment's animation. */
 export function effectiveInputs(inputs: Inputs, ctx: AutoContext): InputValues {
   const auto = autoValues(ctx);
-  const pick = <G extends Group>(g: G): InputValues[G] => (inputs.modes[g] === 'manual' ? inputs.manual[g] : auto[g]);
+  type AutoGroup = Exclude<Group, 'imu'>;
+  const pick = <G extends AutoGroup>(g: G): Omit<InputValues, 'imu'>[G] =>
+    inputs.modes[g] === 'manual' ? inputs.manual[g] : auto[g];
+  const motion = pick('motion');
+  const vibration = pick('vibration');
   return {
     engine: pick('engine'),
     pulses: pick('pulses'),
-    motion: pick('motion'),
-    vibration: pick('vibration'),
-    imu: pick('imu'),
+    motion,
+    vibration,
+    imu: inputs.modes.imu === 'manual' ? inputs.manual.imu : autoImu(motion, vibration, ctx.random),
     rtc: pick('rtc'),
     errors: pick('errors'),
     flags: pick('flags'),
