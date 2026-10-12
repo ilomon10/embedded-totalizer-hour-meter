@@ -40,10 +40,11 @@ import {
   setManual,
   setVehicleModes,
 } from './inputs.ts';
+import { RunConfirm } from './run-confirm.ts';
 import type { VehicleSim } from './vehicle/sim.ts';
 import { Ack, codec, type DecodedMessage, Device, Flag, frameBytes, type Message, MSG } from './protocol.ts';
 
-/** Factory defaults, esp32/lib/Storage/src/Settings.cpp (tag order 110..128). */
+/** Factory defaults, esp32/lib/Storage/src/Settings.cpp (tag order 110..129). */
 export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
   telemetryIntervalMs: 1000,
   imuSampleHz: 100,
@@ -64,6 +65,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
   kalmanQMag: Math.fround(0.05),
   bluetooth: false,
   btPin: 1234,
+  runVibMinMg: 0,
 });
 
 /** esp_reset_reason_t values the simulator uses (tag 58). */
@@ -155,6 +157,8 @@ export class SimDevice {
   private lastPersistMs = 0;
   private lastInputMs = 0;
   private engineOn = true;
+  private vibrationMg: readonly [number, number] | null = null;
+  private runConfirm = new RunConfirm();
   private rtcHasTime: boolean;
   private time: TimeState = { valid: false, epochAtSync: 0, syncMs: 0, backedUp: false };
   private settingsNotSaved = false;
@@ -248,6 +252,8 @@ export class SimDevice {
     this.bootTime(nowMs, powerCut);
     this.bootCounters(nowMs);
     this.imuSinceMs = nowMs;
+    this.runConfirm = new RunConfirm();
+    this.runConfirm.update((this.devices & Device.imu) !== 0, false, 0, Number(this.settings.runVibMinMg));
     this.lastInputMs = nowMs;
     this.due = { telemetry: nowMs + this.telemetryPeriodMs(), stream: nowMs + this.streamPeriodMs(), presence: nowMs };
     this.emit(buildBootEvent(this.hourMeter(), this.status()), true);
@@ -295,6 +301,11 @@ export class SimDevice {
   /** Engine state for auto mode (--engine, engine-cycle scenario). A manual engine ignores it. */
   setEngine(on: boolean): void {
     this.engineOn = on;
+  }
+
+  /** Auto vibration RMS range in mg, independent of the engine input (acc-wire scenario); null: follows it. */
+  setVibrationRange(range: readonly [number, number] | null): void {
+    this.vibrationMg = range;
   }
 
   engineRunning(): boolean {
@@ -350,6 +361,7 @@ export class SimDevice {
     return effectiveInputs(this.inputState, {
       t: (nowMs - this.bootMs) / 1000,
       engineOn: this.engineOn,
+      vibrationMg: this.vibrationMg,
       pulsesPerSecond: this.opts.pulsesPerSecond,
       rtcBattery: this.opts.rtcBattery,
       random: this.opts.random,
@@ -405,7 +417,13 @@ export class SimDevice {
   private runInputs(nowMs: number): void {
     const elapsedMs = nowMs - this.lastInputMs;
     this.lastInputMs = nowMs;
-    if (this.current.engine.running && elapsedMs > 0) {
+    const confirmed = this.runConfirm.update(
+      (this.devices & Device.imu) !== 0,
+      this.hasVibration(nowMs),
+      this.current.vibration.rmsMg,
+      Number(this.settings.runVibMinMg),
+    );
+    if (this.current.engine.running && confirmed && elapsedMs > 0) {
       this.runMsRemainder += elapsedMs;
       const whole = Math.floor(this.runMsRemainder / 1000);
       this.runSeconds = (this.runSeconds + whole) >>> 0;
@@ -473,7 +491,7 @@ export class SimDevice {
   private runTelemetry(nowMs: number): void {
     this.due.telemetry = nowMs + this.telemetryPeriodMs();
     const imu = (this.devices & Device.imu) !== 0 ? this.imuOutput() : null;
-    const vib = imu && nowMs - this.imuSinceMs >= Number(this.settings.vibrationWindowMs) ? this.vibration() : null;
+    const vib = imu && this.hasVibration(nowMs) ? this.vibration() : null;
     this.emit(buildTelemetry(this.hourMeter(), this.status(), imu, vib), true);
   }
 
@@ -617,7 +635,8 @@ export class SimDevice {
     return {
       runSeconds: this.runSeconds,
       totalCount: this.totalCount,
-      running: this.current.engine.running,
+      running: this.current.engine.running && this.runConfirm.confirmed(),
+      inputActive: this.current.engine.running,
       pulsesPerUnit: Number(this.settings.pulsesPerUnit),
       lastSavedEpoch: this.lastSavedEpoch,
       journalSeq: this.journalSeq,
@@ -692,6 +711,11 @@ export class SimDevice {
       headingValid: hasMag,
       hasMag,
     };
+  }
+
+  /** A vibration window has completed since the IMU appeared (firmware pipeline.hasVibration()). */
+  private hasVibration(nowMs: number): boolean {
+    return (this.devices & Device.imu) !== 0 && nowMs - this.imuSinceMs >= Number(this.settings.vibrationWindowMs);
   }
 
   private vibration(): VibrationLevel {

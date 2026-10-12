@@ -61,6 +61,20 @@ const SCENARIOS: Record<string, { help: string; make: Factory }> = {
       };
     },
   },
+  'acc-wire': {
+    help:
+      'acc-wire                 engine input wired to the key (ON from the start) but the engine runs only 20-80 s of ' +
+      'each 120 s, vibration 8-12 mg off / 40-80 mg on: run hours grow all the time until hour-meter set runVibMinMg=30',
+    make: () => ({
+      label: 'engine input on with the key; engine runs 20-80 s of every 120 s',
+      tick: (nowMs, dev) => {
+        const t = nowMs % 120_000;
+        const running = t >= 20_000 && t < 80_000;
+        dev.setEngine(true); // the key is on
+        dev.setVibrationRange(running ? [40, 80] : [8, 12]);
+      },
+    }),
+  },
   'no-rtc-battery': {
     help: 'no-rtc-battery           RTC lost its time at power-on: timeValid=false, rtcBatteryLost until setTime',
     make: () => ({ label: 'RTC without battery', configure: (opts) => void (opts.rtcBattery = false) }),

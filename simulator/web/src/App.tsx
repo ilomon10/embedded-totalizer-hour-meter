@@ -41,7 +41,7 @@ function Header({ sim, route, navigate }: { sim: Simulator; route: Route; naviga
       <div className='flex min-h-16 flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 text-sm'>
         <h1 className='text-base font-semibold'>
           Hour Meter Simulator
-          {s && <span className='ml-2 font-normal text-slate-500'>v{s.version}, firmware 2.4.0 protocol</span>}
+          {s && <span className='ml-2 font-normal text-slate-500'>v{s.version}, firmware 2.5.0 protocol</span>}
         </h1>
         <nav aria-label='Pages' className='flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800'>
           {TABS.map((t) => (

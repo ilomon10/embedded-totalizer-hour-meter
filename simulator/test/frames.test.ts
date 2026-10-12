@@ -46,6 +46,7 @@ const hourMeter: HourMeterSnapshot = {
   totalCount: 15000,
   pulsesPerUnit: 100,
   running: true,
+  inputActive: true,
   lastSavedEpoch: 1791376440,
   journalSeq: 812,
 };

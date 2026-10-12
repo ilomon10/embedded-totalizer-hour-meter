@@ -75,6 +75,8 @@ export interface AutoContext {
   t: number;
   /** Engine state from --engine or the engine-cycle scenario. */
   engineOn: boolean;
+  /** Scenario override of the auto vibration RMS range [lo, hi] mg (acc-wire); null: follows engineOn. */
+  vibrationMg: readonly [number, number] | null;
   pulsesPerSecond: number;
   rtcBattery: boolean;
   random: () => number;
@@ -113,7 +115,8 @@ function jitter(v: Vec3, n: (s: number) => number, scale: number): Vec3 {
 /** The built-in animation: engine cycle, a gentle tilt, a slow turn, engine vibration. */
 export function autoValues(ctx: AutoContext): Omit<InputValues, 'imu'> {
   const { t, engineOn, random } = ctx;
-  const rmsMg = engineOn ? 35 + random() * 8 : 2 + random();
+  const [lo, hi] = ctx.vibrationMg ?? (engineOn ? [35, 43] : [2, 3]);
+  const rmsMg = lo + random() * (hi - lo);
   return {
     engine: { running: engineOn },
     pulses: { perSecond: ctx.pulsesPerSecond },

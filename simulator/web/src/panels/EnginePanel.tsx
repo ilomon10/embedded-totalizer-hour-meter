@@ -14,7 +14,7 @@ export function EnginePanel({ state, send }: PanelProps) {
     >
       <Toggle
         label='Engine running'
-        note='Alternator input. Run hours only count while it is on.'
+        note='Engine-running input (altInput). Run hours count while it is on and, with runVibMinMg, the vibration confirms it.'
         checked={values.engine.running}
         onChange={(running) => send({ type: 'set', group: 'engine', patch: { running } })}
       />
@@ -65,6 +65,7 @@ export function EnginePanel({ state, send }: PanelProps) {
             <span className='w-10 text-xs text-slate-500'>pulses</span>
           </span>
         </div>
+        <Stat label='Counting (alternator)'>{hourMeter.running ? 'yes' : 'no'}</Stat>
         <Stat label='Run seconds'>{hourMeter.runSeconds}</Stat>
         <Stat label='Units'>{units.toFixed(2)} (÷ {hourMeter.pulsesPerUnit})</Stat>
         <Stat label='Last EEPROM save'>#{hourMeter.journalSeq}</Stat>

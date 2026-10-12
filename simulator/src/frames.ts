@@ -17,7 +17,10 @@ export interface Vec3 {
 export interface HourMeterSnapshot {
   runSeconds: number;
   totalCount: number;
+  /** Run time is counting: the input is active AND the vibration confirms it (tag 3 alternator). */
   running: boolean;
+  /** The raw engine-running input (tag 10 altInput). */
+  inputActive: boolean;
   pulsesPerUnit: number;
   lastSavedEpoch: number;
   journalSeq: number;
@@ -107,6 +110,7 @@ export function appendHourMeter(out: Rec[], hm: HourMeterSnapshot, withPersistIn
     rec('runSeconds', hm.runSeconds),
     rec('totalCount', hm.totalCount),
     rec('alternator', hm.running),
+    rec('altInput', hm.inputActive),
     rec('runHours', Math.floor(hm.runSeconds / 36)), // x0.01 h
     rec('totalUnits', Number((BigInt(hm.totalCount) * 100n) / BigInt(ppu))), // x0.01 unit
   );
@@ -209,7 +213,7 @@ export function buildAck(st: DeviceStatus, cmdSeq: number, status: number, rejec
   return { msgType: MSG.ACK, timestamp: headerTimestamp(st), records };
 }
 
-/** All settings in tag order (110..128) with the firmware's wire types. */
+/** All settings in tag order (110..129) with the firmware's wire types. */
 export function appendSettings(out: Rec[], s: Settings): void {
   for (const name of Object.keys(SETTINGS)) {
     const value = s[name];

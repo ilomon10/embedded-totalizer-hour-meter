@@ -3,10 +3,11 @@
 import { assert, assertEquals } from './assert.ts';
 import { ResetReason } from '../src/device.ts';
 import { Ack, Device, Flag, MSG, RESET_MAGIC } from '../src/protocol.ts';
+import { parseScenario } from '../src/scenarios.ts';
 import { command, makeDevice, tagsOf } from './helpers.ts';
 
-const BOOT_TAGS = [8, 1, 2, 3, 4, 5, 6, 7, 50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 62, 63, 241, 54];
-const TELEMETRY_TAGS = [1, 2, 3, 4, 5, 50, 53, 40, 41, 42, 43, 44];
+const BOOT_TAGS = [8, 1, 2, 3, 10, 4, 5, 6, 7, 50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 62, 63, 241, 54];
+const TELEMETRY_TAGS = [1, 2, 3, 10, 4, 5, 50, 53, 40, 41, 42, 43, 44];
 
 Deno.test('power-on sends the boot EVENT with the firmware record order', () => {
   const { device, last } = makeDevice();
@@ -41,10 +42,10 @@ Deno.test('get=1..4 answers with the requested data in one ACK', () => {
   const { device, last } = makeDevice();
   device.powerOn();
   device.onCommand(command(7, { get: 1 }));
-  assertEquals(tagsOf(last()), [242, 243, 1, 2, 3, 4, 5, 6, 7]);
+  assertEquals(tagsOf(last()), [242, 243, 1, 2, 3, 10, 4, 5, 6, 7]);
   assertEquals(last().values.ackSeq, 7);
   device.onCommand(command(8, { get: 2 }));
-  assertEquals(last().records.length, 2 + 19);
+  assertEquals(last().records.length, 2 + 20);
   assertEquals(last().values.btPin, 1234);
   device.onCommand(command(9, { get: 3 }));
   assertEquals(tagsOf(last()).slice(2), [50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 62, 63, 241, 54]);
@@ -58,8 +59,8 @@ Deno.test('get=1..4 in one command: the last group is cut at 250 bytes, like the
   device.onCommand(command(11, { get: 1 }, [2, 3, 4].map((v) => ({ tag: 101, fmt: 'u8', value: v }))));
   assertEquals(last().values.ackStatus, Ack.Ok);
   const tags = tagsOf(last());
-  assert(tags.includes(54) && tags.includes(128), 'get=1..3 complete');
-  assertEquals(tags.filter((t) => t >= 130 && t <= 148).length, 8); // 21 + 39 + 78 + 61 = 199; 51 bytes left = 8 f32 records
+  assert(tags.includes(54) && tags.includes(129), 'get=1..3 complete');
+  assertEquals(tags.filter((t) => t >= 130 && t <= 148).length, 7); // 21 + 42 + 82 + 55 = 200; 50 bytes left = 7 f32 records of get=4
 });
 
 Deno.test('settings are all-or-nothing: one bad value rejects the whole command', () => {
@@ -225,7 +226,7 @@ Deno.test('unplugged IMU is lost after 3 presence checks: EVENT kind 3, no IMU r
   assertEquals(event.values.eventKind, 3);
   assertEquals(event.values.devices, Device.eeprom | Device.rtc);
   run(1000);
-  assertEquals(tagsOf(lastOf(MSG.TELEMETRY) as never), [1, 2, 3, 4, 5, 50, 53]);
+  assertEquals(tagsOf(lastOf(MSG.TELEMETRY) as never), [1, 2, 3, 10, 4, 5, 50, 53]);
 });
 
 Deno.test('a replugged IMU brings its magnetometer back: EVENT kind 3 with all modules', () => {
@@ -259,4 +260,54 @@ Deno.test('output=uart stops periodic data on the simulated USB port', () => {
   assertEquals(device.liveDataAllowed(), true);
   device.onCommand(command(1, { output: 2 }));
   assertEquals(device.liveDataAllowed(), false);
+});
+
+Deno.test('settings ACK lists runVibMinMg (129), default 0, validated 0..2000', () => {
+  const { device, last } = makeDevice();
+  device.powerOn();
+  device.onCommand(command(1, { get: 2 }));
+  assertEquals(last().values.runVibMinMg, 0);
+  assertEquals(tagsOf(last()).at(-1), 129);
+  device.onCommand(command(2, { runVibMinMg: 2001 }));
+  assertEquals(last().values.ackStatus, Ack.InvalidValue);
+  assertEquals(last().values.rejectedTag, 129);
+  device.onCommand(command(3, { runVibMinMg: 30 }));
+  assertEquals(last().values.ackStatus, Ack.Ok);
+  device.onCommand(command(4, { get: 2 }));
+  assertEquals(last().values.runVibMinMg, 30);
+});
+
+/** acc-wire: run seconds after 3 cycles of 120 s, and TELEMETRY (altInput, alternator) in the off phase. */
+function accWire(runVibMinMg: number) {
+  const { device, run, lastOf, clock } = makeDevice({ runSeconds: 0, random: () => 0.5 });
+  const scenario = parseScenario('acc-wire', () => 0.5);
+  device.powerOn();
+  if (runVibMinMg) device.onCommand(command(1, { runVibMinMg }));
+  const samples: { t: number; altInput: unknown; alternator: unknown }[] = [];
+  for (let ms = 0; ms < 360_000; ms += 10) {
+    scenario.tick!(clock.nowMs(), device);
+    run(10);
+    if (ms % 10_000 === 5_000) {
+      const t = lastOf(MSG.TELEMETRY)!;
+      samples.push({ t: ms / 1000, altInput: t.values.altInput, alternator: t.values.alternator });
+    }
+  }
+  return { runSeconds: device.hourMeter().runSeconds, samples };
+}
+
+Deno.test('acc-wire without runVibMinMg: run hours grow the whole time the key is on (the bug)', () => {
+  const r = accWire(0);
+  assert(r.runSeconds >= 355 && r.runSeconds <= 360, `runSeconds ${r.runSeconds}`);
+  assert(r.samples.every((s) => s.alternator === true && s.altInput === true));
+});
+
+Deno.test('acc-wire with runVibMinMg=30: run hours grow only while the engine runs', () => {
+  const r = accWire(30);
+  // 3 cycles x 60 s of engine, minus the first vibration window; confirmation lags by one telemetry-free poll.
+  assert(r.runSeconds >= 175 && r.runSeconds <= 182, `runSeconds ${r.runSeconds}`);
+  const off = r.samples.filter((s) => s.t % 120 < 15 || s.t % 120 > 85);
+  assert(off.length > 0 && off.every((s) => s.altInput === true && s.alternator === false));
+  const on = r.samples.filter((s) => s.t % 120 > 25 && s.t % 120 < 75);
+  assert(on.every((s) => s.alternator === true));
+  console.log(`acc-wire: without ${accWire(0).runSeconds} s, with runVibMinMg=30 ${r.runSeconds} s of 360 s`);
 });

@@ -1,6 +1,6 @@
 # Hour meter simulator
 
-**A fake hour-meter device on a virtual serial port.** It speaks the real protocol (SensorFrame v1, firmware 2.4.0): it sends TELEMETRY, IMU stream and EVENT frames and answers your COMMANDs with the same ACKs, error codes and quirks as the firmware. Use it to write and test a driver without the hardware.
+**A fake hour-meter device on a virtual serial port.** It speaks the real protocol (SensorFrame v1, firmware 2.5.0): it sends TELEMETRY, IMU stream and EVENT frames and answers your COMMANDs with the same ACKs, error codes and quirks as the firmware. Use it to write and test a driver without the hardware.
 
 ```bash
 cd simulator
@@ -81,7 +81,7 @@ The hour meter rides in a vehicle on a real map. The simulator turns the vehicle
 
 ### Dead reckoning: what the numbers mean
 
-Firmware 2.4.0 sends no position or speed, so moving without GPS is the host's job, integrating the IMU stream. The page draws the **true path** (solid) and a **reference estimate** (dashed orange) built only from the IMU frames the host receives (same rate, same 1 mg / 0.1 °/s resolution), plus the error in metres. *GPS fix* re-anchors the estimate to the truth, like a real fix.
+Firmware 2.5.0 sends no position or speed, so moving without GPS is the host's job, integrating the IMU stream. The page draws the **true path** (solid) and a **reference estimate** (dashed orange) built only from the IMU frames the host receives (same rate, same 1 mg / 0.1 °/s resolution), plus the error in metres. *GPS fix* re-anchors the estimate to the truth, like a real fix.
 
 - **Ground vehicles:** gravity is learned while parked, and a zero-velocity update zeroes the speed whenever the truck stands still (judged by vibration, not by the mean: a truck cruising at constant speed reads pure gravity too, but shakes far more than an idling one). Heading integrates the gyro about "up".
 - **Aircraft:** a 3D strapdown INS. In a coordinated turn the accelerometer feels no sideways force, so gravity can't be read off it (the firmware's roll even reads level while banking 45°); attitude must come from the gyro.
@@ -147,7 +147,8 @@ deno task start --scenario no-rtc-battery --scenario corrupt=5
 
 | Scenario | What happens | What your driver should do |
 |---|---|---|
-| `engine-cycle[=onS,offS]` | Alternator on/off cycle (the default, 40,40) | Show `alternator`; run hours only grow while on |
+| `engine-cycle[=onS,offS]` | Alternator on/off cycle (the default, 40,40) | Show `alternator`; run hours only grow while on. `altInput` (tag 10) is the raw input; `alternator` (tag 3) is what counts (input on and, if `runVibMinMg` > 0, vibration confirmed) |
+| `acc-wire` | Models the wrong wiring: the engine input is ON whenever the key is on (always), but the engine really runs only from 20 s to 80 s of every 120 s; vibration RMS 8-12 mg when stopped, 40-80 mg when running. TELEMETRY shows `altInput` true while `alternator` is false during the off phase | Without `runVibMinMg` the run hours grow the whole time (the bug). With `hour-meter set runVibMinMg=30` they grow only while the engine runs; `alternator` = counting, `altInput` = raw input |
 | `no-rtc-battery` | Time lost at power-on: `timeValid` false, `rtcBatteryLost` + `timeInvalid`, header timestamp = uptime | Send `setTime` (UTC) |
 | `no-rtc` | No RTC: `rtcMissing`; after `setTime`, `timeNotBackedUp` | Send `setTime` after every boot |
 | `no-eeprom` | No EEPROM: presets answer `DeviceMissing`, settings set `settingsNotSaved` | Warn that counters are not persistent |
