@@ -13,7 +13,7 @@ import { parseArgs } from 'node:util';
 import { createRng, realClock } from './src/clock.ts';
 import { type DeviceOptions, ResetReason, SimDevice } from './src/device.ts';
 import { FrameLog, type Verbosity } from './src/log.ts';
-import { Device } from './src/protocol.ts';
+import { Device, FIRMWARE_VERSION } from './src/protocol.ts';
 import { parseScenario, type Scenario, scenarioHelp } from './src/scenarios.ts';
 import { FrameSplitter } from './src/splitter.ts';
 import type { Transport } from './src/transport/link.ts';
@@ -21,11 +21,13 @@ import { PtyTransport } from './src/transport/pty.ts';
 import { StdioTransport } from './src/transport/stdio.ts';
 import { TcpTransport } from './src/transport/tcp.ts';
 
+/** Simulator release version (tags: simulator-v<version>). The protocol version is FIRMWARE_VERSION. */
+export const SIM_VERSION = '1.0.0';
 const POLL_MS = 10;
 
 const HELP = `Hour meter simulator: a fake device on a virtual serial port.
 
-Usage: deno task start [options]
+Usage: deno task start [options]    (release binary: hour-meter-sim [options])
 
 Port (pick one):
   --pty <path>         virtual tty made by socat (default /tmp/ttyHourMeter)
@@ -49,6 +51,7 @@ ${scenarioHelp()}
 Output:
   -v, --verbose        log every frame with all its records
   -q, --quiet          log nothing but errors
+  --version
   -h, --help
 `;
 
@@ -81,9 +84,15 @@ function parseCli(argv: string[]): Cli {
       scenario: { type: 'string', multiple: true },
       verbose: { type: 'boolean', short: 'v' },
       quiet: { type: 'boolean', short: 'q' },
+      version: { type: 'boolean' },
       help: { type: 'boolean', short: 'h' },
     },
   });
+  if (values.version) {
+    const fw = [16, 8, 0].map((shift) => (FIRMWARE_VERSION >> shift) & 0xff).join('.');
+    console.log(`hour-meter-sim ${SIM_VERSION} (speaks firmware ${fw} protocol)`);
+    Deno.exit(0);
+  }
   if (values.help) {
     console.log(HELP);
     Deno.exit(0);

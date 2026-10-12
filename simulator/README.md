@@ -18,6 +18,18 @@ npm run tui -- /tmp/ttyHourMeter                     # full configurator
 
 Needs [Deno](https://deno.com) 2 and, for the virtual tty, `socat` (`apt install socat` / `pacman -S socat` / `brew install socat`). Without socat, use `--tcp`.
 
+### Without Deno: download a binary
+
+Standalone binaries for Linux (x64, arm64), macOS (Intel, Apple Silicon) and Windows (x64) are on the [releases page](https://github.com/ilomon10/embedded-totalizer-hour-meter/releases) (tags `simulator-v*`). They take the same options as `deno task start`:
+
+```bash
+tar -xzf hour-meter-sim-1.0.0-linux-x64.tar.gz
+./hour-meter-sim-1.0.0-linux-x64/hour-meter-sim              # /tmp/ttyHourMeter (needs socat)
+./hour-meter-sim-1.0.0-linux-x64/hour-meter-sim --tcp 5555   # no socat needed
+```
+
+On Windows there is no socat: use `hour-meter-sim.exe --tcp 5555`, or pair it with a virtual COM-port pair (e.g. com0com) and a TCP-to-serial bridge. On macOS, if Gatekeeper blocks the unsigned binary, run `xattr -d com.apple.quarantine hour-meter-sim` once. Check a download with `sha256sum -c SHA256SUMS`.
+
 ## What you get
 
 | | Same as the real device |
@@ -53,6 +65,7 @@ Device
 Output
   -v, --verbose        log every frame with all its records (stderr)
   -q, --quiet          log nothing but errors
+  --version            simulator version and the firmware protocol it speaks
 ```
 
 The log on stderr shows each session, every COMMAND and its ACK, and every EVENT (`-v` adds TELEMETRY and IMU):
@@ -115,7 +128,10 @@ deno task test         # 27 tests: firmware golden frames, catalog dumps, comman
 deno task check        # type-check
 deno lint && deno fmt --check
 deno task gen-catalog  # print the FRAME-CATALOG.md frames after a protocol change
+deno task compile      # release binaries for all 5 platforms into dist/ (+ SHA256SUMS)
 ```
+
+To release: bump `SIM_VERSION` in `main.ts`, run `deno task compile`, tag `simulator-v<version>`, and attach `dist/*.tar.gz`, `dist/*.zip` and `dist/SHA256SUMS` to a GitHub release.
 
 ```
 simulator/
@@ -131,7 +147,7 @@ simulator/
 │   ├── clock.ts          injected clock + seeded RNG
 │   ├── log.ts            human log on stderr
 │   └── transport/        pty (socat), tcp, stdio
-├── tools/                catalog.ts + gen-catalog.ts (FRAME-CATALOG.md frames)
+├── tools/                catalog.ts + gen-catalog.ts (FRAME-CATALOG.md frames), compile.ts (release binaries)
 └── test/
 ```
 

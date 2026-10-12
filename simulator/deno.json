@@ -3,7 +3,8 @@
     "start": "deno run --allow-read --allow-run=socat --allow-net main.ts",
     "test": "deno test --allow-read",
     "check": "deno check main.ts src/ test/ tools/",
-    "gen-catalog": "deno run --allow-read tools/gen-catalog.ts"
+    "gen-catalog": "deno run --allow-read tools/gen-catalog.ts",
+    "compile": "deno run --allow-read --allow-write=dist --allow-run=deno,tar,zip tools/compile.ts"
   },
   "compilerOptions": {
     "strict": true
