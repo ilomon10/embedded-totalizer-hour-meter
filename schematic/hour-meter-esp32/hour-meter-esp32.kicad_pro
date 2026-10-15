@@ -729,13 +729,18 @@
       {
         "filename": "hour-meter-esp32.kicad_sch",
         "name": "hour-meter-esp32",
-        "uuid": "00000000-0000-0000-0000-000000000000"
+        "uuid": "2d646301-d3c4-489d-b429-033c00a2d477"
       }
     ],
     "used_designators": "",
     "variants": []
   },
-  "sheets": [],
+  "sheets": [
+    [
+      "2d646301-d3c4-489d-b429-033c00a2d477",
+      "hour-meter-esp32"
+    ]
+  ],
   "text_variables": {},
   "tuning_profiles": {
     "meta": {
