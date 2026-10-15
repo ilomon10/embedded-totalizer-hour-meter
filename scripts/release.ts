@@ -30,6 +30,7 @@ import {
   FLASH_LAYOUT,
   generateNotes,
   INFO,
+  needsBump,
   parseProjectVersion,
   parseVersion,
   releaseTitle,
@@ -261,7 +262,7 @@ for (const c of COMPONENTS) {
       : since.replace(`${c}-v`, '')
     : null;
   const commits = await commitsSince(since, baseSha, INFO[c].dir);
-  if (commits.length && previousVersion === v) {
+  if (needsBump(commits) && previousVersion === v) {
     warnings.push(`${c}: changed since ${since} but still ${v} (bump it in ${INFO[c].versionFile})`);
   }
   parts.push({ component: c, version: v, previousVersion, commits });

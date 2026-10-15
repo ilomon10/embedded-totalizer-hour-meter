@@ -118,6 +118,14 @@ export function changeList(c: Component, commits: Commit[]): string[] {
   return lines;
 }
 
+/** Commits that change what users run (not docs, build scripts, tests or chores): they need a new version. */
+export function needsBump(commits: Commit[]): boolean {
+  return commits.some((c) => {
+    const type = c.subject.match(/^(\w+)(?:\([^)]*\))?!?:/)?.[1];
+    return type === undefined || !['docs', 'build', 'chore', 'ci', 'style', 'test'].includes(type);
+  });
+}
+
 export interface ComponentNotes {
   component: Component;
   version: string;

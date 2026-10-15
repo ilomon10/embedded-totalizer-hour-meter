@@ -6,6 +6,7 @@ import {
   bumpVersion,
   changeList,
   generateNotes,
+  needsBump,
   parseProjectVersion,
   parseVersion,
   repoFromRemote,
@@ -109,4 +110,12 @@ Deno.test('notes files, remotes and shell lines', () => {
   assertThrows(() => repoFromRemote('https://gitlab.com/me/repo.git'), /not a GitHub remote/);
   assertEquals(shellLine('git', ['tag', '-a', 'v1', '-m', "it's done"]), "git tag -a v1 -m 'it'\\''s done'");
   assertEquals(shellLine('deno', ['task', 'test'], 'simulator'), '(cd simulator && deno task test)');
+});
+
+Deno.test('a version bump is needed for features and fixes, not for docs or build changes', () => {
+  const c = (subject: string) => ({ subject, body: '' });
+  assertEquals(needsBump([c('docs(simulator): typo'), c('build(release): script')]), false);
+  assertEquals(needsBump([c('docs: typo'), c('fix(simulator): reverse sign')]), true);
+  assertEquals(needsBump([c('Update schematic')]), true);
+  assertEquals(needsBump([]), false);
 });
