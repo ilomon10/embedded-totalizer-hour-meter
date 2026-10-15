@@ -70,6 +70,18 @@ make -C sensorframe/arduino/test          # SensorFrame C++ library on the deskt
 cd simulator && deno task test            # simulator: firmware golden frames, frame catalog, command rules
 ```
 
+## Releasing
+
+[`scripts/release.ts`](scripts/release.ts) publishes firmware, configurator and simulator releases (tags `firmware-v*`, `configurator-v*`, `simulator-v*`). Bump the version first (`kFirmwareVersion` in `Protocol.h`, `TOOL_VERSION` in `configurator/src/version.ts`, `SIM_VERSION` in `simulator/main.ts`) and commit.
+
+```bash
+./scripts/release.ts all --dry-run          # what it would run, plus the release notes; changes nothing
+./scripts/release.ts firmware simulator     # checks, tests, builds, asks, then tags, pushes and publishes
+./scripts/release.ts firmware --notes notes.md --draft   # your own notes ("# Title" first line), as a draft
+```
+
+For each component it releases the newest commit that touches its folder (or `--ref <commit>`). It tests and builds that exact commit in a temporary git worktree, and puts the files and `NOTES.md` in `.release/<tag>/`. It asks before anything leaves your machine. Afterwards it downloads the release and checks `SHA256SUMS`, `--version` and the firmware image. It stops before changing anything if you're not on `main`, the component has uncommitted changes, `gh` isn't logged in, `origin/main` has commits you lack, or the tag or release already exists. Without `--notes`, the notes are generated from the Conventional Commit messages since the previous release.
+
 ## Documentation
 
 | You are… | Read |
