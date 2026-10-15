@@ -334,6 +334,7 @@ if (problems.length && !DRY) {
 // ---------------------------------------------------------------------- build ----
 
 const worktrees: string[] = [];
+let declined = false;
 try {
   for (const p of plans) await build(p);
 
@@ -341,24 +342,27 @@ try {
   console.log(bold('\nPublish'));
   if (!DRY && !opts.yes) {
     const answer = prompt(`Push and publish ${plans.map((p) => p.tag).join(', ')} to github.com/${repo}? [y/N]`);
-    if (!/^y(es)?$/i.test(answer ?? '')) {
-      console.log(`Not published. The files are in ${opts.out}/; nothing was tagged or pushed.`);
-      Deno.exit(0);
+    declined = !/^y(es)?$/i.test(answer ?? '');
+  }
+  if (!declined) {
+    if (pushMain) await run('git', ['push', 'origin', 'main']);
+    for (const p of plans) await publish(p);
+    if (opts.verify) {
+      console.log(bold('\nVerify'));
+      for (const p of plans) await verify(p);
     }
   }
-  if (pushMain) await run('git', ['push', 'origin', 'main']);
-  for (const p of plans) await publish(p);
-
-  if (opts.verify) {
-    console.log(bold('\nVerify'));
-    for (const p of plans) await verify(p);
-  }
 } finally {
+  // (also after a failure: the builds are kept in .release/<tag>/, the worktrees are not)
   for (const wt of worktrees) await run('git', ['worktree', 'remove', '--force', wt]).catch(() => {});
 }
 
-console.log(bold(`\n${DRY ? 'Dry run finished: nothing was changed.' : 'Done.'}`));
-for (const p of plans) console.log(`  https://github.com/${repo}/releases/tag/${p.tag}`);
+if (declined) {
+  console.log(`\nNot published. The files are in ${opts.out}/; nothing was tagged or pushed.`);
+} else {
+  console.log(bold(`\n${DRY ? 'Dry run finished: nothing was changed.' : 'Done.'}`));
+  for (const p of plans) console.log(`  https://github.com/${repo}/releases/tag/${p.tag}`);
+}
 if (DRY && problems.length) {
   console.log(`\n${problems.length} problem(s) above would stop a real run.`);
   Deno.exit(1);
