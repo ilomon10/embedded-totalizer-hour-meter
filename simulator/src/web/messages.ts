@@ -4,7 +4,9 @@
 import type { SimSnapshot } from '../device.ts';
 import type { FaultSettings } from '../faults.ts';
 import type { Group, InputValues } from '../inputs.ts';
+import type { Mount } from '../vehicle/body.ts';
 import type { HeadingSource } from '../vehicle/dead-reckoning.ts';
+import type { MountCalStatus, MountCalStep } from '../vehicle/mount-cal.ts';
 import type { LatLon } from '../vehicle/geo.ts';
 import type { Controls, VehicleKind } from '../vehicle/models.ts';
 import type { RoutePlan, Waypoint } from '../vehicle/route.ts';
@@ -16,6 +18,9 @@ export type {
   DriveMode,
   HeadingSource,
   LatLon,
+  Mount,
+  MountCalStatus,
+  MountCalStep,
   RoutePlan,
   TrackPoint,
   VehicleKind,
@@ -78,4 +83,8 @@ export type ClientMessage =
   /** A simulated GPS fix: the estimate jumps to the truth. */
   | { type: 'anchor' }
   | { type: 'estimator'; headingSource: HeadingSource }
-  | { type: 'clear-tracks' };
+  | { type: 'clear-tracks' }
+  /** How the board is fitted in the truck (degrees; all 0 = x forward, z up). */
+  | { type: 'mount'; mount: Mount }
+  /** Mounting calibration: level (vehicle still), then front (drive straight ahead), or clear. */
+  | { type: 'mount-cal'; step: MountCalStep };

@@ -126,6 +126,7 @@ export function DrivePage(
 
   // Live driving: keyboard + gamepad, sent at 20 Hz while the Live tab is open.
   const keyboard = useRef(new KeyboardDriver());
+  const reverse = useRef(false); // the gear lever: toggled, not held
   useEffect(() => {
     if (tab !== 'live' || !vehicle) return;
     send({ type: 'drive-mode', mode: 'live' });
@@ -134,12 +135,17 @@ export function DrivePage(
     const down = (e: KeyboardEvent) => {
       if (isTyping(e)) return;
       if (e.code === 'KeyR') return send({ type: 'anchor' });
+      if (e.code === 'KeyX') {
+        if (!e.repeat) reverse.current = !reverse.current;
+        return e.preventDefault();
+      }
       if (keyboard.current.key(e.code, true)) e.preventDefault();
     };
     const up = (e: KeyboardEvent) => keyboard.current.key(e.code, false);
     addEventListener('keydown', down);
     addEventListener('keyup', up);
     let anchorWasDown = false;
+    let reverseWasDown = false;
     let last = performance.now();
     const timer = setInterval(() => {
       const now = performance.now();
@@ -157,8 +163,11 @@ export function DrivePage(
         const anchorDown = readBinding(pad, mapping.anchor) > 0.5;
         if (anchorDown && !anchorWasDown) send({ type: 'anchor' });
         anchorWasDown = anchorDown;
+        const reverseDown = readBinding(pad, mapping.reverse) > 0.5;
+        if (reverseDown && !reverseWasDown) reverse.current = !reverse.current;
+        reverseWasDown = reverseDown;
       }
-      send({ type: 'controls', controls });
+      send({ type: 'controls', controls: { ...controls, reverse: reverse.current } });
     }, SEND_CONTROLS_MS);
     return () => {
       clearInterval(timer);

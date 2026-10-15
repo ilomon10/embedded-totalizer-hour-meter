@@ -126,6 +126,7 @@ function applyDriveMessage(msg: ClientMessage, ctx: WebContext): string | null {
         brake: num(c.brake, 0, 1),
         steer: num(c.steer, -1, 1),
         pitch: num(c.pitch, -1, 1),
+        reverse: c.reverse === true,
       }, ctx.nowMs());
       return null;
     }
@@ -137,6 +138,20 @@ function applyDriveMessage(msg: ClientMessage, ctx: WebContext): string | null {
       return null;
     case 'clear-tracks':
       sim.clearTracks();
+      return null;
+    case 'mount': {
+      const m = msg.mount ?? {};
+      const deg = (v: unknown, lo: number, hi: number) => Math.max(lo, Math.min(hi, Number(v) || 0));
+      sim.setMount({
+        yawDeg: ((deg(m.yawDeg, -360, 360) % 360) + 360) % 360,
+        pitchDeg: deg(m.pitchDeg, -30, 30),
+        rollDeg: deg(m.rollDeg, -30, 30),
+      });
+      return null;
+    }
+    case 'mount-cal':
+      if (msg.step !== 'level' && msg.step !== 'front' && msg.step !== 'clear') return `unknown step ${msg.step}`;
+      sim.calibrateMount(msg.step);
       return null;
     default:
       return 'unknown message';

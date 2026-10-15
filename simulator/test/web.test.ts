@@ -4,7 +4,7 @@ import { Faults } from '../src/faults.ts';
 import { MSG } from '../src/protocol.ts';
 import { applyClientMessage, startWebServer, WebHub } from '../src/web/server.ts';
 import type { ClientMessage, ServerMessage, SimState } from '../src/web/messages.ts';
-import { makeDevice } from './helpers.ts';
+import { command, makeDevice } from './helpers.ts';
 
 function context() {
   const sim = makeDevice();
@@ -40,6 +40,27 @@ Deno.test('control messages drive the device', () => {
   assertEquals(lastOf(MSG.EVENT)?.values.resetReason, 6);
   assertEquals(lastOf(MSG.EVENT)?.values.lastCause, 1);
   assertEquals(applyClientMessage({ type: 'counters', runSeconds: -1 }, ctx), 'counters must be 0..4294967295');
+});
+
+Deno.test('drive messages: reverse gear, board mount (clamped) and the mounting calibration', () => {
+  const { device, ctx, run } = context();
+  const apply = (msg: ClientMessage) => applyClientMessage(msg, ctx);
+  assertEquals(apply({ type: 'mount-cal', step: 'level' }), 'no vehicle: start one first');
+  device.onCommand(command(1, { imuStreamHz: 100, streamMode: 2 })); // the calibration reads the host's stream
+  assertEquals(apply({ type: 'vehicle', kind: 'truck', origin: { lat: -6.17, lon: 106.82 } }), null);
+  assertEquals(apply({ type: 'mount', mount: { yawDeg: -90, pitchDeg: 0, rollDeg: 50 } }), null);
+  const vehicle = () => device.vehicle()!.snapshot();
+  assertEquals(vehicle().mount, { yawDeg: 270, pitchDeg: 0, rollDeg: 30 });
+  run(500); // parked (warm-up)
+  assertEquals(apply({ type: 'mount-cal', step: 'level' }), null);
+  run(2500);
+  assertEquals(vehicle().mountCal.phase, 'leveled', vehicle().mountCal.message);
+  assert(Math.abs(vehicle().mountCal.level!.tiltRollDeg - 30) < 2, JSON.stringify(vehicle().mountCal.level));
+  assertEquals(apply({ type: 'mount-cal', step: 'sideways' as never }), 'unknown step sideways');
+  apply({ type: 'controls', controls: { throttle: 0, brake: 0, steer: 0, pitch: 0, reverse: true } });
+  run(50);
+  assertEquals(vehicle().controls.reverse, true);
+  assertEquals(vehicle().gear, 'R');
 });
 
 Deno.test('web server: page or build hint, JSON state, and a WebSocket round trip', async () => {

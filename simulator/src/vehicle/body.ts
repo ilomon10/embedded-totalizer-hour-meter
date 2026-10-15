@@ -1,7 +1,7 @@
 // body.ts: the board's axes in the world (east/north/up), from an attitude.
 //
-// Board frame = vehicle frame (the board is mounted with x pointing forward):
-// x forward, y left, z up, right-handed. Angles follow the firmware's math
+// Vehicle frame: x forward, y left, z up, right-handed. The board frame equals it
+// unless a mount rotation says otherwise (mountAxes: a board fitted turned or tilted). Angles follow the firmware's math
 // (Orientation.h): roll about x, left side up positive; pitch positive nose up
 // (a right-handed rate about +y lowers the nose); heading = x axis clockwise from north.
 import type { Vec3 } from '../frames.ts';
@@ -65,4 +65,28 @@ export function bodyRates(prev: Axes, next: Axes, dt: number): Vec3 {
     y: (nz.x - nx.z) / 2 / dt,
     z: (nx.y - ny.x) / 2 / dt,
   };
+}
+
+/**
+ * How the board sits in the vehicle, in the same terms as an attitude relative to the
+ * vehicle: yaw = board x clockwise from the vehicle's nose (seen from above), then
+ * pitch (board nose up) and roll (board left side up). All 0 = x forward, z up.
+ */
+export interface Mount {
+  yawDeg: number;
+  pitchDeg: number;
+  rollDeg: number;
+}
+
+export const NO_MOUNT: Mount = Object.freeze({ yawDeg: 0, pitchDeg: 0, rollDeg: 0 });
+
+export const isMounted = (m: Mount) => m.yawDeg !== 0 || m.pitchDeg !== 0 || m.rollDeg !== 0;
+
+/** The board's axes in the world, given the vehicle's axes and the mount. */
+export function mountAxes(vehicle: Axes, m: Mount): Axes {
+  if (!isMounted(m)) return vehicle;
+  // axesOf() with the mount as an attitude, read with "north" = vehicle forward and "east" = right.
+  const rel = axesOf({ headingDeg: m.yawDeg, pitchDeg: m.pitchDeg, rollDeg: m.rollDeg });
+  const toWorld = (v: Vec3): Vec3 => add(add(scale(vehicle.x, v.y), scale(vehicle.y, -v.x)), scale(vehicle.z, v.z));
+  return { x: toWorld(rel.x), y: toWorld(rel.y), z: toWorld(rel.z) };
 }

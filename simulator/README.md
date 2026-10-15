@@ -75,7 +75,8 @@ The hour meter rides in a vehicle on a real map. The simulator turns the vehicle
 
 - **Vehicles:** a truck (bicycle model, suspension roll and squat, tyre grip limit about 0.45 g), a plane (coordinated turns, climb, stall speed), or **your own model** (`.glb`/`.gltf`, kept in your browser) that moves like either. Turn it 90° at a time until the orange arrow under it points at its nose.
 - **Route:** click the map to add waypoints, drag to move them, double-click to delete; set speed (and height for the plane), loop, Play/Pause/Stop. Playback is driven, not drawn: a path follower steers and brakes like a driver.
-- **Live:** keyboard (W throttle, S/Space brake, A/D steer, Q/E climb, R GPS fix) or a **gamepad**. *Gamepad controls* shows every binding live: press *Assign* and move the stick, trigger or button you want; *Flip* reverses a direction; the mapping is saved in your browser. Default: right trigger throttle, left trigger brake, left stick steers (and climbs), A/cross = GPS fix. The vehicle brakes if the controls stop for 0.5 s.
+- **Live:** keyboard (W throttle, S/Space brake, A/D steer, X drive/reverse, Q/E climb, R GPS fix) or a **gamepad**. *Gamepad controls* shows every binding live: press *Assign* and move the stick, trigger or button you want; *Flip* reverses a direction; the mapping is saved in your browser. Default: right trigger throttle, left trigger brake, left stick steers (and climbs), B/circle = drive/reverse, A/cross = GPS fix. The vehicle brakes if the controls stop for 0.5 s. The truck's **reverse gear** (up to 18 km/h) engages only at standstill: until then the *Gear* badge says "stop to engage R" and the throttle brakes.
+- **Mounting** (truck): fit the board turned (*Forward*, *Right*, *Backward*, *Left*, or any yaw) and tilted up to ±30°. The IMU data, the firmware's roll/pitch/heading and everything a host receives then come from the turned board, as on a vehicle where the box could only be screwed in sideways.
 - **Replay:** drop a GPX file (`<trkpt lat lon>` with optional `<ele>` and `<time>`) or a CSV with a header naming `lat`, `lon` and optionally `alt`/`ele` and `time` (ISO 8601 or Unix seconds). With times, each stretch is driven at its recorded speed. Try [`docs/sample-loop.csv`](docs/sample-loop.csv), a lap of Jl. Medan Merdeka around Monas in Jakarta built from OpenStreetMap road geometry.
 - **Map:** OpenStreetMap tiles (© OpenStreetMap contributors). They need internet; offline, a grid with lines about 220 m apart is shown and everything else works. The tiles are OSM's free service: fine for testing, not for heavy automated use ([tile usage policy](https://operations.osmfoundation.org/policies/tiles/)).
 
@@ -87,7 +88,17 @@ Firmware 2.5.0 sends no position or speed, so moving without GPS is the host's j
 - **Aircraft:** a 3D strapdown INS. In a coordinated turn the accelerometer feels no sideways force, so gravity can't be read off it (the firmware's roll even reads level while banking 45°); attitude must come from the gyro.
 - **Stream rate matters most.** The default `imuStreamHz` is 10. Set `hour-meter set imuStreamHz=100 streamMode=2` for dead reckoning: in the tests, a plane's estimate after 2.8 km is 31 m off at 100 Hz but 412 m off at 10 Hz.
 - **Expected errors a driver must live with:** suspension squat under acceleration tilts gravity onto the forward axis (an IMU can't tell it from acceleration: about 10% speed over-estimate after pulling away); the firmware's roll/pitch filter trusts the accelerometer strongly, so reported pitch absorbs braking and acceleration (don't remove gravity with it on the ground).
+- **Reverse:** the estimate's speed is signed. It goes negative while backing up because the acceleration points to the tail, and the zero-velocity update re-zeroes it at every stop.
 - **Sign convention:** positive pitch is nose up (firmware 2.4.0 fixed the sign; 2.3.0 reported nose down).
+
+### Mounting calibration: finding "level" and "front" from the IMU
+
+A host can't assume the board's x axis is the vehicle's nose. *Mounting → Calibrate from the IMU* finds the fitting from the stream alone, in two steps:
+
+1. **Level:** stop the truck and press *Level*. For 2 s the accelerometer reads only gravity, so its mean is "up" in board axes, which gives the tilt. The same comes from the reported roll/pitch at rest.
+2. **Front:** press *Front* and pull away straight ahead. The accelerometer minus gravity, flattened onto the ground, points to the nose, which gives the yaw. This needs the drive: gravity reads the same for any yaw, and the compass measures the board's x axis, not the nose.
+
+The panel shows what it found next to what is fitted, for example a yaw of 89.6° found against 90° fitted. From then on the reference estimate takes forward as (accel − up) · front (so reversing is negative) and the vehicle heading as the compass heading minus the yaw. Without a calibration, a board fitted sideways reads every acceleration as sideways, and the estimate gets lost. The firmware has no mount setting (its settings slot is full), so this is the host's job, and the simulator shows how to do it (`src/vehicle/mount-cal.ts`).
 
 From the command line, the same without a browser (CI):
 

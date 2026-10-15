@@ -22,6 +22,7 @@ export function GamepadMapper({ mapping, onChange }: { mapping: Mapping; onChang
     brake: 0,
     steer: 0,
     pitch: 0,
+    reverse: 0,
     anchor: 0,
   });
   const [padName, setPadName] = useState<string | null>(null);

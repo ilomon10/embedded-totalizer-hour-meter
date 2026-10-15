@@ -16,9 +16,13 @@
 //      acceleration and removing "gravity" with it would cancel the very signal we need.
 //   2. heading: integrate the rotation rate about "up" (gyro), or take the compass heading
 //   3. motion acceleration = accelerometer - up (1 g), forward component -> speed
+//      (signed: negative while backing up; the zero-velocity update re-zeroes it at rest)
 //   4. position += speed * (sin heading, cos heading) * dt
+// "Forward" is the board's x axis, or the vehicle's nose once a mount calibration
+// (mount-cal.ts) is set; the compass heading is then corrected by the mount's yaw too.
 import { upVector } from '../attitude.ts';
 import type { Message } from '../protocol.ts';
+import type { MountCal } from './mount-cal.ts';
 import { MSG, TAGS } from '../protocol.ts';
 
 const G = 9.80665;
@@ -105,6 +109,8 @@ export class DeadReckoner implements Estimator {
   private lastT: number | null = null;
   private gravity: { x: number; y: number; z: number } | null = null;
   private learnGravity = true;
+  /** How the board sits in the vehicle (null: x forward). */
+  mount: MountCal | null = null;
 
   private stillS = 0;
   private vibMs2 = 1; // running mean of |a - short-term mean|², g² (starts "moving")
@@ -148,14 +154,18 @@ export class DeadReckoner implements Estimator {
 
     const up = this.upFrom(accel, gyro, roll, pitch, dt);
     const e = this.est;
-    if (this.headingSource === 'compass' && r.headingDeg !== undefined) e.headingDeg = r.headingDeg;
-    else {
+    const mount = this.mount;
+    if (this.headingSource === 'compass' && r.headingDeg !== undefined) {
+      e.headingDeg = (((r.headingDeg - (mount?.yawOffsetDeg ?? 0)) % 360) + 360) % 360;
+    } else {
       const turnDps = -(gyro.x * up.x + gyro.y * up.y + gyro.z * up.z); // rotation about up, clockwise +
       e.headingDeg = (((e.headingDeg + turnDps * dt) % 360) + 360) % 360;
     }
-    const forward = (accel.x - up.x) * G; // m/s², board x = vehicle forward
-    e.speed = Math.max(0, e.speed + forward * dt);
-    const horizontal = e.speed * Math.min(1, Math.max(0, up.z)); // the forward axis' share of the ground
+    const f = mount?.front ?? { x: 1, y: 0, z: 0 }; // the vehicle's nose in board axes
+    const forward = ((accel.x - up.x) * f.x + (accel.y - up.y) * f.y + (accel.z - up.z) * f.z) * G; // m/s²
+    e.speed += forward * dt;
+    const along = f.x * up.x + f.y * up.y + f.z * up.z; // the nose's share of "up"
+    const horizontal = e.speed * (mount ? Math.sqrt(Math.max(0, 1 - along * along)) : Math.min(1, Math.max(0, up.z)));
     e.e += horizontal * Math.sin(e.headingDeg * DEG) * dt;
     e.n += horizontal * Math.cos(e.headingDeg * DEG) * dt;
     e.samples++;

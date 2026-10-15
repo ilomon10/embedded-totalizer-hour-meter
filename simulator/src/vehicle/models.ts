@@ -21,6 +21,8 @@ export interface Controls {
   steer: number;
   /** -1 (nose down / descend) .. +1 (nose up / climb); plane only */
   pitch: number;
+  /** reverse gear (truck only): throttle drives backwards. Engages only below 0.3 m/s. */
+  reverse?: boolean;
 }
 
 export const NO_CONTROLS: Controls = Object.freeze({ throttle: 0, brake: 0, steer: 0, pitch: 0 });
@@ -29,7 +31,7 @@ export interface VehicleState extends Attitude {
   e: number;
   n: number;
   u: number;
-  /** speed along the path, m/s */
+  /** speed along the vehicle's nose, m/s (negative = reversing) */
   speed: number;
   /** world velocity, m/s (east, north, up) */
   ve: number;
@@ -83,12 +85,20 @@ export class Truck implements Vehicle {
   static readonly MAX_ACCEL = 1.8;
   static readonly MAX_BRAKE = 6;
   static readonly MAX_SPEED = 25; // 90 km/h
+  static readonly MAX_REVERSE = 5; // 18 km/h
+  static readonly SHIFT_BELOW = 0.3; // m/s: the gearbox only changes direction at (almost) standstill
   static readonly MAX_LATERAL = 4.5; // m/s², about 0.45 g: the tyres' grip; beyond it the truck understeers
   private steerDeg = 0;
   private aLong = 0;
   private aLat = 0;
+  private gear: 1 | -1 = 1;
 
   constructor(public state: VehicleState) {}
+
+  /** 1 = drive, -1 = reverse: the gear actually engaged. */
+  get engaged(): 1 | -1 {
+    return this.gear;
+  }
 
   step(c: Controls): void {
     const s = this.state;
@@ -97,14 +107,26 @@ export class Truck implements Vehicle {
       clamp(c.steer, -1, 1) * Truck.MAX_STEER_DEG,
       Truck.STEER_RATE_DPS * STEP_S,
     );
-    const drag = 0.15 + 0.0009 * s.speed * s.speed; // rolling + air
-    let a = clamp(c.throttle, 0, 1) * Truck.MAX_ACCEL - clamp(c.brake, 0, 1) * Truck.MAX_BRAKE;
-    a -= s.speed > 0 ? drag : 0;
-    if (s.speed >= Truck.MAX_SPEED && a > 0) a = 0;
-    const speed = clamp(s.speed + a * STEP_S, 0, Truck.MAX_SPEED);
+    if (Math.abs(s.speed) < Truck.SHIFT_BELOW) this.gear = c.reverse ? -1 : 1;
+    // Throttle pushes in the gear's direction; while the vehicle still rolls the other way
+    // the gearbox waits and the throttle brakes instead. Brake and drag oppose the motion
+    // and stop at 0, never past it.
+    const v = s.speed;
+    const motion = Math.sign(v);
+    const throttle = clamp(c.throttle, 0, 1) * Truck.MAX_ACCEL;
+    const brake = clamp(c.brake, 0, 1) * Truck.MAX_BRAKE;
+    let speed: number;
+    if (motion === 0) speed = this.gear * Math.max(0, throttle - brake) * STEP_S;
+    else {
+      const drag = 0.15 + 0.0009 * v * v; // rolling + air
+      const wanted = c.reverse ? -1 : 1;
+      const along = wanted === motion ? throttle - brake - drag : -throttle - brake - drag;
+      speed = motion * Math.max(0, Math.abs(v) + along * STEP_S);
+    }
+    speed = clamp(speed, -Truck.MAX_REVERSE, Truck.MAX_SPEED);
     this.aLong = (speed - s.speed) / STEP_S;
     const kinematic = (speed / Truck.WHEELBASE_M) * Math.tan(this.steerDeg * DEG); // rad/s, + = clockwise
-    const gripLimit = Truck.MAX_LATERAL / Math.max(speed, 0.5); // understeer: no tighter than grip allows
+    const gripLimit = Truck.MAX_LATERAL / Math.max(Math.abs(speed), 0.5); // understeer: no tighter than grip allows
     const yawRate = clamp(kinematic, -gripLimit, gripLimit);
     this.aLat = speed * yawRate; // toward the turn centre, + = right
     s.headingDeg = wrapHeading(s.headingDeg + (yawRate / DEG) * STEP_S);
@@ -122,7 +144,7 @@ export class Truck implements Vehicle {
   }
 
   vibrationMg(): number {
-    return 14 + this.state.speed * 5.5; // idling diesel plus road, grows with speed
+    return 14 + Math.abs(this.state.speed) * 5.5; // idling diesel plus road, grows with speed
   }
 }
 

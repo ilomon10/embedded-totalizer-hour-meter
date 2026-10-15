@@ -6,11 +6,13 @@
 import type { Calibration, Settings } from '../frames.ts';
 import type { Message } from '../protocol.ts';
 import type { InputValues } from '../inputs.ts';
-import { DeadReckoner, type Estimator, type HeadingSource } from './dead-reckoning.ts';
+import { type Mount, NO_MOUNT } from './body.ts';
+import { DeadReckoner, type Estimator, type HeadingSource, readImuFrame } from './dead-reckoning.ts';
+import { MountCalibrator, type MountCalStatus, type MountCalStep } from './mount-cal.ts';
 import { StrapdownIns } from './strapdown.ts';
 import { type LatLon, LocalFrame } from './geo.ts';
 import { ImuSynth, type RawSample } from './imu-synth.ts';
-import { type Controls, makeVehicle, NO_CONTROLS, STEP_S, type Vehicle, type VehicleKind } from './models.ts';
+import { type Controls, makeVehicle, NO_CONTROLS, STEP_S, Truck, type Vehicle, type VehicleKind } from './models.ts';
 import { FirmwarePipeline, type PipelineOutput } from './pipeline.ts';
 import { RouteFollower, type RoutePlan } from './route.ts';
 
@@ -54,7 +56,13 @@ export interface VehicleSnapshot {
   sinceAnchorS: number;
   headingSource: HeadingSource;
   controls: Controls;
+  /** the gear engaged: 'R' while the truck may back up */
+  gear: 'D' | 'R';
   route: RoutePlan | null;
+  /** how the board is fitted (truth; trucks only) */
+  mount: Mount;
+  /** the host-side mounting calibration (level + front) */
+  mountCal: MountCalStatus;
 }
 
 export interface VehicleOptions {
@@ -71,6 +79,8 @@ export class VehicleSim {
   private synth: ImuSynth;
   private pipeline = new FirmwarePipeline();
   private dr: Estimator;
+  private mountCal = new MountCalibrator();
+  private mount: Mount = NO_MOUNT;
   private mode: DriveMode = 'idle';
   private playing = false;
   private plan: RoutePlan | null = null;
@@ -144,6 +154,19 @@ export class VehicleSim {
     const s = this.vehicle.state;
     this.dr.anchor(s);
     this.anchorMs = this.nowMs;
+  }
+
+  /** Refit the board in the vehicle (trucks only: the plane's INS aligns to the airframe). */
+  setMount(m: Mount): void {
+    if (this.kind !== 'truck') return;
+    this.mount = { ...m };
+    this.synth.setMount(this.mount);
+  }
+
+  /** Run a mounting calibration step on the frames the host receives. */
+  calibrateMount(step: MountCalStep): void {
+    this.mountCal.start(step);
+    if (this.dr instanceof DeadReckoner) this.dr.mount = this.mountCal.result();
   }
 
   setHeadingSource(source: HeadingSource): void {
@@ -230,6 +253,11 @@ export class VehicleSim {
   /** Every frame the device sends: the dead-reckoner reads the IMU stream like a host would. */
   onFrame(msg: Message, nowMs: number): void {
     this.dr.onFrame(msg, nowMs / 1000);
+    const r = readImuFrame(msg);
+    if (!r) return;
+    const wasDone = this.mountCal.result() !== null;
+    this.mountCal.feed(r, nowMs / 1000);
+    if (!wasDone && this.dr instanceof DeadReckoner) this.dr.mount = this.mountCal.result();
   }
 
   /** What the device reports while this vehicle drives it (groups in 'vehicle' mode). */
@@ -282,7 +310,10 @@ export class VehicleSim {
       sinceAnchorS: (this.nowMs - this.anchorMs) / 1000,
       headingSource: this.dr.headingSource,
       controls: this.applied,
+      gear: this.vehicle instanceof Truck && this.vehicle.engaged === -1 ? 'R' : 'D',
       route: this.plan,
+      mount: this.mount,
+      mountCal: this.mountCal.status(),
     };
   }
 

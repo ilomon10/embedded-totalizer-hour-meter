@@ -1,4 +1,5 @@
-// imu-synth.ts: what the MPU9250 on the board would measure while the vehicle moves.
+// imu-synth.ts: what the MPU9250 on the board would measure while the vehicle moves
+// (in board axes: the mount turns them away from the vehicle's).
 //
 //   accelerometer: specific force f = (a_world - g_world) in the board frame, in g.
 //                  At rest that is +1 g on z; braking, turning and climbing add to it.
@@ -8,7 +9,7 @@
 // 100 Hz steps), so they are exactly consistent with the path drawn on the map.
 import type { Vec3 } from '../frames.ts';
 import { FIELD_DOWN_UT, FIELD_HORIZONTAL_UT } from '../attitude.ts';
-import { add, type Axes, axesOf, bodyRates, scale, toBody } from './body.ts';
+import { add, type Axes, axesOf, bodyRates, type Mount, mountAxes, NO_MOUNT, scale, toBody } from './body.ts';
 import { STEP_S, type VehicleState } from './models.ts';
 
 const G = 9.80665;
@@ -25,6 +26,7 @@ export class ImuSynth {
   private prevAxes: Axes | null = null;
   private prevVel: Vec3 | null = null;
   private spare: number | null = null;
+  private mount: Mount = NO_MOUNT;
 
   constructor(private readonly random: () => number) {}
 
@@ -48,7 +50,7 @@ export class ImuSynth {
 
   /** The ideal (noise-free) readings for this step, given the state after it. */
   ideal(s: VehicleState): RawSample {
-    const axes = axesOf(s);
+    const axes = mountAxes(axesOf(s), this.mount);
     const vel: Vec3 = { x: s.ve, y: s.vn, z: s.vu };
     const aWorld = this.prevVel
       ? scale({ x: vel.x - this.prevVel.x, y: vel.y - this.prevVel.y, z: vel.z - this.prevVel.z }, 1 / STEP_S)
@@ -71,6 +73,12 @@ export class ImuSynth {
       gyroDps: add(add(ideal.gyroDps, this.noise(vibrationMg * 0.004)), this.noise(0.05)),
       magUt: add(ideal.magUt, this.noise(0.4)),
     };
+  }
+
+  /** How the board is fitted in the vehicle (default: x forward, z up). Refitting is not a rotation. */
+  setMount(m: Mount): void {
+    this.mount = { ...m };
+    this.prevAxes = null;
   }
 
   reset(): void {

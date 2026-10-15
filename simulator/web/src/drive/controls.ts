@@ -1,11 +1,12 @@
-// controls.ts: keyboard and gamepad -> {throttle, brake, steer, pitch}.
+// controls.ts: keyboard and gamepad -> {throttle, brake, steer, pitch} (+ the reverse gear,
+// a toggle kept by the page: X on the keyboard, a gamepad button).
 //
 // Keyboard keys are digital, so they ramp (a key held for 0.4 s gives full throttle):
 // stepped inputs would make step-shaped accelerations, which no real driver produces.
 // Gamepads are analog and read through a remappable binding table kept in localStorage.
 import type { Controls } from '../../../src/web/messages.ts';
 
-export type Action = 'throttle' | 'brake' | 'steer' | 'pitch' | 'anchor';
+export type Action = 'throttle' | 'brake' | 'steer' | 'pitch' | 'reverse' | 'anchor';
 
 export interface Binding {
   kind: 'axis' | 'button';
@@ -22,6 +23,7 @@ export const ACTIONS: { action: Action; label: string; hint: string }[] = [
   { action: 'brake', label: 'Brake', hint: '0 to full' },
   { action: 'steer', label: 'Steer', hint: 'left to right (plane: bank)' },
   { action: 'pitch', label: 'Climb', hint: 'plane only: up = climb' },
+  { action: 'reverse', label: 'Reverse', hint: 'truck only, a button: toggle drive / reverse' },
   { action: 'anchor', label: 'GPS fix', hint: 'a button: re-anchor the estimate' },
 ];
 
@@ -31,6 +33,7 @@ export const DEFAULT_MAPPING: Mapping = {
   brake: { kind: 'button', index: 6, invert: false, deadzone: 0.05 }, // left trigger
   steer: { kind: 'axis', index: 0, invert: false, deadzone: 0.08 }, // left stick x
   pitch: { kind: 'axis', index: 1, invert: true, deadzone: 0.08 }, // left stick y (up is negative)
+  reverse: { kind: 'button', index: 1, invert: false, deadzone: 0.5 }, // B / circle
   anchor: { kind: 'button', index: 0, invert: false, deadzone: 0.5 }, // A / cross
 };
 

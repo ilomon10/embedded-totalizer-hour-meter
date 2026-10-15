@@ -2,7 +2,14 @@
 // live, replay), how far the IMU-only estimate has drifted, and what the host receives.
 import type { ReactNode } from 'react';
 
-import type { ClientMessage, SimState, VehicleKind, Waypoint } from '../../../src/web/messages.ts';
+import type {
+  ClientMessage,
+  Mount,
+  SimState,
+  VehicleKind,
+  VehicleSnapshot,
+  Waypoint,
+} from '../../../src/web/messages.ts';
 import { SliderField, Toggle } from '../controls.tsx';
 import type { Mapping } from './controls.ts';
 import type { CustomModel } from './modelStore.ts';
@@ -63,6 +70,157 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
       <dt className='text-slate-500'>{label}</dt>
       <dd className='text-right tabular-nums'>{children}</dd>
     </div>
+  );
+}
+
+/** The gear lever and what the gearbox has engaged (it waits for standstill). */
+function Gear({ v }: { v: VehicleSnapshot }) {
+  const wanted = v.controls.reverse ? 'R' : 'D';
+  return (
+    <div className='flex items-center gap-3 text-sm'>
+      <span className='text-slate-500'>Gear</span>
+      <div className='flex rounded-md border border-slate-300 dark:border-slate-700' aria-label='Gear'>
+        {(['D', 'R'] as const).map((g) => (
+          <span
+            key={g}
+            className={`px-2.5 py-0.5 font-mono font-semibold ${
+              v.gear === g
+                ? g === 'R' ? 'bg-amber-500 text-white' : 'bg-sky-600 text-white'
+                : 'text-slate-400 dark:text-slate-600'
+            }`}
+          >
+            {g}
+          </span>
+        ))}
+      </div>
+      {wanted !== v.gear && <span className='text-xs text-slate-500'>stop to engage {wanted}</span>}
+    </div>
+  );
+}
+
+const MOUNT_PRESETS: { label: string; yawDeg: number }[] = [
+  { label: 'Forward', yawDeg: 0 },
+  { label: 'Right', yawDeg: 90 },
+  { label: 'Backward', yawDeg: 180 },
+  { label: 'Left', yawDeg: 270 },
+];
+
+const deg = (v: number) => `${(Math.abs(v) < 0.05 ? 0 : v).toFixed(1)}°`;
+
+/**
+ * How the board is fitted in the truck (the truth), and the host-side calibration that
+ * finds it again from the IMU stream: level while parked, front while pulling away.
+ */
+function MountingSection({ v, send }: { v: VehicleSnapshot; send: (msg: ClientMessage) => void }) {
+  const m = v.mount;
+  const set = (patch: Partial<Mount>) => send({ type: 'mount', mount: { ...m, ...patch } });
+  const c = v.mountCal;
+  const busy = c.phase === 'level' || c.phase === 'front';
+  const tone = c.phase === 'failed'
+    ? 'bg-rose-50 text-rose-900 dark:bg-rose-950 dark:text-rose-300'
+    : c.phase === 'done'
+    ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
+    : 'bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-300';
+  return (
+    <Section title='Mounting'>
+      <p className='text-xs text-slate-500'>
+        How the board is fitted in the truck. Board x points to the{' '}
+        {MOUNT_PRESETS.find((p) => p.yawDeg === m.yawDeg)?.label.toLowerCase() ?? `${m.yawDeg}° clockwise`}
+        {m.yawDeg === 0 ? ' (the nose)' : ''}.
+      </p>
+      <div className='flex flex-wrap gap-1.5'>
+        {MOUNT_PRESETS.map((p) => (
+          <button
+            key={p.label}
+            type='button'
+            aria-pressed={m.yawDeg === p.yawDeg}
+            className={`${BTN} ${m.yawDeg === p.yawDeg ? 'border-sky-600 text-sky-700 dark:text-sky-400' : ''}`}
+            onClick={() => set({ yawDeg: p.yawDeg })}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <SliderField
+        label='Yaw'
+        value={m.yawDeg}
+        min={0}
+        max={359}
+        step={1}
+        unit='°'
+        digits={0}
+        onChange={(yawDeg) => set({ yawDeg })}
+      />
+      <SliderField
+        label='Pitch'
+        value={m.pitchDeg}
+        min={-30}
+        max={30}
+        step={1}
+        unit='°'
+        digits={0}
+        onChange={(pitchDeg) => set({ pitchDeg })}
+      />
+      <SliderField
+        label='Roll'
+        value={m.rollDeg}
+        min={-30}
+        max={30}
+        step={1}
+        unit='°'
+        digits={0}
+        onChange={(rollDeg) => set({ rollDeg })}
+      />
+
+      <h3 className='pt-2 text-sm font-semibold text-slate-800 dark:text-slate-100'>Calibrate from the IMU</h3>
+      <ol className='list-decimal space-y-1 pl-5 text-xs text-slate-600 dark:text-slate-400'>
+        <li>Stop the truck and press Level: 2 s of gravity give "up", so the tilt.</li>
+        <li>Press Front and pull away straight ahead: the push of the acceleration gives the nose, so the yaw.</li>
+      </ol>
+      <div className='flex flex-wrap gap-2'>
+        <button
+          type='button'
+          className={PRIMARY}
+          disabled={busy}
+          onClick={() => send({ type: 'mount-cal', step: 'level' })}
+        >
+          Level
+        </button>
+        <button
+          type='button'
+          className={PRIMARY}
+          disabled={busy || c.level === null}
+          onClick={() => send({ type: 'mount-cal', step: 'front' })}
+        >
+          Front
+        </button>
+        <button type='button' className={BTN} onClick={() => send({ type: 'mount-cal', step: 'clear' })}>
+          Clear
+        </button>
+      </div>
+      <div className={`rounded-md px-3 py-2 text-xs ${tone}`} role='status'>
+        {c.message}
+        {busy && (
+          <div className='mt-2 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800'>
+            <div className='h-full rounded-full bg-sky-600' style={{ width: `${Math.round(c.progress * 100)}%` }} />
+          </div>
+        )}
+      </div>
+      {(c.level || c.cal) && (
+        <dl className='space-y-1'>
+          {c.level && (
+            <Row label='Tilt, found / fitted'>
+              {deg(c.level.tiltPitchDeg)} pitch, {deg(c.level.tiltRollDeg)} roll / {deg(m.pitchDeg)}, {deg(m.rollDeg)}
+            </Row>
+          )}
+          {c.cal && (
+            <Row label='Yaw, found / fitted'>
+              {deg((c.cal.yawOffsetDeg + 360) % 360)} / {deg(m.yawDeg)}
+            </Row>
+          )}
+        </dl>
+      )}
+    </Section>
   );
 }
 
@@ -309,9 +467,11 @@ export function DriveInspector(p: InspectorProps) {
           {p.tab === 'live' && (
             <>
               <p className='text-xs text-slate-500'>
-                Keyboard: W throttle, S or Space brake, A / D steer{kind === 'plane' ? ', Q / E climb / descend' : ''},
-                R GPS fix.
+                Keyboard: W throttle, S or Space brake, A / D steer{kind === 'plane'
+                  ? ', Q / E climb / descend'
+                  : ', X drive / reverse'}, R GPS fix.
               </p>
+              {kind === 'truck' && <Gear v={v} />}
               <div className='space-y-1.5'>
                 <Bar label='Throttle' value={v.controls.throttle} />
                 <Bar label='Brake' value={v.controls.brake} />
@@ -328,6 +488,8 @@ export function DriveInspector(p: InspectorProps) {
           )}
         </Section>
       )}
+
+      {v && v.kind === 'truck' && <MountingSection v={v} send={send} />}
 
       {v && (
         <Section
@@ -357,6 +519,7 @@ export function DriveInspector(p: InspectorProps) {
             <Row label='Since the last fix'>{v.sinceAnchorS.toFixed(0)} s</Row>
             <Row label='Speed, true / estimated'>
               {(v.truth.speed * 3.6).toFixed(1)} / {(v.estimate.speed * 3.6).toFixed(1)} km/h
+              {v.estimate.speed < -0.3 && <span className='ml-1 text-slate-500'>(reversing)</span>}
             </Row>
             <Row label='Heading, true / estimated'>
               {v.truth.headingDeg.toFixed(1)}° / {v.estimate.headingDeg.toFixed(1)}°
