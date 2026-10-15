@@ -3,8 +3,10 @@
 import { deepStrictEqual as assertEquals, throws as assertThrows } from 'node:assert/strict';
 import {
   assetNames,
+  bumpVersion,
   changeList,
   generateNotes,
+  parseProjectVersion,
   parseVersion,
   repoFromRemote,
   shellLine,
@@ -12,25 +14,32 @@ import {
   tagOf,
 } from './release-lib.ts';
 
-Deno.test('versions come from Protocol.h, version.ts and main.ts', () => {
+Deno.test('component versions come from Protocol.h, version.ts and main.ts', () => {
   assertEquals(parseVersion('firmware', 'constexpr uint32_t kFirmwareVersion = 0x00020500;'), '2.5.0');
   assertEquals(parseVersion('firmware', 'kFirmwareVersion = 0x000A0C0F;'), '10.12.15');
   assertEquals(parseVersion('configurator', "export const TOOL_VERSION = '1.2.0';"), '1.2.0');
   assertEquals(parseVersion('simulator', "export const SIM_VERSION = '1.5.0';"), '1.5.0');
   assertThrows(() => parseVersion('simulator', "TOOL_VERSION = '1.0.0'"), /SIM_VERSION not found/);
-  assertEquals(tagOf('firmware', '2.5.0'), 'firmware-v2.5.0');
+});
+
+Deno.test('the project version: VERSION file, bumps and the tag', () => {
+  assertEquals(parseProjectVersion('1.0.0\n'), '1.0.0');
+  assertThrows(() => parseProjectVersion('v1.0'), /must hold a version like 1.0.0/);
+  assertEquals(bumpVersion('1.2.3', 'patch'), '1.2.4');
+  assertEquals(bumpVersion('1.2.3', 'minor'), '1.3.0');
+  assertEquals(bumpVersion('1.2.3', 'major'), '2.0.0');
+  assertEquals(tagOf('1.0.0'), 'v1.0.0');
 });
 
 Deno.test('release files match the names the builds produce', () => {
   assertEquals(assetNames('firmware', '2.5.0'), [
     'hour-meter-2.5.0-esp32dev-merged.bin',
     'hour-meter-firmware-2.5.0-esp32dev.tar.gz',
-    'SHA256SUMS',
   ]);
   const sim = assetNames('simulator', '1.5.0');
   assertEquals(sim[0], 'hour-meter-sim-1.5.0-linux-x64.tar.gz');
   assertEquals(sim[4], 'hour-meter-sim-1.5.0-windows-x64.zip');
-  assertEquals(assetNames('configurator', '1.2.0').length, 6);
+  assertEquals(assetNames('configurator', '1.2.0').length, 5);
 });
 
 Deno.test('change list: subjects without type(scope), body bullets joined across wrapped lines', () => {
@@ -53,38 +62,42 @@ Deno.test('change list: subjects without type(scope), body bullets joined across
   ]);
 });
 
-Deno.test('generated notes: title, files table, changes and the compare link', () => {
+Deno.test('generated notes: one release, every part with its version, files and changes', () => {
   const n = generateNotes({
-    component: 'configurator',
-    version: '1.2.0',
+    version: '1.0.0',
     repo: 'me/repo',
-    previousTag: 'configurator-v1.1.0',
-    commits: [{ subject: 'feat(configurator): something new', body: '' }],
+    previousTag: null,
+    components: [
+      {
+        component: 'firmware',
+        version: '2.5.0',
+        previousVersion: '2.4.0',
+        commits: [{ subject: 'feat(firmware): vibration', body: '' }],
+      },
+      { component: 'configurator', version: '1.2.0', previousVersion: '1.2.0', commits: [] },
+      { component: 'simulator', version: '1.5.0', previousVersion: null, commits: [] },
+    ],
   });
-  assertEquals(n.title, 'hour-meter configurator 1.2.0');
+  assertEquals(n.title, 'Hour meter 1.0.0: firmware 2.5.0, configurator 1.2.0, simulator 1.5.0');
   for (
     const part of [
+      '| Firmware | 2.5.0 | yes (was 2.4.0) |',
+      '| Configurator (`hour-meter`) | 1.2.0 | no |',
+      '| Simulator (`hour-meter-sim`) | 1.5.0 | new |',
+      '`hour-meter-2.5.0-esp32dev-merged.bin`',
       '`hour-meter-1.2.0-macos-arm64.tar.gz`',
-      '- Something new',
-      'compare/configurator-v1.1.0...configurator-v1.2.0',
+      '- Vibration',
+      'No changes since the previous release.',
     ]
   ) {
     assertEquals(n.body.includes(part), true, part);
   }
-  const first = generateNotes({
-    component: 'firmware',
-    version: '1.0.0',
-    repo: 'me/repo',
-    previousTag: null,
-    commits: [],
-  });
-  assertEquals(first.body.includes('compare/'), false);
-  assertEquals(first.body.includes('(no commits found)'), true);
+  assertEquals(n.body.includes('compare/'), false);
 });
 
 Deno.test('notes files, remotes and shell lines', () => {
-  assertEquals(splitNotes('# Firmware 2.5.0: the ACC fix\n\nBody\n', 'x'), {
-    title: 'Firmware 2.5.0: the ACC fix',
+  assertEquals(splitNotes('# Hour meter 1.0.0: the ACC fix\n\nBody\n', 'x'), {
+    title: 'Hour meter 1.0.0: the ACC fix',
     body: 'Body\n',
   });
   assertEquals(splitNotes('Body only\n', 'Fallback'), { title: 'Fallback', body: 'Body only\n' });

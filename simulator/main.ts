@@ -27,7 +27,7 @@ import { PtyTransport } from './src/transport/pty.ts';
 import { StdioTransport } from './src/transport/stdio.ts';
 import { TcpTransport } from './src/transport/tcp.ts';
 
-/** Simulator release version (tags: simulator-v<version>). The protocol version is FIRMWARE_VERSION. */
+/** Simulator version (shipped in release v<VERSION>, scripts/release.ts). Protocol version: FIRMWARE_VERSION. */
 export const SIM_VERSION = '1.5.0';
 const POLL_MS = 10;
 const DEFAULT_WEB_PORT = 8080;

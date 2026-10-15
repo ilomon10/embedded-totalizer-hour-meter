@@ -1,6 +1,7 @@
-// release-lib.ts: the pure part of scripts/release.ts. What each component is,
-// where its version lives, which files a release carries and the generated
-// release notes. No I/O here, so it is tested on its own (release-lib.test.ts).
+// release-lib.ts: the pure part of scripts/release.ts. One release (tag v<VERSION>)
+// carries all three components, each with its own version: where those versions
+// live, which files the release carries, and the generated release notes.
+// No I/O here, so it is tested on its own (release-lib.test.ts).
 
 export type Component = 'firmware' | 'configurator' | 'simulator';
 
@@ -11,19 +12,22 @@ export interface ComponentInfo {
   dir: string;
   /** file that holds the version, relative to the repo root */
   versionFile: string;
-  /** what the release is called on GitHub, before the version */
-  title: string;
+  /** how the notes name it */
+  label: string;
 }
 
 export const INFO: Record<Component, ComponentInfo> = {
-  firmware: { dir: 'esp32', versionFile: 'esp32/lib/App/src/Protocol.h', title: 'Hour meter firmware' },
+  firmware: { dir: 'esp32', versionFile: 'esp32/lib/App/src/Protocol.h', label: 'Firmware' },
   configurator: {
     dir: 'configurator',
     versionFile: 'configurator/src/version.ts',
-    title: 'hour-meter configurator',
+    label: 'Configurator (`hour-meter`)',
   },
-  simulator: { dir: 'simulator', versionFile: 'simulator/main.ts', title: 'hour-meter-sim simulator' },
+  simulator: { dir: 'simulator', versionFile: 'simulator/main.ts', label: 'Simulator (`hour-meter-sim`)' },
 };
+
+/** The project version file (the release tag is v<its content>). */
+export const VERSION_FILE = 'VERSION';
 
 /** Platforms `deno task compile` builds, as they appear in archive names. */
 export const TOOL_PLATFORMS = ['linux-x64', 'linux-arm64', 'macos-x64', 'macos-arm64', 'windows-x64'] as const;
@@ -35,6 +39,8 @@ const PLATFORM_LABEL: Record<(typeof TOOL_PLATFORMS)[number], string> = {
   'macos-arm64': 'macOS Apple Silicon',
   'windows-x64': 'Windows x64',
 };
+
+const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
 
 /** The version in a component's version file, e.g. "2.5.0". Throws if it is not found. */
 export function parseVersion(c: Component, source: string): string {
@@ -50,22 +56,29 @@ export function parseVersion(c: Component, source: string): string {
   return m[1];
 }
 
-export const tagOf = (c: Component, version: string) => `${c}-v${version}`;
+/** The project version from the VERSION file ("1.0.0", whitespace ignored). */
+export function parseProjectVersion(text: string): string {
+  const v = text.trim();
+  if (!SEMVER.test(v)) throw new Error(`${VERSION_FILE} must hold a version like 1.0.0, not '${v}'`);
+  return v;
+}
 
-/** Names of the files attached to the release (SHA256SUMS last). */
+export type Bump = 'major' | 'minor' | 'patch';
+
+export function bumpVersion(v: string, bump: Bump): string {
+  const [, a, b, c] = v.match(SEMVER)!.map(Number);
+  return bump === 'major' ? `${a + 1}.0.0` : bump === 'minor' ? `${a}.${b + 1}.0` : `${a}.${b}.${c + 1}`;
+}
+
+export const tagOf = (version: string) => `v${version}`;
+
+/** Files one component adds to the release (without SHA256SUMS: there is one for the whole release). */
 export function assetNames(c: Component, version: string): string[] {
   if (c === 'firmware') {
-    return [
-      `hour-meter-${version}-esp32dev-merged.bin`,
-      `hour-meter-firmware-${version}-esp32dev.tar.gz`,
-      'SHA256SUMS',
-    ];
+    return [`hour-meter-${version}-esp32dev-merged.bin`, `hour-meter-firmware-${version}-esp32dev.tar.gz`];
   }
   const base = c === 'configurator' ? 'hour-meter' : 'hour-meter-sim';
-  return [
-    ...TOOL_PLATFORMS.map((p) => `${base}-${version}-${p}.${p.startsWith('windows') ? 'zip' : 'tar.gz'}`),
-    'SHA256SUMS',
-  ];
+  return TOOL_PLATFORMS.map((p) => `${base}-${version}-${p}.${p.startsWith('windows') ? 'zip' : 'tar.gz'}`);
 }
 
 /** Flash offsets of the ESP32 images (Arduino core, 4 MB, default partition table). */
@@ -105,59 +118,78 @@ export function changeList(c: Component, commits: Commit[]): string[] {
   return lines;
 }
 
-export interface NotesInput {
+export interface ComponentNotes {
   component: Component;
   version: string;
-  repo: string;
-  /** the tag of the previous release of this component, if any */
-  previousTag: string | null;
+  /** the version in the previous release, null if this is its first */
+  previousVersion: string | null;
   commits: Commit[];
+}
+
+export interface NotesInput {
+  version: string;
+  repo: string;
+  /** the previous release's tag (v… or an old per-component tag), for the compare link */
+  previousTag: string | null;
+  components: ComponentNotes[];
+}
+
+export function releaseTitle(version: string, versions: Record<Component, string>): string {
+  return `Hour meter ${version}: firmware ${versions.firmware}, configurator ${versions.configurator}, simulator ${versions.simulator}`;
 }
 
 /** Release notes generated from the commits, in the style of the earlier releases. */
 export function generateNotes(n: NotesInput): { title: string; body: string } {
-  const { component: c, version: v, repo } = n;
-  const assets = assetNames(c, v);
-  const out: string[] = [];
-  if (c === 'firmware') {
-    out.push(
-      `Firmware **${v}** for the ESP32 DevKit hour meter.`,
-      '',
-      '| File | What |',
-      '|---|---|',
-      `| \`${assets[0]}\` | One image, flash at \`0x0\` |`,
-      `| \`${assets[1]}\` | The separate images (${FLASH_LAYOUT.map((l) => `${l.file} \`${l.offset}\``).join(', ')}) |`,
-      '',
-      '```bash',
-      `esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 write_flash 0x0 ${assets[0]}`,
-      '# or from the source tree:  cd esp32 && pio run -e esp32dev -t upload',
-      '```',
-    );
-  } else {
-    const exe = c === 'configurator' ? 'hour-meter' : 'hour-meter-sim';
-    out.push(
-      `\`${exe}\` **${v}**. One standalone binary, no Deno needed.`,
-      '',
-      '| Platform | File |',
-      '|---|---|',
-      ...TOOL_PLATFORMS.map((p, i) => `| ${PLATFORM_LABEL[p]} | \`${assets[i]}\` |`),
-      '',
-      '```bash',
-      `tar xzf ${assets[0]} && cd ${assets[0].replace(/\.tar\.gz$/, '')}`,
-      c === 'configurator'
-        ? './hour-meter --demo            # or: ./hour-meter /dev/ttyUSB0'
-        : './hour-meter-sim --web',
-      '```',
-    );
+  const versions = Object.fromEntries(n.components.map((c) => [c.component, c.version])) as Record<Component, string>;
+  const out: string[] = [
+    `One release with everything for the ESP32 hour meter. Each part keeps its own version.`,
+    '',
+    '| Part | Version | Changed |',
+    '|---|---|---|',
+    ...n.components.map((c) =>
+      `| ${INFO[c.component].label} | ${c.version} | ${
+        c.previousVersion === null ? 'new' : c.commits.length ? `yes (was ${c.previousVersion})` : 'no'
+      } |`
+    ),
+  ];
+  for (const c of n.components) {
+    const assets = assetNames(c.component, c.version);
+    out.push('', `## ${INFO[c.component].label} ${c.version}`, '');
+    if (c.component === 'firmware') {
+      out.push(
+        '| File | What |',
+        '|---|---|',
+        `| \`${assets[0]}\` | One image, flash at \`0x0\` |`,
+        `| \`${assets[1]}\` | The separate images (${
+          FLASH_LAYOUT.map((l) => `${l.file} \`${l.offset}\``).join(', ')
+        }) |`,
+        '',
+        '```bash',
+        `esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 write_flash 0x0 ${assets[0]}`,
+        '```',
+      );
+    } else {
+      const exe = c.component === 'configurator' ? './hour-meter --demo' : './hour-meter-sim --web';
+      out.push(
+        '| Platform | File |',
+        '|---|---|',
+        ...TOOL_PLATFORMS.map((p, i) => `| ${PLATFORM_LABEL[p]} | \`${assets[i]}\` |`),
+        '',
+        '```bash',
+        `tar xzf ${assets[0]} && cd ${assets[0].replace(/\.tar\.gz$/, '')} && ${exe}`,
+        '```',
+      );
+    }
+    const changes = changeList(c.component, c.commits);
+    if (changes.length) out.push('', '### Changes', ...changes);
+    else out.push('', `No changes since the previous release.`);
   }
-  const changes = changeList(c, n.commits);
-  out.push('', '### Changes', ...(changes.length ? changes : ['- (no commits found)']));
-  out.push('', '### Notes');
+  out.push('', '## Notes');
   if (n.previousTag) {
-    out.push(`- Full list: https://github.com/${repo}/compare/${n.previousTag}...${tagOf(c, v)}`);
+    out.push(`- Full list: https://github.com/${n.repo}/compare/${n.previousTag}...${tagOf(n.version)}`);
   }
-  out.push('- Verify a download with `sha256sum -c SHA256SUMS`.');
-  return { title: `${INFO[c].title} ${v}`, body: out.join('\n') + '\n' };
+  out.push('- Verify a download with `sha256sum -c SHA256SUMS` (it lists every file in this release).');
+  return { title: releaseTitle(n.version, versions), body: out.join('\n') + '\n' };
 }
 
 /** A notes file: an optional first line "# Title", then the body. */

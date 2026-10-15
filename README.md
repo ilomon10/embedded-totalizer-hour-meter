@@ -72,15 +72,25 @@ cd simulator && deno task test            # simulator: firmware golden frames, f
 
 ## Releasing
 
-[`scripts/release.ts`](scripts/release.ts) publishes firmware, configurator and simulator releases (tags `firmware-v*`, `configurator-v*`, `simulator-v*`). Bump the version first (`kFirmwareVersion` in `Protocol.h`, `TOOL_VERSION` in `configurator/src/version.ts`, `SIM_VERSION` in `simulator/main.ts`) and commit.
+One GitHub release, tagged `v<VERSION>` (the [`VERSION`](VERSION) file), carries all three parts: the firmware images, the `hour-meter` binaries and the `hour-meter-sim` binaries. Each part keeps its own version (`kFirmwareVersion` in `Protocol.h`, `TOOL_VERSION` in `configurator/src/version.ts`, `SIM_VERSION` in `simulator/main.ts`), and the release notes show them side by side. [`scripts/release.ts`](scripts/release.ts) does it all:
 
 ```bash
-./scripts/release.ts all --dry-run          # what it would run, plus the release notes; changes nothing
-./scripts/release.ts firmware simulator     # checks, tests, builds, asks, then tags, pushes and publishes
-./scripts/release.ts firmware --notes notes.md --draft   # your own notes ("# Title" first line), as a draft
+./scripts/release.ts --dry-run              # what it would run, plus the release notes; changes nothing
+./scripts/release.ts                        # checks, tests, builds, asks, then tags, pushes and publishes
+./scripts/release.ts --bump minor           # next release: VERSION 1.0.0 -> 1.1.0 in a commit first
+./scripts/release.ts --notes notes.md --draft   # your own notes ("# Title" first line), as a draft
 ```
 
-For each component it releases the newest commit that touches its folder (or `--ref <commit>`). It tests and builds that exact commit in a temporary git worktree, and puts the files and `NOTES.md` in `.release/<tag>/`. It asks before anything leaves your machine. Afterwards it downloads the release and checks `SHA256SUMS`, `--version` and the firmware image. It stops before changing anything if you're not on `main`, the component has uncommitted changes, `gh` isn't logged in, `origin/main` has commits you lack, or the tag or release already exists. Without `--notes`, the notes are generated from the Conventional Commit messages since the previous release.
+It releases HEAD (or `--ref <commit>`). It tests and builds that exact commit in a temporary git worktree, and puts the files, one `SHA256SUMS` and `NOTES.md` in `.release/v<VERSION>/`. It asks before anything leaves your machine. Afterwards it downloads the release and checks `SHA256SUMS`, both binaries' `--version` and the firmware image.
+
+It stops before changing anything if:
+- you're not on `main`;
+- a released folder has uncommitted changes;
+- `gh` isn't logged in;
+- `origin/main` has commits you lack;
+- the tag or release already exists. Use `--bump` in that case.
+
+It warns when a part changed since the previous release but still has the same version. Without `--notes`, the notes are generated from the Conventional Commit messages since the previous release. Releases before 1.0.0 were separate per part (`firmware-v*`, `configurator-v*`, `simulator-v*`).
 
 ## Documentation
 

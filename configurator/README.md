@@ -10,7 +10,7 @@ hour-meter get hour --port /dev/ttyUSB0 # one command, one ACK
 
 ## Install
 
-**Binary:** download `hour-meter-<version>-<platform>` from the [releases page](https://github.com/ilomon10/embedded-totalizer-hour-meter/releases) (tags `configurator-v*`), unpack it, and run `hour-meter`. Verify the download with `sha256sum -c SHA256SUMS`. On macOS, if Gatekeeper blocks the unsigned binary, run `xattr -d com.apple.quarantine hour-meter` once.
+**Binary:** download `hour-meter-<version>-<platform>` from the [releases page](https://github.com/ilomon10/embedded-totalizer-hour-meter/releases) (each release `v*` carries the firmware, this tool and the simulator; older ones are tagged `configurator-v*`), unpack it, and run `hour-meter`. Verify the download with `sha256sum -c SHA256SUMS`. On macOS, if Gatekeeper blocks the unsigned binary, run `xattr -d com.apple.quarantine hour-meter` once.
 
 **From source** (needs [Deno](https://deno.com) 2):
 
@@ -161,4 +161,4 @@ configurator/
 
 Why not the npm `serialport` package? Under Deno its native add-on opens the port, but every read and write then fails with `EBADF`. So serial ports are opened with `Deno.open` and set up with `stty`. That keeps the binary free of native code, but rules out Windows COM ports for now. Opening device files needs Deno's `-A` permission, which `deno task start` and the release binary use.
 
-To release: bump `TOOL_VERSION` in `src/version.ts`, run `deno task compile`, tag `configurator-v<version>`, and attach `dist/*.tar.gz`, `dist/*.zip` and `dist/SHA256SUMS` to a GitHub release.
+To release: bump `TOOL_VERSION` in `src/version.ts`, commit, and run [`scripts/release.ts`](../scripts/release.ts) from the repository root (see [Releasing](../README.md#releasing)). `deno task compile` alone builds the binaries into `dist/`.

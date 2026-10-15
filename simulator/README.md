@@ -21,7 +21,7 @@ Needs [Deno](https://deno.com) 2 and, for the virtual tty, `socat` (`apt install
 
 ### Without Deno: download a binary
 
-Standalone binaries for Linux (x64, arm64), macOS (Intel, Apple Silicon) and Windows (x64) are on the [releases page](https://github.com/ilomon10/embedded-totalizer-hour-meter/releases) (tags `simulator-v*`). They take the same options as `deno task start`:
+Standalone binaries for Linux (x64, arm64), macOS (Intel, Apple Silicon) and Windows (x64) are on the [releases page](https://github.com/ilomon10/embedded-totalizer-hour-meter/releases) (each release `v*` carries the firmware, the configurator and this simulator; older ones are tagged `simulator-v*`). They take the same options as `deno task start`:
 
 ```bash
 tar -xzf hour-meter-sim-1.0.0-linux-x64.tar.gz
@@ -210,7 +210,7 @@ deno task gen-catalog  # print the FRAME-CATALOG.md frames after a protocol chan
 deno task compile      # builds the web UI, then release binaries for all 5 platforms into dist/ (+ SHA256SUMS)
 ```
 
-To release: bump `SIM_VERSION` in `main.ts`, run `deno task compile`, tag `simulator-v<version>`, and attach `dist/*.tar.gz`, `dist/*.zip` and `dist/SHA256SUMS` to a GitHub release.
+To release: bump `SIM_VERSION` in `main.ts`, commit, and run [`scripts/release.ts`](../scripts/release.ts) from the repository root (see [Releasing](../README.md#releasing)). `deno task web:build && deno task compile` alone builds the binaries into `dist/`.
 
 ```
 simulator/
