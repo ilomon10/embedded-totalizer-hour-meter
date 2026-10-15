@@ -105,7 +105,7 @@ export function changeList(c: Component, commits: Commit[]): string[] {
     const m = commit.subject.match(/^(\w+)(?:\(([^)]+)\))?!?:\s*(.+)$/);
     const scope = m?.[2];
     const text = m ? m[3] : commit.subject;
-    if (m && ['chore', 'ci', 'style', 'test'].includes(m[1])) continue;
+    if (m && ['build', 'chore', 'ci', 'style', 'test'].includes(m[1])) continue; // not what users run
     lines.push(`- ${scope && scope !== c ? `[${scope}] ` : ''}${text.charAt(0).toUpperCase()}${text.slice(1)}`);
     let inBullet = false;
     for (const b of commit.body.split('\n')) {
