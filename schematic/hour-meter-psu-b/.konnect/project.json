@@ -1,0 +1,8 @@
+{
+  "design_rules": [],
+  "fab_constraints": {
+    "layer_count": 2
+  },
+  "naming_conventions": {},
+  "sourcing": {}
+}
