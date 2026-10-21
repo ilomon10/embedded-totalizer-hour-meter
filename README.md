@@ -26,7 +26,9 @@ Firmware version: **2.5.0** (see `kFirmwareVersion` in [`Protocol.h`](esp32/lib/
 | [`esp32/`](esp32/README.md) | PlatformIO firmware. Envs: `esp32dev` (firmware), `bench` (module test firmware), `native` (unit tests on the PC) |
 | [`configurator/`](configurator/README.md) | `hour-meter` (Deno, released as a standalone binary): full-screen TUI, live reader (`read`), single commands (`get`, `set`, ...) and the `DeviceClient` library |
 | [`sensorframe/`](sensorframe/README.md) | The wire format: [SPEC.md](sensorframe/SPEC.md), header-only C++ library (`arduino/`), zero-dependency npm package (`js/`), shared golden test vectors |
-| [`schematic/hour-meter-esp32/`](schematic/hour-meter-esp32/README.md) | Carrier PCB rev A (KiCad): schematic, 2-layer THT board, JLCPCB Gerbers + BOM in `production/`, generator scripts `tools-*.py` |
+| [`schematic/hour-meter-board/`](schematic/hour-meter-board/README.md) | Main board rev B (KiCad, draft): chip-down, one schematic sheet per former module, 4-layer 100 × 90 mm, JLCPCB in-stock parts, runs from 5 V |
+| [`schematic/hour-meter-psu-b/`](schematic/hour-meter-psu-b/README.md) | Plug-on 9–36 V → 5.3 V supply (TPS54360B) for the rev-B board |
+| [`schematic/hour-meter-esp32/`](schematic/hour-meter-esp32/README.md) | Carrier PCB rev A (KiCad): schematic, 2-layer THT board for the loose modules, JLCPCB Gerbers + BOM in `production/`, generator scripts `tools-*.py`. Superseded by rev B |
 | `schematic/totalizator-hour-meter-schematic/` | Early KiCad draft (DevKit pin headers only), superseded by `hour-meter-esp32/` |
 | [`simulator/`](simulator/README.md) | Deno device simulator: the real protocol on a virtual serial port (socat), TCP or stdio, with fault scenarios, the Bluetooth lock, and a web UI (`--web`): every value live, a 3D bench, and a truck/plane on an OpenStreetMap map with IMU-only dead reckoning. For driver development without hardware |
 | `canbus/` | `can.sh`: CANable2 (slcan) helper for can-utils: `up [rate] [--tx]`, `down`, `scan [seconds]`, `status`. Listen-only by default |
@@ -36,6 +38,8 @@ Firmware version: **2.5.0** (see `kFirmwareVersion` in [`Protocol.h`](esp32/lib/
 ESP32 DevKit · AT24C256 EEPROM (0x50) · DS3231 RTC (0x68) · MPU9250 IMU (**0x69**, AD0 high) · alternator input GPIO27 · pulse input GPIO26 · UART GPIO16/17 · Bluetooth Classic SPP (off by default, PIN-locked).
 
 Engine inputs go through a 2-channel PC817 module (outputs active LOW). Wiring details and required resistor changes: [esp32/docs/WIRING.md](esp32/docs/WIRING.md).
+
+The rev-B [main board](schematic/hour-meter-board/README.md) puts all of this on one PCB from JLCPCB in-stock parts. It adds RS485, USB-C, a GPS socket and VIN sensing, uses an MPU-6500 + LIS3MDL in place of the discontinued MPU9250, and takes its 9–36 V supply from the plug-on [PSU-B](schematic/hour-meter-psu-b/README.md). Before ordering, check part stock with `./scripts/jlc-stock.ts <bom.csv>`.
 
 ## Quick start
 
@@ -99,7 +103,7 @@ It warns when a part changed since the previous release but still has the same v
 | Building an app that talks to the device | [INTEGRATION-GUIDE.md](esp32/docs/INTEGRATION-GUIDE.md) + [SensorFrame SPEC.md](sensorframe/SPEC.md) |
 | Writing a driver: exact bytes of every frame | [FRAME-CATALOG.md](esp32/docs/FRAME-CATALOG.md) |
 | Developing without hardware | [simulator/README.md](simulator/README.md) |
-| Wiring the hardware | [WIRING.md](esp32/docs/WIRING.md), [carrier PCB README](schematic/hour-meter-esp32/README.md) |
+| Wiring the hardware | [WIRING.md](esp32/docs/WIRING.md), [rev-B main board](schematic/hour-meter-board/README.md), [rev-A carrier PCB](schematic/hour-meter-esp32/README.md) |
 | Working on the firmware | [ARCHITECTURE.md](esp32/docs/ARCHITECTURE.md), [CODING-STANDARD.md](esp32/docs/CODING-STANDARD.md) |
 | A TypeScript developer new to C++ | [CPP-FOR-TYPESCRIPT.md](esp32/docs/CPP-FOR-TYPESCRIPT.md) |
 | Curious how data survives power cuts | [EEPROM-LAYOUT.md](esp32/docs/EEPROM-LAYOUT.md) |
