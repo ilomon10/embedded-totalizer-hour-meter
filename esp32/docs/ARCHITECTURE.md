@@ -16,7 +16,7 @@ How the hour-meter firmware is organised, how data flows, and where to change th
 │   Protocol.h (all tags) · SettingsSchema · HourMeter · ImuPipeline       │
 │   CommandHandler · Telemetry · TimeKeeper · Snapshots · Supervisor       │
 ├──────────────────────────────────────────────────────────────────────────┤
-│ lib/Storage     EEPROM layout · Journal (counters) · SettingsStore (A/B)  │
+│ lib/Storage     Journal · SettingsStore (EEPROM) · FlashStore · Mirror    │
 │ lib/Filters     Kalman1D · KalmanAngle · Compass · Vibration · Stats      │
 ├──────────────────────────────────────────────────────────────────────────┤
 │ lib/At24c  lib/Ds3231  lib/Mpu9250    chip drivers (talk only via II2cBus)│
@@ -34,14 +34,15 @@ How the hour-meter firmware is organised, how data flows, and where to change th
 | Step | What | If it fails |
 |---|---|---|
 | 1 | Enable the 5 s task watchdog | |
-| 2 | `ResetLog`: read why and where the last run ended (`lastCause`, `lastStage`); count unplanned restarts | 3 in a row: **safe mode**, steps 4, 5, 8, 9 are skipped |
+| 2 | `ResetLog`: read why and where the last run ended (`lastCause`, `lastStage`); count unplanned restarts | 3 in a row: **safe mode**, steps 5, 6, 9, 10 are skipped |
 | 3 | Open USB (115200 fixed) | |
-| 4 | I2C bus recovery + start (400 kHz) | |
-| 5 | EEPROM probe → layout header check (format if blank/foreign; watchdog raised to 30 s) → load settings (A/B) → scan journal → `HourMeter.restore()` | Run on defaults; flags `eepromMissing` / `settingsDefaults` / `journalEmpty` |
-| 6 | Open UART (`uartBaud`), Bluetooth if enabled | |
-| 7 | Inputs: alternator pin, pulse interrupt | |
-| 8 | RTC probe, enable battery oscillator, read time | Flag `rtcMissing`; timestamps become uptime |
-| 9 | IMU WHO_AM_I, configure, magnetometer if present | Flag `imuMissing` / `magMissing` |
+| 4 | Flash store: find partition `hmdata`, read both settings copies, scan the counter journal | Flag `flashStoreMissing`: the EEPROM is the only store |
+| 5 | I2C bus recovery + start (400 kHz) | |
+| 6 | EEPROM probe → layout header check (format if blank/foreign; watchdog raised to 30 s) → scan journal | Flag `eepromMissing`: the flash alone keeps the values |
+| 7 | `StorageMirror.adopt()`: settings from the flash, else the EEPROM; counters: the newest save of this history in either store, with an EEPROM from another history added to the counters counted from zero → `HourMeter.restore()`; the store that is behind is brought up to date ([STORAGE.md](STORAGE.md)) | Run on defaults; flags `settingsDefaults` / `journalEmpty` |
+| 8 | Open UART (`uartBaud`), Bluetooth if enabled; inputs: alternator pin, pulse interrupt | |
+| 9 | RTC probe, enable battery oscillator, read time | Flag `rtcMissing`; timestamps become uptime |
+| 10 | IMU WHO_AM_I, configure, magnetometer if present | Flag `imuMissing` / `magMissing` |
 | 10 | Apply settings to every component, start timers | |
 | 11 | Send boot EVENT | |
 
@@ -76,12 +77,14 @@ pulse ISR ───────► Inputs.takePulses() ─► HourMeter.addPulse
                          │
        engine stopped OR persistDue (dirty && interval elapsed)
                          ▼
-                Journal.append(runSeconds, totalCount, epoch)  ──► AT24C256 ring slot n+1
-                         │                                        (CRC + read-back verify)
-                 ok ─► markPersisted     fail ─► deferPersist + statusFlags.storageError
+      StorageMirror.saveCounters(runSeconds, totalCount, epoch)   one new seq for both:
+             ├──► FlashStore.append   ──► flash ring slot n+1   (erase on entering a sector)
+             └──► Journal.append      ──► AT24C256 ring slot m+1 (when fitted)
+                         │                (CRC + read-back verify in both)
+       a store kept it ─► markPersisted     none did ─► deferPersist;  any failure ─► storageError
 ```
 
-At boot, `Journal.begin()` scans all 992 slots and restores the record with the highest valid `seq`. See [EEPROM-LAYOUT.md](EEPROM-LAYOUT.md).
+At boot both stores are scanned, and in each the valid record with the highest `seq` is its newest. Within one history the newer of the two wins: normally the flash's, which gets every save. An EEPROM from another history is only added to the counters counted from zero. See [STORAGE.md](STORAGE.md) and [EEPROM-LAYOUT.md](EEPROM-LAYOUT.md).
 
 ## 5. Data flow: IMU
 
@@ -115,6 +118,7 @@ Calibration runs inside the same pipeline using running statistics (Welford): no
 | Add a setting | `Settings` struct (bump `SettingsStore::kVersion`) → `SettingsSchema.cpp` row + `read`/`write` cases → `configurator/src/tags.ts` → INTEGRATION-GUIDE §7 → `./scripts/check-docs.ts` |
 | Add a telemetry value | new tag in `Protocol.h` → `Telemetry.cpp` → `configurator/src/tags.ts` → INTEGRATION-GUIDE §5 (+ `simulator/src/frames.ts`) |
 | Add a command | tag in `Protocol.h` → `checkAction` + `runAction` in `CommandHandler.cpp` → `IDeviceControl` if it needs hardware → docs |
-| Change the EEPROM map | `EepromLayout.h` + bump `kLayoutVersion` (the device reformats once) → [EEPROM-LAYOUT.md](EEPROM-LAYOUT.md) |
+| Change the EEPROM map | `EepromLayout.h` + bump `kLayoutVersion` (the device reformats the EEPROM once, then refills it from the flash) → [EEPROM-LAYOUT.md](EEPROM-LAYOUT.md) |
+| Change the flash store | `FlashStore.h` (+ `partitions.csv` for its size) → [STORAGE.md](STORAGE.md) |
 | Support another IMU | new driver in `lib/` producing `ImuSample`; the pipeline is chip-agnostic |
 | Test a module on the bench | `src/bench/BenchMain.cpp` (env `bench`), see [TESTING-MODULES.md](TESTING-MODULES.md) |

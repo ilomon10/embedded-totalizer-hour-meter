@@ -2,7 +2,7 @@
 
 **Audience:** developers building an app (desktop, mobile, server, PLC gateway) that reads data from or configures the totalizer / hour-meter device over a serial port.
 **You need:** a serial port and the ability to read bytes. No SDK and no firmware knowledge are required.
-**Protocol:** SensorFrame v1 binary frames, firmware 2.5.0. The byte-level appendix is [`sensorframe/SPEC.md`](../../sensorframe/SPEC.md).
+**Protocol:** SensorFrame v1 binary frames, firmware 2.6.0. The byte-level appendix is [`sensorframe/SPEC.md`](../../sensorframe/SPEC.md).
 **Byte-exact examples:** [FRAME-CATALOG.md](FRAME-CATALOG.md) lists every frame the device sends, with hex dumps. **No hardware?** The [simulator](../../simulator/README.md) runs a fake device on a virtual serial port.
 
 | Section | Contents |
@@ -26,7 +26,7 @@ The device is installed on an engine or machine. It measures:
 
 | Quantity | Source | Notes |
 |---|---|---|
-| **Engine run time** (hour meter) | Alternator signal | Counts only while the engine runs. Survives power loss (stored in EEPROM) |
+| **Engine run time** (hour meter) | Alternator signal | Counts only while the engine runs. Survives power loss (stored in the ESP32's flash and, when fitted, the EEPROM) |
 | **Totalizer** | Pulse input (flow meter, counter) | Raw pulses plus scaled units (`pulsesPerUnit`) |
 | **Real time** | DS3231 RTC | **UTC** Unix time. The device has no timezone |
 | **Vibration** | MPU9250 accelerometer | RMS and peak in milli-g over a window. Use for engine-health trends |
@@ -315,8 +315,8 @@ A boot EVENT with `resetReason` ≠ 1 (see tag 58) means the device restarted wi
 | 3 | `alternator` | bool | | | Engine running now (debounced). With `runVibMinMg` set, only while the IMU also feels the engine |
 | 4 | `runHours` | u32 | 0.01 | h | `runSeconds / 3600`, two decimals, for display |
 | 5 | `totalUnits` | u32 | 0.01 | unit | `totalCount / pulsesPerUnit`, two decimals |
-| 6 | `lastSavedEpoch` | u32 | 1 | s UTC | When the counters were last written to EEPROM (0 if time was unknown) |
-| 7 | `journalSeq` | u32 | 1 | | Save counter (increases by 1 per EEPROM save) |
+| 6 | `lastSavedEpoch` | u32 | 1 | s UTC | When the counters were last saved (0 if time was unknown) |
+| 7 | `journalSeq` | u32 | 1 | | Save counter (increases with every save; flash and EEPROM carry the same one) |
 | 8 | `eventKind` | u8 | | | EVENT type: 1 boot, 2 calibration finished, 3 modules changed |
 | 9 | `calibResult` | u8 | | | Result of a calibration (ackStatus code) |
 | 10 | `altInput` | bool | | | The engine-running input itself, before the vibration check. `altInput` true with `alternator` false means "wire live, no engine vibration": usually a key-on wire ([WIRING](WIRING.md#pick-the-wire)) |
@@ -359,10 +359,10 @@ The **raw** values come straight from the sensor. The **filtered** values have c
 | 57 | `overruns` | u32 | | | Times the device could not keep up with its schedule (lower rates or raise the baud) |
 | 58 | `resetReason` | u8 | | | 1 power-on, 3 software (reboot command), 4 crash, 5/6/7 watchdog, 9 brown-out (supply dip) |
 | 59 | `rejectedTag` | u8 | | | In an error ACK: which tag was refused |
-| 60 | `settingsSource` | u8 | | | 0 factory defaults, 1/2 stored copy A/B |
+| 60 | `settingsSource` | u8 | | | 0 factory defaults, 1/2 EEPROM copy A/B, 3/4 flash copy A/B (2.6.0) |
 | 61 | `btState` | u8 | | | Bluetooth: 0 off, 1 on (no client), 2 client connected and locked, 3 client connected and unlocked |
 | 62 | `lastCause` | u8 | | | Why the device restarted last time: 0 none (power-on, brown-out), 1 watchdog (the firmware stalled for 5 s), 2 I2C bus stuck for 30 s, 3 USB transmit stalled for 10 s, 4 [panic signal](#64-panic-signal-restart-without-a-frame), 5 `reboot` command, 6 crash |
-| 63 | `lastStage` | u8 | | | What it was doing at that moment: 0 unknown (power-on), 1 boot, 2 opening USB, 3 starting I2C, 4 EEPROM, 5 opening UART / Bluetooth, 6 RTC, 7 IMU, 8 serial / command, 9 inputs, 10 telemetry, 11 module presence check |
+| 63 | `lastStage` | u8 | | | What it was doing at that moment: 0 unknown (power-on), 1 boot, 2 opening USB, 3 starting I2C, 4 EEPROM, 5 opening UART / Bluetooth, 6 RTC, 7 IMU, 8 serial / command, 9 inputs, 10 telemetry, 11 module presence check, 12 flash store (2.6.0) |
 | 241 | `fwVersion` | u32 | | | `0x00MMmmpp`, e.g. `0x00020400` = 2.4.0 |
 | 242 | `ackSeq` | u16 | | | In ACK: the `seq` of your command |
 | 243 | `ackStatus` | u8 | | | In ACK: result, [see 6.3](#63-ackstatus-codes) |
@@ -371,25 +371,26 @@ The **raw** values come straight from the sensor. The **filtered** values have c
 
 | Bit | Name | Meaning / action |
 |---:|---|---|
-| 0 | `eepromMissing` | No EEPROM: counters are **not** saved. Service the device |
+| 0 | `eepromMissing` | No EEPROM. The counters and settings are still saved in the ESP32's flash (2.6.0), unless `flashStoreMissing` is set too: then they are **not** saved, service the device |
 | 1 | `rtcMissing` | No RTC: timestamps are uptime |
 | 2 | `timeInvalid` | The device does not know the time (new device, RTC without battery after a power cut, or no RTC). Send `setTime` |
 | 3 | `imuMissing` | No IMU: no vibration or orientation data |
 | 4 | `magMissing` | No magnetometer (some boards are MPU6500): no heading |
 | 5 | `imuNotCalibrated` | Run `calibrate` 1 |
 | 6 | `magNotCalibrated` | Run `calibrate` 2; heading is inaccurate until then |
-| 7 | `settingsDefaults` | Factory settings in use (first boot, or stored settings unreadable) |
-| 8 | `journalEmpty` | No saved hour meter found at boot (counting started at 0) |
-| 9 | `storageError` | The last EEPROM write failed. The device retries; persistent = hardware fault |
+| 7 | `settingsDefaults` | Factory settings in use (first boot, or no readable copy in flash or EEPROM) |
+| 8 | `journalEmpty` | No saved hour meter found at boot, in flash or EEPROM (counting started at 0) |
+| 9 | `storageError` | The last save failed in the flash or the EEPROM (the other one may still have it). The device retries; persistent = hardware fault |
 | 10 | `imuStuck` | IMU returns identical samples (frozen) |
 | 11 | `imuSaturated` | Acceleration or rotation exceeded the ±4 g / ±500 °/s range |
 | 12 | `i2cErrors` | Sensor bus errors occurred (see tag 56) |
 | 13 | `eepromFormatted` | EEPROM was blank or foreign and was initialised at this boot |
 | 14 | `calibrating` | A calibration is running |
 | 15 | `rtcBatteryLost` | The time had been set, but the RTC lost it during the last power-off: its backup battery is missing or flat. Ask the user to fit one (see [9.2](#92-running-without-an-rtc-battery)). Reported from boot until the next reboot |
-| 17 | `settingsNotSaved` | Settings were changed while no EEPROM was attached. They are active now and are saved automatically when an EEPROM is plugged in; lost if the device reboots first |
 | 16 | `timeNotBackedUp` | The time is valid but held only in the ESP32's RAM (no RTC, or the RTC could not store it). It will be lost at the next reboot; send `setTime` again after each boot EVENT |
-| 18 | `safeMode` | The device restarted itself 3 times in a row without being asked (watchdog, crash, I2C stuck, USB stalled), so it booted **without I2C**: no EEPROM, RTC or IMU, counting in RAM only. Read `lastCause` / `lastStage`, fix the wiring, then power-cycle, send `reboot` or the panic signal ([9.3](#93-the-device-sends-nothing)) |
+| 17 | `settingsNotSaved` | Settings were changed while there was nowhere to save them (no flash store and no EEPROM). They are active now and are saved automatically when an EEPROM is plugged in; lost if the device reboots first |
+| 18 | `safeMode` | The device restarted itself 3 times in a row without being asked (watchdog, crash, I2C stuck, USB stalled), so it booted **without I2C**: no EEPROM, RTC or IMU. The counters and settings still come from, and are saved to, the ESP32's flash (2.6.0). Read `lastCause` / `lastStage`, fix the wiring, then power-cycle, send `reboot` or the panic signal ([9.3](#93-the-device-sends-nothing)) |
+| 19 | `flashStoreMissing` | The ESP32's flash has no `hmdata` partition: its partition table is older than firmware 2.6.0 (an app-only update). The EEPROM is the only store. Flash the full image (`hour-meter firmware flash`, or `pio run -t upload`) to add it |
 
 ### 5.6 Calibration values (read-only)
 
@@ -470,7 +471,7 @@ Results are saved in the device and survive reboot. Read them with `get` 4.
 | 0 | Ok | Done | |
 | 1 | UnknownTag | A record tag is not a command or setting | Check `rejectedTag`; your app may be newer than the firmware |
 | 2 | InvalidValue | Value out of range or of the wrong type | Check `rejectedTag` and [§7](#7-settings-reference) |
-| 3 | StorageError | EEPROM write failed | Retry once; if it repeats, the device needs service |
+| 3 | StorageError | Saving failed: neither the flash nor the EEPROM kept the value | Retry once; if it repeats, the device needs service |
 | 4 | DeviceMissing | Needed chip absent (e.g. `calibrate` without IMU) | Check `devices` (tag 55) |
 | 5 | Busy | A calibration is already running | Wait for the calibration EVENT |
 | 6 | BadMagic | `resetCounters` without the magic value | |
@@ -495,7 +496,7 @@ port.write(new Uint8Array(64)); // 64 zero bytes
 
 ## 7. Settings reference
 
-Read all settings with `get` 2. To change one or more, send their tags in a COMMAND. Values are validated, saved to EEPROM (power-safe), and **applied immediately** unless the table says otherwise.
+Read all settings with `get` 2. To change one or more, send their tags in a COMMAND. Values are validated, saved to the flash and the EEPROM (power-safe), and **applied immediately** unless the table says otherwise.
 
 | Tag | Name | Type | Default | Range | Controls |
 |---:|---|---|---:|---|---|
@@ -503,7 +504,7 @@ Read all settings with `get` 2. To change one or more, send their tags in a COMM
 | 111 | `imuSampleHz` | u16 | 100 | 10–500 | IMU read + filter rate |
 | 112 | `imuStreamHz` | u8 | 10 | 0–100, ≤ `imuSampleHz` | IMU stream rate (0 = off) |
 | 113 | `streamMode` | u8 | 2 | 0 off, 1 raw, 2 filtered, 3 both | IMU stream content |
-| 114 | `persistIntervalS` | u16 | 60 | 10–3600 | Max time between EEPROM saves while running (always saved when the engine stops) |
+| 114 | `persistIntervalS` | u16 | 60 | 10–3600 | Max time between saves while running (always saved when the engine stops) |
 | 115 | `vibrationWindowMs` | u16 | 1000 | 100–10000 | Window for `vibRms` / `vibPeak` |
 | 116 | `rtcSyncIntervalS` | u16 | 60 | 1–3600 | How often the RTC is re-read |
 | 117 | `output` | u8 | 1 | 1 usb, 2 uart, 3 both | Where periodic data goes. **Applied after the ACK** |
@@ -560,7 +561,7 @@ sequenceDiagram
     participant App
     participant Device
     App->>Device: COMMAND setRunSeconds=4500000 (1250 h), setTotalCount=0
-    Device-->>App: ACK Ok (saved to EEPROM)
+    Device-->>App: ACK Ok (saved)
     App->>Device: COMMAND get=1
     Device-->>App: ACK runHours=1250.00 ...
 ```
@@ -621,7 +622,7 @@ sequenceDiagram
 5. **Check `timeValid`** before trusting timestamps. When it is false, the header timestamp is uptime (always below 946684800).
 6. **Device `seq` wraps** 65535 → 0. A jump or reset of `seq` together with a boot EVENT means the device restarted.
 7. **Hour meter after power loss.** The device saves at least every `persistIntervalS` while running and on every engine stop. After a sudden power cut, at most the last interval (default ≤ 60 s) is lost; the counter never jumps or corrupts.
-8. **Watch `statusFlags`.** Show `timeInvalid`, `rtcBatteryLost`, `eepromMissing` and `storageError` to the user; they need action.
+8. **Watch `statusFlags`.** Show `timeInvalid`, `rtcBatteryLost`, `eepromMissing`, `storageError` and `flashStoreMissing` to the user; they need action.
 
 ### 9.1 Modules are optional
 
@@ -629,11 +630,11 @@ Every I2C module (EEPROM, RTC, IMU) is optional and may be plugged in or removed
 
 | Missing | Still works | Not available |
 |---|---|---|
-| EEPROM | Counting (RAM), all settings (RAM, flag `settingsNotSaved`) | Persistence across reboots; `setRunSeconds` / `setTotalCount` / `resetCounters` answer `DeviceMissing` |
+| EEPROM | Everything: counters and settings are saved in the ESP32's flash (2.6.0) | The second copy. Without the flash store too (`flashStoreMissing`): persistence across reboots, settings stay in RAM (`settingsNotSaved`), and `setRunSeconds` / `setTotalCount` / `resetCounters` answer `DeviceMissing` |
 | RTC | Everything; `setTime` keeps time in RAM (`timeNotBackedUp`) | Time after a reboot until the app sends it again |
 | IMU | Everything else | Vibration, roll/pitch, heading, IMU stream, calibration |
 
-When an EEPROM is attached after boot, the hour meter it stored is **added** to what was counted meanwhile (engine time without storage is still real engine time).
+Every save goes to both the flash and the EEPROM. The flash is the main store; the EEPROM's values are used when the flash has none (a new ESP32 board, the first boot after the update). An EEPROM with newer saves of the same history (it ran in another ESP32 meanwhile) wins at boot; plugged in later, what that ESP32 counted is added. An EEPROM from another history, plugged in at boot or later, is **added** only to the counters the device was counting from zero without knowing their value: engine time without storage is still real engine time. Otherwise the EEPROM is given the device's values. Details: [`STORAGE.md`](STORAGE.md).
 
 ### 9.2 Running without an RTC battery
 
@@ -641,7 +642,7 @@ Many DS3231 boards are shipped or installed without a coin cell, and vehicle pow
 
 | Situation | What the device does | What your app should do |
 |---|---|---|
-| Power returns, RTC has no battery | Hour meter and totalizer continue from EEPROM (unaffected). `timeValid=false`, header timestamps are uptime, counter saves are stamped `lastSavedEpoch = 0` | Send `setTime` **automatically** when you see `timeValid=false` (rate-limit to about once per 30 s). The reference client does this: `DeviceClient.enableAutoTimeSync()` in [`configurator/src/device.ts`](../../configurator/src/device.ts) |
+| Power returns, RTC has no battery | Hour meter and totalizer continue from the stored copy (unaffected). `timeValid=false`, header timestamps are uptime, counter saves are stamped `lastSavedEpoch = 0` | Send `setTime` **automatically** when you see `timeValid=false` (rate-limit to about once per 30 s). The reference client does this: `DeviceClient.enableAutoTimeSync()` in [`configurator/src/device.ts`](../../configurator/src/device.ts) |
 | First boot after the time was lost | Also sets `rtcBatteryLost` (bit 15) | Tell the user the RTC needs a battery |
 | `setTime` received | Writes the RTC and uses the time immediately. If the RTC is missing or cannot be written, keeps the time in RAM and sets `timeNotBackedUp` (bit 16) | Nothing more; re-send after each boot EVENT while `timeNotBackedUp` is set |
 | RTC loses its time while running (supply dip) | Rewrites the RTC from its RAM clock at the next RTC sync (≤ `rtcSyncIntervalS`) | Nothing |
@@ -684,3 +685,4 @@ The restart counter clears after 10 minutes of normal running. USB is opened bef
 | 2.3.0 | Bluetooth Classic SPP (off by default, `bluetooth` / `btPin` settings, PIN-locked sessions with `unlock`, `Locked` / `BadPin` ACK codes, `btState`) |
 | 2.4.0 | Self-recovery: watchdog armed from the first instruction of boot, USB opened before I2C, restarts on a stuck I2C bus or stalled USB, the [panic signal](#64-panic-signal-restart-without-a-frame), safe mode (flag 18), `lastCause` / `lastStage` (tags 62, 63). **Fix:** `pitch` (tag 41) now follows this guide (nose up positive); 2.3.0 and older sent it with the opposite sign |
 | 2.5.0 | Engine-running confirmation by vibration: `runVibMinMg` setting (tag 129, off by default), `altInput` (tag 10) reports the raw input. Settings stored by older firmware load unchanged |
+| 2.6.0 | Settings and counters are also stored in the ESP32's own flash (partition `hmdata`): the device keeps its hour meter without an EEPROM, and in safe mode. Every save goes to flash and EEPROM; the flash is the main store, and the first boot copies the EEPROM into the flash. `setRunSeconds` / `setTotalCount` / `resetCounters` work without an EEPROM. `settingsSource` 3/4, `lastStage` 12, flag 19 `flashStoreMissing` |

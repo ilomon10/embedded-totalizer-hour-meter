@@ -2,6 +2,8 @@
 
 What is stored where in the 32 KB external EEPROM, and why it survives power cuts and decades of writes. Source of truth: [`lib/Storage/src/EepromLayout.h`](../lib/Storage/src/EepromLayout.h).
 
+Since firmware 2.6.0 the EEPROM is one of two stores: the ESP32's own flash holds the same records and every save goes to both. The flash is the main store; the EEPROM's values are used when the flash has none. See [STORAGE.md](STORAGE.md).
+
 ## Map
 
 ```
@@ -52,12 +54,13 @@ Settings only change when a user sends a command or completes a calibration, so 
 |---|---|---|
 | magic | u16 | `0x524A` |
 | version | u8 | 1 |
-| flags | u8 | bit0 time valid, bit1 manual preset, bit2 reset |
+| flags | u8 | bit0 time valid, bit1 manual preset, bit2 reset; from 2.6.0 bit3 / bit4: the hour meter / totalizer counts from zero, its real value unknown ([STORAGE.md](STORAGE.md)) |
 | seq | u32 | +1 per save; the highest valid one is current |
 | runSeconds | u32 | hour meter |
 | totalCount | u32 | totalizer pulses |
 | epoch | u32 | UTC time of the save (0 if unknown) |
-| reserved | 10 B | zero |
+| lineage | u32 | history id (from 2.6.0; 0 = written by older firmware) |
+| reserved | 6 B | zero |
 | crc | u16 | CRC16 of the 30 bytes above |
 
 **Endurance:**
@@ -76,5 +79,5 @@ In practice the device saves only while the engine runs (nothing changes otherwi
 ## Changing the layout
 
 1. Edit `EepromLayout.h` and update this document.
-2. Increment `layout::kLayoutVersion`. Devices reformat **once** on the next boot, which erases settings and counters, so preset the hour meter again afterwards (`setRunSeconds`).
+2. Increment `layout::kLayoutVersion`. Devices reformat the EEPROM **once** on the next boot. From firmware 2.6.0 the flash copy refills it, so nothing is lost; a device without the flash store (`flashStoreMissing`) loses its settings and counters, so preset the hour meter again afterwards (`setRunSeconds`).
 3. If only the `Settings` struct changes, increment `SettingsStore::kVersion` instead. Old settings are then ignored (defaults used) while the counters are kept.

@@ -72,3 +72,6 @@ struct Settings : StoredSettings {
 };
 
 Settings defaultSettings();
+
+// Every field equal: the frozen StoredSettings bytes (no padding inside) and the newer fields.
+bool sameSettings(const Settings& a, const Settings& b);

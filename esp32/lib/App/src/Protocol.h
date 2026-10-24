@@ -12,7 +12,7 @@
 // One writer size for every frame we send (SensorFrame maximum).
 using FrameWriter = SensorFrameWriter<SF_MAX_PACKET>;
 
-constexpr uint32_t kFirmwareVersion = 0x00020500;  // 0x00MMmmpp -> 2.5.0
+constexpr uint32_t kFirmwareVersion = 0x00020600;  // 0x00MMmmpp -> 2.6.0
 
 namespace msg {
 constexpr uint8_t kTelemetry = SF_MSG_TELEMETRY;  // 1: periodic hour meter + status
@@ -59,7 +59,7 @@ constexpr uint8_t kI2cErrors = 56;      // u32
 constexpr uint8_t kOverruns = 57;       // u32  scheduler overruns
 constexpr uint8_t kResetReason = 58;    // u8   ESP32 esp_reset_reason_t
 constexpr uint8_t kRejectedTag = 59;    // u8   which tag made a command fail
-constexpr uint8_t kSettingsSource = 60; // u8   0 defaults, 1 copy A, 2 copy B
+constexpr uint8_t kSettingsSource = 60; // u8   0 defaults, 1/2 EEPROM copy A/B, 3/4 flash copy A/B
 constexpr uint8_t kBtState = 61;        // u8   0 off, 1 on (no client), 2 client locked, 3 client unlocked
 constexpr uint8_t kLastCause = 62;      // u8   LastCause: why the device restarted last time
 constexpr uint8_t kLastStage = 63;      // u8   Stage: what it was doing when it restarted
@@ -122,6 +122,7 @@ enum class Stage : uint8_t {
   Inputs = 9,        // alternator + pulse inputs, saving counters
   Telemetry = 10,    // building and sending frames
   Presence = 11,     // hot-plug check of the I2C modules
+  Flash = 12,        // settings + counters in the ESP32's own flash: read, compare with the EEPROM, save
 };
 
 // The panic signal: this many 0x00 bytes in a row on a wired port restarts the
@@ -134,7 +135,7 @@ enum class AckStatus : uint8_t {
   Ok = 0,
   UnknownTag = 1,     // tag not a command or setting; see rejectedTag
   InvalidValue = 2,   // out of range / wrong type; see rejectedTag
-  StorageError = 3,   // EEPROM write failed
+  StorageError = 3,   // saving failed: no store (flash, EEPROM) kept the value
   DeviceMissing = 4,  // RTC / IMU not present
   Busy = 5,           // calibration already running
   BadMagic = 6,       // resetCounters without the magic value
@@ -162,8 +163,9 @@ constexpr uint32_t kEepromFormatted = 1u << 13;
 constexpr uint32_t kCalibrating = 1u << 14;
 constexpr uint32_t kRtcBatteryLost = 1u << 15;   // RTC lost a previously set time over power-off: no/flat battery
 constexpr uint32_t kTimeNotBackedUp = 1u << 16;  // time valid in RAM only (no RTC / RTC not writable): lost at reboot
-constexpr uint32_t kSettingsNotSaved = 1u << 17; // settings changed while no EEPROM: active, saved when one is attached
+constexpr uint32_t kSettingsNotSaved = 1u << 17; // settings changed with no store (no flash, no EEPROM): RAM only until one appears
 constexpr uint32_t kSafeMode = 1u << 18;         // 3 unplanned restarts in a row: I2C is skipped until the next reboot
+constexpr uint32_t kFlashStoreMissing = 1u << 19; // no "hmdata" partition (old partition table): the EEPROM is the only store
 }  // namespace status_flag
 
 namespace device_bit {

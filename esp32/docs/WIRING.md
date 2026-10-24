@@ -16,7 +16,7 @@ Pin assignments are defined in [`include/BoardPins.h`](../include/BoardPins.h). 
 
 | Device | Address | Notes |
 |---|---|---|
-| AT24C256 EEPROM | `0x50` | A0–A2 to GND. WP to GND (write enabled) |
+| AT24C256 EEPROM | `0x50` | A0–A2 to GND. WP to GND (write enabled). Optional from firmware 2.6.0: the ESP32's flash keeps the same values ([STORAGE.md](STORAGE.md)) |
 | DS3231 RTC | `0x68` | Fixed address |
 | MPU9250 IMU | **`0x69`** | **Tie AD0 to 3V3.** With AD0 low it would also be `0x68` and collide with the RTC: both chips would answer, and the data would be garbage |
 | AK8963 magnetometer | `0x0C` | Inside the MPU9250, reached through bypass mode (set by the firmware) |

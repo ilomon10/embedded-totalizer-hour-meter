@@ -26,16 +26,19 @@ struct JournalRecord {
   uint32_t runSeconds;   // hour meter
   uint32_t totalCount;   // totalizer pulses
   uint32_t epoch;        // UTC time of the save (0 if the RTC time was invalid)
-  uint8_t reserved[10];  // future fields; written as 0
+  uint32_t lineage;      // which history this is (StorageMirror.h); 0 = written by firmware 2.5.0 or older
+  uint8_t reserved[6];   // future fields; written as 0
   uint16_t crc;          // CRC16 of all bytes above
 };
 static_assert(sizeof(JournalRecord) == layout::kJournalRecordSize, "JournalRecord must be 32 bytes");
 static_assert(offsetof(JournalRecord, crc) == sizeof(JournalRecord) - 2, "crc must be the last field");
 
 namespace journal_flags {
-constexpr uint8_t kTimeValid = 0x01;  // epoch came from a valid RTC
-constexpr uint8_t kManualSet = 0x02;  // values preset by a command
-constexpr uint8_t kReset = 0x04;      // counters reset by a command
+constexpr uint8_t kTimeValid = 0x01;      // epoch came from a valid RTC
+constexpr uint8_t kManualSet = 0x02;      // values preset by a command
+constexpr uint8_t kReset = 0x04;          // counters reset by a command
+constexpr uint8_t kRunFromZero = 0x08;    // the hour meter started at 0 with no stored value (StorageMirror.h)
+constexpr uint8_t kCountFromZero = 0x10;  // the totalizer likewise
 }  // namespace journal_flags
 
 class Journal {
@@ -48,8 +51,12 @@ class Journal {
   // Scan the ring. Ok even when empty (check hasRecord()).
   Status begin();
 
-  // Append a new record after the latest one.
+  // Append a new record after the latest one, with the next seq.
   Status append(uint32_t runSeconds, uint32_t totalCount, uint32_t epoch, uint8_t flags);
+  // The same with a seq chosen by the caller: StorageMirror gives flash and EEPROM the same seq.
+  Status append(uint32_t runSeconds, uint32_t totalCount, uint32_t epoch, uint8_t flags, uint32_t seq);
+  // A complete record (StorageMirror: seq and lineage set, CRC filled in by makeRecord).
+  Status append(const JournalRecord& r);
 
   // Erase every slot (used when the EEPROM layout is new or incompatible).
   Status format();
@@ -60,6 +67,9 @@ class Journal {
   uint32_t invalidSlotsSeen() const { return invalidSlots_; }
 
   static bool isValid(const JournalRecord& r);
+  // A record ready to store: magic, version and CRC filled in (also used by FlashStore).
+  static JournalRecord makeRecord(uint32_t runSeconds, uint32_t totalCount, uint32_t epoch, uint8_t flags,
+                                  uint32_t seq, uint32_t lineage = 0);
 
  private:
   At24c& eeprom_;

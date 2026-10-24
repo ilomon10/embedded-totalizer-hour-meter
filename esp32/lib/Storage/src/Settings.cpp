@@ -1,6 +1,8 @@
 // Settings.cpp — factory defaults.
 #include "Settings.h"
 
+#include <string.h>
+
 Settings defaultSettings() {
   Settings s{};
   s.telemetryIntervalMs = 1000;
@@ -28,4 +30,10 @@ Settings defaultSettings() {
   s.cal.accelNoiseVar = vec3(0.0004f, 0.0004f, 0.0004f);
   s.cal.gyroNoiseVar = vec3(0.01f, 0.01f, 0.01f);
   return s;
+}
+
+bool sameSettings(const Settings& a, const Settings& b) {
+  const StoredSettings& sa = a;
+  const StoredSettings& sb = b;
+  return memcmp(&sa, &sb, sizeof(StoredSettings)) == 0 && a.runVibMinMg == b.runVibMinMg;
 }

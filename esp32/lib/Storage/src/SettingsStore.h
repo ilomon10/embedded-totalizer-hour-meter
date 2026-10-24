@@ -24,7 +24,8 @@ struct SettingsRecord {
 static_assert(sizeof(SettingsRecord) <= layout::kSettingsSlotSize, "SettingsRecord must fit in 128 bytes");
 static_assert(offsetof(SettingsRecord, crc) == sizeof(SettingsRecord) - 2, "crc must be the last field, no tail padding");
 
-enum class SettingsSource : uint8_t { Defaults = 0, CopyA = 1, CopyB = 2 };
+// Where the settings in use were read from (status tag 60): EEPROM copies 1/2, flash copies 3/4 (FlashStore.h).
+enum class SettingsSource : uint8_t { Defaults = 0, CopyA = 1, CopyB = 2, FlashA = 3, FlashB = 4 };
 
 class SettingsStore {
  public:
@@ -38,9 +39,17 @@ class SettingsStore {
   // Always fills `out` (defaults if nothing valid is stored). Returns the
   // EEPROM status; Status::NotFound means defaults were used.
   Status load(Settings& out);
-  Status save(const Settings& s);
+  Status save(const Settings& s);  // seq + 1
+  // The same with a seq chosen by the caller: StorageMirror gives flash and EEPROM the same seq.
+  Status save(const Settings& s, uint32_t seq);
 
   SettingsSource source() const { return source_; }
+  uint32_t seq() const { return seq_; }  // of the copy last loaded or saved; 0 = none
+
+  // Shared with FlashStore: build, check and unpack a record.
+  static SettingsRecord makeRecord(const Settings& s, uint32_t seq);
+  static bool isValid(const SettingsRecord& r);
+  static void fromRecord(const SettingsRecord& r, Settings& out);
 
  private:
   At24c& eeprom_;
@@ -48,5 +57,4 @@ class SettingsStore {
   SettingsSource source_ = SettingsSource::Defaults;
 
   bool readCopy(uint32_t addr, SettingsRecord& out);
-  static void fromRecord(const SettingsRecord& r, Settings& out);
 };

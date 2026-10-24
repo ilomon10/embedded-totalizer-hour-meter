@@ -23,7 +23,7 @@ uint8_t checkOf(const Record& r) { return static_cast<uint8_t>(r.cause ^ r.conse
 
 bool valid(const Record& r) {
   return r.magic == kMagic && r.check == checkOf(r) && r.cause <= static_cast<uint8_t>(LastCause::Crash) &&
-         r.stage <= static_cast<uint8_t>(Stage::Presence);
+         r.stage <= static_cast<uint8_t>(Stage::Flash);
 }
 
 void seal() { record.check = checkOf(record); }

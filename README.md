@@ -1,8 +1,8 @@
 # Totalizer Hour Meter
 
-An ESP32-based **engine hour meter and totalizer** for 12/24 V vehicles and machines. It counts engine run hours from the alternator signal, counts totalizer pulses, and measures vibration, roll/pitch and compass heading with an IMU. Counters survive power cuts in EEPROM, time is kept in UTC on an RTC, and everything is reported as compact [SensorFrame](sensorframe/README.md) binary frames over USB, UART or Bluetooth SPP to the `hour-meter` configurator.
+An ESP32-based **engine hour meter and totalizer** for 12/24 V vehicles and machines. It counts engine run hours from the alternator signal, counts totalizer pulses, and measures vibration, roll/pitch and compass heading with an IMU. Counters survive power cuts in the ESP32's flash and the EEPROM (either one is enough), time is kept in UTC on an RTC, and everything is reported as compact [SensorFrame](sensorframe/README.md) binary frames over USB, UART or Bluetooth SPP to the `hour-meter` configurator.
 
-Firmware version: **2.5.0** (see `kFirmwareVersion` in [`Protocol.h`](esp32/lib/App/src/Protocol.h)).
+Firmware version: **2.6.0** (see `kFirmwareVersion` in [`Protocol.h`](esp32/lib/App/src/Protocol.h)).
 
 ```
  Vehicle 12/24 V ──► carrier PCB ──────────────────────────────┐
@@ -106,7 +106,7 @@ It warns when a part changed since the previous release but still has the same v
 | Wiring the hardware | [WIRING.md](esp32/docs/WIRING.md), [rev-B main board](schematic/hour-meter-board/README.md), [rev-A carrier PCB](schematic/hour-meter-esp32/README.md) |
 | Working on the firmware | [ARCHITECTURE.md](esp32/docs/ARCHITECTURE.md), [CODING-STANDARD.md](esp32/docs/CODING-STANDARD.md) |
 | A TypeScript developer new to C++ | [CPP-FOR-TYPESCRIPT.md](esp32/docs/CPP-FOR-TYPESCRIPT.md) |
-| Curious how data survives power cuts | [EEPROM-LAYOUT.md](esp32/docs/EEPROM-LAYOUT.md) |
+| Curious how data survives power cuts | [STORAGE.md](esp32/docs/STORAGE.md), [EEPROM-LAYOUT.md](esp32/docs/EEPROM-LAYOUT.md) |
 | Setting up the IMU | [CALIBRATION.md](esp32/docs/CALIBRATION.md) |
 | Using the TUI, CLI or Bluetooth | [configurator/README.md](configurator/README.md) |
 | Using SensorFrame in another project | [sensorframe/README.md](sensorframe/README.md) |
@@ -116,4 +116,4 @@ It warns when a part changed since the previous release but still has the same v
 - **Time is UTC only.** The device stores a Unix epoch with no timezone; host tools convert for display.
 - **`esp32/lib/App/src/Protocol.h` is the single source of truth for tags.** After any protocol change, run `./esp32/scripts/check-docs.ts`, update `configurator/src/tags.ts`, port the change to `simulator/src/frames.ts`, and run `deno task test` there (it fails until the simulator's frames match the firmware's golden frames again).
 - **USB is the recovery path:** fixed at 115200 baud and always accepts commands. `uartBaud` only affects the UART pins.
-- **EEPROM holds only counters, calibration and settings**, never sample logs. Filtering (Kalman) runs in RAM.
+- **The stores (ESP32 flash, EEPROM) hold only counters, calibration and settings**, never sample logs. Filtering (Kalman) runs in RAM.

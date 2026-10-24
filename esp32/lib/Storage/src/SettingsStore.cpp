@@ -5,11 +5,12 @@
 
 #include "Crc.h"
 
+bool SettingsStore::isValid(const SettingsRecord& r) {
+  return r.magic == kMagic && r.version == kVersion && r.crc == crcOfStructWithoutTail(r);
+}
+
 bool SettingsStore::readCopy(uint32_t addr, SettingsRecord& out) {
-  if (eeprom_.get(addr, out) != Status::Ok) {
-    return false;
-  }
-  return out.magic == kMagic && out.version == kVersion && out.crc == crcOfStructWithoutTail(out);
+  return eeprom_.get(addr, out) == Status::Ok && isValid(out);
 }
 
 void SettingsStore::fromRecord(const SettingsRecord& r, Settings& out) {
@@ -40,17 +41,24 @@ Status SettingsStore::load(Settings& out) {
   return Status::NotFound;
 }
 
-Status SettingsStore::save(const Settings& s) {
+SettingsRecord SettingsStore::makeRecord(const Settings& s, uint32_t seq) {
   SettingsRecord r;
   // Zero every byte (incl. any padding) so the CRC is deterministic. The cast is
   // fine: SettingsRecord is trivially copyable, it just has default initialisers.
   memset(static_cast<void*>(&r), 0, sizeof(r));
   r.magic = kMagic;
   r.version = kVersion;
-  r.seq = seq_ + 1;
+  r.seq = seq;
   r.settings = s;  // the StoredSettings part
   r.runVibMinMg = s.runVibMinMg;
   r.crc = crcOfStructWithoutTail(r);
+  return r;
+}
+
+Status SettingsStore::save(const Settings& s) { return save(s, seq_ + 1); }
+
+Status SettingsStore::save(const Settings& s, uint32_t seq) {
+  const SettingsRecord r = makeRecord(s, seq);
   // Overwrite the copy we did NOT load from (the older one).
   const bool writeB = (source_ == SettingsSource::CopyA);
   TRY(eeprom_.put(writeB ? layout::kSettingsAddrB : layout::kSettingsAddrA, r));

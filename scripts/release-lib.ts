@@ -81,7 +81,7 @@ export function assetNames(c: Component, version: string): string[] {
   return TOOL_PLATFORMS.map((p) => `${base}-${version}-${p}.${p.startsWith('windows') ? 'zip' : 'tar.gz'}`);
 }
 
-/** Flash offsets of the ESP32 images (Arduino core, 4 MB, default partition table). */
+/** Flash offsets of the ESP32 images (Arduino core, 4 MB, esp32/partitions.csv). */
 export const FLASH_LAYOUT = [
   { offset: '0x1000', file: 'bootloader.bin' },
   { offset: '0x8000', file: 'partitions.bin' },

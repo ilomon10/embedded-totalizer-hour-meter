@@ -13,4 +13,5 @@ constexpr uint32_t kWatchdogFormatTimeoutS = 30;  // while attaching (maybe form
 constexpr uint32_t kRebootDelayMs = 100;    // let the ACK leave the UART before restarting
 constexpr uint32_t kDuplicateWindowMs = 10000;   // a repeated command seq within this window is a retry
 constexpr uint32_t kPresencePeriodUs = 2000000;  // hot-plug check of EEPROM / RTC / IMU every 2 s
+constexpr const char* kFlashPartition = "hmdata";  // flash copy of settings + counters (partitions.csv)
 }  // namespace app_config

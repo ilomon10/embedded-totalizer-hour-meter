@@ -3,7 +3,8 @@
 // TS mental model: the composition root of a Node service. It creates the
 // drivers, injects them into the logic classes, and polls timers:
 //
-//   setup(): watchdog -> USB -> bus -> EEPROM -> settings + journal -> UART -> RTC -> IMU -> boot event
+//   setup(): watchdog -> USB -> flash store -> bus -> EEPROM -> newest settings + counters -> UART -> RTC -> IMU
+//            -> boot event
 //   loop():  serial commands | inputs (100 Hz) | IMU (imuSampleHz) | stream | telemetry
 //            | RTC sync | presence check (hot-plug of EEPROM / RTC / IMU) | supervisor
 //
@@ -15,6 +16,10 @@
 // Modular: every I2C module is optional and hot-pluggable. A missing module
 // sets a status flag, the rest keeps working, and the module is attached as
 // soon as it is plugged in (an EVENT devicesChanged reports every change).
+//
+// Storage: settings and counters are kept in the ESP32's own flash AND, when
+// fitted, in the EEPROM (StorageMirror.h): the device keeps its values without
+// an EEPROM, and in safe mode too.
 #pragma once
 
 #include <Arduino.h>
@@ -25,6 +30,7 @@
 #include "At24c.h"
 #include "CommandHandler.h"
 #include "Ds3231.h"
+#include "FlashStore.h"
 #include "HourMeter.h"
 #include "IDeviceControl.h"
 #include "ImuPipeline.h"
@@ -34,10 +40,12 @@
 #include "RunConfirm.h"
 #include "Presence.h"
 #include "SettingsStore.h"
+#include "StorageMirror.h"
 #include "Supervisor.h"
 #include "TimeKeeper.h"
 #include "platform/ArduinoClock.h"
 #include "platform/Inputs.h"
+#include "platform/PartitionFlash.h"
 #include "platform/SerialLink.h"
 
 class Application : public IDeviceControl {
@@ -68,6 +76,9 @@ class Application : public IDeviceControl {
   // Storage + logic
   Journal journal_;
   SettingsStore settingsStore_;
+  PartitionFlash flashArea_;  // the "hmdata" partition (partitions.csv)
+  FlashStore flashStore_;
+  StorageMirror storage_;     // flash (main) + EEPROM (copy)
   Settings settings_;
   HourMeter meter_;
   RunConfirm runConfirm_;  // optional vibration check on top of the alternator input
@@ -104,14 +115,19 @@ class Application : public IDeviceControl {
   PresenceTracker imuPresence_;
   bool setupDone_ = false;
   bool devicesChanged_ = false;
-  bool storageAdopted_ = false;   // EEPROM contents merged once per boot
-  bool settingsNotSaved_ = false; // settings changed while no EEPROM was attached
+  // Settings came from a store at boot, were changed since, or an EEPROM was read already: a later
+  // EEPROM is given the settings in use instead of being read (counters: StorageMirror's history rules).
+  bool settingsKnown_ = false;
+  bool settingsNotSaved_ = false; // settings changed with no store at all (no flash partition, no EEPROM)
+  bool lastSaveHadTime_ = false;  // the counters adopted at boot were saved with a valid time
 
   uint32_t deviceId_ = 0;
   uint16_t txSeq_ = 0;
   uint8_t devices_ = 0;          // device_bit mask found at boot
   uint32_t bootFlags_ = 0;       // status_flag bits decided at boot
-  bool storageError_ = false;
+  bool storageError_ = false;       // the EEPROM could not be formatted or scanned
+  bool counterSaveFailed_ = false;  // the last counter save failed in a store
+  bool settingsSaveFailed_ = false; // the last settings save failed in a store
   bool rebootRequested_ = false;
   bool linkReconfigPending_ = false;
   uint32_t lastImuUs_ = 0;
@@ -125,11 +141,16 @@ class Application : public IDeviceControl {
   bool safeMode_ = false;         // booted without I2C after repeated unplanned restarts
 
   void setDevice(uint8_t bit, bool present);
+  bool eepromAttached() const { return (devices_ & device_bit::kEeprom) != 0; }
   bool attachEeprom();
   bool attachEepromWatched();
   void supervise(uint32_t nowMs);
   void restart(LastCause cause);  // does not return
-  void adoptStorage();
+  void initFlashStore();
+  void adoptStoredState();
+  void onEepromArrived();
+  void adoptLateSettings(const Settings& stored);
+  Status saveSettingsEverywhere(const Settings& next);
   bool attachRtc(bool atBoot);
   bool attachImu();
   void runPresence();
@@ -145,7 +166,8 @@ class Application : public IDeviceControl {
   void runTelemetry();
   void syncRtc(uint32_t nowMs);
   void finishCalibration(CalibKind kind, AckStatus result, const Calibration& cal);
-  void persistCounters(uint32_t nowMs, uint8_t extraFlags);
+  // Save the counters to every store (the EEPROM only if includeEeprom). True if at least one kept them.
+  [[nodiscard]] bool persistCounters(uint32_t nowMs, uint8_t extraFlags, bool includeEeprom = true);
   void afterCommand();
 
   static void onCommand(SensorFrameView& frame, Port from, void* ctx);

@@ -21,6 +21,9 @@ Application::Application()
       imu_(bus_, clock_, i2c_addr::kImu),
       journal_(eeprom_),
       settingsStore_(eeprom_),
+      flashArea_(app_config::kFlashPartition),
+      flashStore_(flashArea_),
+      storage_(flashStore_, journal_, settingsStore_),
       settings_(defaultSettings()),
       commands_(*this),
       link_(Serial, Serial2),
@@ -29,8 +32,9 @@ Application::Application()
 // ---------------------------------------------------------------- setup ----
 
 // Boot order matters for recovery: the watchdog first (a hang anywhere below
-// reboots), then USB (fixed baud, needs no settings), and only then I2C. After
-// kSafeModeAfter unplanned restarts in a row, I2C is skipped entirely.
+// reboots), then USB (fixed baud, needs no settings), the flash store, and only
+// then I2C. After kSafeModeAfter unplanned restarts in a row, I2C is skipped
+// entirely; the settings and counters still come from the flash.
 void Application::setup() {
   esp_task_wdt_init(app_config::kWatchdogTimeoutS, true);  // panic + reboot on stall
   esp_task_wdt_add(nullptr);
@@ -44,15 +48,13 @@ void Application::setup() {
   link_.beginUsb(app_config::kUsbBaud);
   link_.onCommand(onCommand, this);
 
-  bool eepromOk = false;
+  initFlashStore();  // no I2C involved: works in safe mode too
   if (!safeMode_) {
     reset_log::stage(Stage::I2cInit);
     (void)bus_.begin();
-    eepromOk = attachEepromWatched();  // settings must be known before the UART pins open
+    (void)attachEepromWatched();
   }
-  if (!eepromOk) {
-    bootFlags_ |= status_flag::kSettingsDefaults | status_flag::kJournalEmpty;
-  }
+  adoptStoredState();  // settings must be known before the UART pins open
   reset_log::stage(Stage::UartOpen);
   link_.beginUart(settings_.baud, pins::kUartRx, pins::kUartTx, static_cast<OutputPort>(settings_.output));
   applyBluetooth();  // off unless the `bluetooth` setting is on
@@ -106,45 +108,96 @@ bool Application::attachEeprom() {
     bootFlags_ |= status_flag::kEepromFormatted;
   }
   if (journal_.begin() != Status::Ok) {
-    storageError_ = true;
+    storageError_ = true;  // a partial scan could pick an old record: retried at the next presence check
+    return false;
   }
+  storageError_ = false;
   eepromPresence_.markPresent();
   setDevice(device_bit::kEeprom, true);
-  if (storageAdopted_) {
-    meter_.markDirty();  // came back after a loss: save the RAM counters soon
-  } else {
-    adoptStorage();      // first EEPROM seen this boot: take its settings + counters
-    storageAdopted_ = true;
-  }
-  if (settingsNotSaved_) {
-    settingsNotSaved_ = settingsStore_.save(settings_) != Status::Ok;  // changes made without EEPROM
+  if (setupDone_) {
+    onEepromArrived();  // at boot, adoptStoredState() reads it together with the flash
   }
   return true;
 }
 
-void Application::adoptStorage() {
-  Settings stored;
-  if (!settingsNotSaved_ && settingsStore_.load(stored) == Status::Ok) {
-    const bool linkChanged = (stored.baud != settings_.baud) || (stored.output != settings_.output);
-    settings_ = stored;
-    bootFlags_ &= ~status_flag::kSettingsDefaults;
-    if (setupDone_) {  // EEPROM plugged in while running: apply now
-      applyRuntimeSettings();
-      if (linkChanged) {
-        link_.reconfigure(settings_.baud, static_cast<OutputPort>(settings_.output));
-      }
-      applyBluetooth();
-    }
-  } else if (!settingsNotSaved_) {
+// ------------------------------------------------------ storage (flash + EEPROM) --
+
+// The flash copy: find the partition and read it. Without the partition (an older partition table,
+// kept by an app-only update) the EEPROM is the only store, and flashStoreMissing says so.
+void Application::initFlashStore() {
+  reset_log::stage(Stage::Flash);
+  (void)flashArea_.begin();   // false without the partition: then its size is 0 ...
+  (void)flashStore_.begin();  // ... and this is NotFound
+}
+
+// Boot: the flash's settings and counters (the main store), or the EEPROM's when the flash has none.
+// StorageMirror also copies them to the store that is behind (the first boot after the update fills the
+// flash from the EEPROM), so from then on either store alone can carry the device.
+void Application::adoptStoredState() {
+  reset_log::stage(Stage::Flash);
+  // The id of a new history. Before the radio starts esp_random() is only pseudo-random: the chip's MAC
+  // and the time since reset keep two boards (and two boots) apart even then.
+  const uint64_t mac = ESP.getEfuseMac();
+  const uint32_t id = esp_random() ^ static_cast<uint32_t>(mac) ^ static_cast<uint32_t>(mac >> 32) ^ clock_.nowUs();
+  const StoredState stored = storage_.adopt(eepromAttached(), id != 0 ? id : 1);
+  counterSaveFailed_ = storage_.lastSaveFailed();
+  settingsKnown_ = stored.hasSettings || eepromAttached();  // an EEPROM read now is never read again later
+  if (stored.hasSettings) {
+    settings_ = stored.settings;
+  } else {
     bootFlags_ |= status_flag::kSettingsDefaults;
   }
-  if (journal_.hasRecord()) {
-    const JournalRecord& r = journal_.latest();
-    meter_.mergeStored(r.runSeconds, r.totalCount, r.epoch, r.seq);  // continue where we stopped
-    bootFlags_ &= ~status_flag::kJournalEmpty;
+  if (stored.hasCounters) {
+    const JournalRecord& r = stored.counters;
+    meter_.restore(r.runSeconds, r.totalCount, r.epoch, r.seq);  // continue where we stopped (or merged)
+    lastSaveHadTime_ = (r.flags & journal_flags::kTimeValid) != 0;
   } else {
     bootFlags_ |= status_flag::kJournalEmpty;
   }
+}
+
+// An EEPROM plugged in while running is given the device's values. From another history, it adds its
+// counters to those the device counted from zero; holding saves of this history made in another ESP32, it
+// adds what that one counted (StorageMirror.h). Its settings are taken only while the device runs on
+// defaults it found at boot and nobody changed them (a new ESP32 board whose old EEPROM made contact late).
+void Application::onEepromArrived() {
+  const LateEeprom late = storage_.fromLateEeprom(!settingsKnown_, settings_);
+  settingsKnown_ = true;  // this EEPROM has been read: from now on it only receives
+  const bool added = late.addRunSeconds != 0 || late.addTotalCount != 0;
+  if (added) {
+    const HourMeterSnapshot hm = meter_.snapshot();
+    meter_.mergeStored(late.addRunSeconds, late.addTotalCount, hm.lastSavedEpoch, hm.journalSeq);
+    bootFlags_ &= ~status_flag::kJournalEmpty;
+  }
+  if (late.hasSettings) {
+    adoptLateSettings(late.settings);
+  }
+  if (added || storage_.eepromCountersBehind()) {
+    (void)persistCounters(clock_.nowMs(), 0);  // flash + EEPROM, one new seq
+  }
+  if (late.hasSettings || settingsNotSaved_ || late.settingsBehind) {
+    const bool saved = saveSettingsEverywhere(settings_) == Status::Ok;  // also gives settings taken late to the flash
+    settingsNotSaved_ = settingsNotSaved_ && !saved;
+  }
+}
+
+// Save to every store there is; Ok when one kept the settings, NotFound when there is no store at all.
+Status Application::saveSettingsEverywhere(const Settings& next) {
+  const Status saved = storage_.saveSettings(next, eepromAttached());
+  settingsSaveFailed_ = saved != Status::NotFound && storage_.lastSaveFailed();
+  return saved;
+}
+
+void Application::adoptLateSettings(const Settings& stored) {
+  const bool linkChanged = (stored.baud != settings_.baud) || (stored.output != settings_.output);
+  settings_ = stored;
+  settingsKnown_ = true;
+  bootFlags_ &= ~status_flag::kSettingsDefaults;
+  applyRuntimeSettings();
+  if (linkChanged) {
+    link_.reconfigure(settings_.baud, static_cast<OutputPort>(settings_.output));
+  }
+  applyBluetooth();
 }
 
 bool Application::attachRtc(bool atBoot) {
@@ -155,9 +208,8 @@ bool Application::attachRtc(bool atBoot) {
   setDevice(device_bit::kRtc, true);
   syncRtc(clock_.nowMs());  // a RAM time set while the RTC was absent is written to it
   if (atBoot) {
-    // Runs after the EEPROM: the journal tells us whether time had been set before.
-    const bool lastSaveHadTime = journal_.hasRecord() && (journal_.latest().flags & journal_flags::kTimeValid) != 0;
-    if (time_policy::batteryLost(time_.valid(), lastSaveHadTime)) {
+    // Runs after adoptStoredState(): the saved counters tell whether time had been set before.
+    if (time_policy::batteryLost(time_.valid(), lastSaveHadTime_)) {
       bootFlags_ |= status_flag::kRtcBatteryLost;
     }
   }
@@ -281,24 +333,26 @@ void Application::runInputs(uint32_t nowMs) {
                                             pipeline_.vibration().rmsMg, settings_.runVibMinMg);
   const bool engineStopped = meter_.update(nowMs, inputs_.alternatorHigh(), confirmed);
   if (engineStopped || meter_.persistDue(nowMs)) {
-    persistCounters(nowMs, 0);
+    (void)persistCounters(nowMs, 0);
   }
 }
 
-void Application::persistCounters(uint32_t nowMs, uint8_t extraFlags) {
-  if ((devices_ & device_bit::kEeprom) == 0) {
-    return;
+bool Application::persistCounters(uint32_t nowMs, uint8_t extraFlags, bool includeEeprom) {
+  const bool eeprom = includeEeprom && eepromAttached();
+  if (!storage_.anyStore(eeprom)) {
+    return false;  // nowhere to save: the counters live in RAM
   }
   const HourMeterSnapshot hm = meter_.snapshot();
   const uint32_t epoch = time_.nowEpoch(nowMs);
   const uint8_t flags = static_cast<uint8_t>(extraFlags | (time_.valid() ? journal_flags::kTimeValid : 0));
-  if (journal_.append(hm.runSeconds, hm.totalCount, epoch, flags) == Status::Ok) {
-    meter_.markPersisted(nowMs, epoch, journal_.latest().seq);
-    storageError_ = false;
-  } else {
-    storageError_ = true;
+  const Status saved = storage_.saveCounters(hm.runSeconds, hm.totalCount, epoch, flags, eeprom);
+  counterSaveFailed_ = storage_.lastSaveFailed();
+  if (saved != Status::Ok) {
     meter_.deferPersist(nowMs);  // retry after one persist interval, not every 10 ms
+    return false;
   }
+  meter_.markPersisted(nowMs, epoch, storage_.counterSeq());
+  return true;
 }
 
 void Application::runImu(uint32_t nowUs) {
@@ -474,8 +528,9 @@ void Application::supervise(uint32_t nowMs) {
 // Every deliberate restart goes through here, so the next boot can say why.
 void Application::restart(LastCause cause) {
   reset_log::recordCause(cause);
-  if (cause != LastCause::I2cStuck && meter_.dirty()) {
-    persistCounters(clock_.nowMs(), 0);  // best effort; skipped without an EEPROM
+  if (meter_.dirty()) {
+    // Best effort. On a stuck bus the EEPROM is left out (it would only delay the restart), the flash is not.
+    (void)persistCounters(clock_.nowMs(), 0, cause != LastCause::I2cStuck);
   }
   if (cause == LastCause::RebootCommand) {
     link_.flush();  // the ACK must leave first (a stalled USB is never flushed: it would block)
@@ -484,11 +539,17 @@ void Application::restart(LastCause cause) {
   ESP.restart();
 }
 
-// Settings always apply immediately. Without an EEPROM they live in RAM
-// (statusFlags.settingsNotSaved) and are written as soon as one is attached.
+// Settings apply immediately and are saved to the flash and, when fitted, the EEPROM. With neither
+// (no flash partition, no EEPROM) they live in RAM (statusFlags.settingsNotSaved) until an EEPROM appears.
+// Resending the same settings after a store failed retries that store (the flash, if it has them, is not
+// written again).
 Status Application::applySettings(const Settings& next) {
-  if ((devices_ & device_bit::kEeprom) != 0) {
-    TRY(settingsStore_.save(next));
+  if (sameSettings(next, settings_) && !settingsSaveFailed_) {
+    return Status::Ok;  // nothing changed and every store has it: no save, no flash wear (hosts resend)
+  }
+  settingsKnown_ = true;  // chosen now: an EEPROM that answers later does not replace them
+  if (storage_.anyStore(eepromAttached())) {
+    TRY(saveSettingsEverywhere(next));  // no store kept them: refuse the change (ACK StorageError)
     settingsNotSaved_ = false;
   } else {
     settingsNotSaved_ = true;
@@ -517,22 +578,23 @@ Status Application::setTimeEpoch(uint32_t epoch) {
   return Status::Ok;
 }
 
+// Presets and resets need a store (flash or EEPROM): a value that a reboot would undo is refused.
 Status Application::presetCounters(bool setRun, uint32_t runSeconds, bool setCount, uint32_t totalCount) {
-  if ((devices_ & device_bit::kEeprom) == 0) {
+  if (!storage_.anyStore(eepromAttached())) {
     return Status::DeviceMissing;
   }
   meter_.preset(setRun, runSeconds, setCount, totalCount);
-  persistCounters(clock_.nowMs(), journal_flags::kManualSet);
-  return storageError_ ? Status::VerifyFailed : Status::Ok;
+  storage_.anchor(setRun, setCount);  // known now: a later EEPROM is not added to these
+  return persistCounters(clock_.nowMs(), journal_flags::kManualSet) ? Status::Ok : Status::VerifyFailed;
 }
 
 Status Application::resetCounters() {
-  if ((devices_ & device_bit::kEeprom) == 0) {
+  if (!storage_.anyStore(eepromAttached())) {
     return Status::DeviceMissing;
   }
   meter_.preset(true, 0, true, 0);
-  persistCounters(clock_.nowMs(), journal_flags::kReset);
-  return storageError_ ? Status::VerifyFailed : Status::Ok;
+  storage_.anchor(true, true);
+  return persistCounters(clock_.nowMs(), journal_flags::kReset) ? Status::Ok : Status::VerifyFailed;
 }
 
 AckStatus Application::startCalibration(CalibKind kind) {
@@ -552,7 +614,7 @@ DeviceStatus Application::status() const {
   st.i2cErrors = bus_.errorCount();
   st.overruns = inputTask_.overruns() + imuTask_.overruns() + streamTask_.overruns() + telemetryTask_.overruns();
   st.resetReason = static_cast<uint8_t>(esp_reset_reason());
-  st.settingsSource = static_cast<uint8_t>(settingsStore_.source());
+  st.settingsSource = static_cast<uint8_t>(storage_.settingsSource());
   st.btState = !link_.bluetoothOn() ? 0 : !btHadClient_ ? 1 : btGate_.unlocked() ? 3 : 2;
   st.lastCause = static_cast<uint8_t>(lastCause_);
   st.lastStage = static_cast<uint8_t>(lastStage_);
@@ -569,12 +631,13 @@ DeviceStatus Application::status() const {
   f |= (settings_.cal.flags & calib_flags::kImu) == 0 ? status_flag::kImuNotCalibrated : 0;
   f |= ((devices_ & device_bit::kMag) != 0 && (settings_.cal.flags & calib_flags::kMag) == 0)
            ? status_flag::kMagNotCalibrated : 0;
-  f |= storageError_ ? status_flag::kStorageError : 0;
+  f |= (storageError_ || counterSaveFailed_ || settingsSaveFailed_) ? status_flag::kStorageError : 0;
   f |= pipeline_.stuck() ? status_flag::kImuStuck : 0;
   f |= imuSaturated_ ? status_flag::kImuSaturated : 0;
   f |= st.i2cErrors > 0 ? status_flag::kI2cErrors : 0;
   f |= pipeline_.calibrating() ? status_flag::kCalibrating : 0;
   f |= safeMode_ ? status_flag::kSafeMode : 0;
+  f |= !flashStore_.available() ? status_flag::kFlashStoreMissing : 0;
   st.flags = f;
   return st;
 }

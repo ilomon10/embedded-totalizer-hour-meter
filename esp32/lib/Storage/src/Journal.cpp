@@ -47,17 +47,31 @@ Status Journal::begin() {
   return Status::Ok;
 }
 
-Status Journal::append(uint32_t runSeconds, uint32_t totalCount, uint32_t epoch, uint8_t flags) {
+JournalRecord Journal::makeRecord(uint32_t runSeconds, uint32_t totalCount, uint32_t epoch, uint8_t flags,
+                                 uint32_t seq, uint32_t lineage) {
   JournalRecord r;
   memset(&r, 0, sizeof(r));
   r.magic = kRecordMagic;
   r.version = kRecordVersion;
   r.flags = flags;
-  r.seq = hasRecord_ ? latest_.seq + 1 : 1;
+  r.seq = seq;
   r.runSeconds = runSeconds;
   r.totalCount = totalCount;
   r.epoch = epoch;
+  r.lineage = lineage;
   r.crc = crcOfStructWithoutTail(r);
+  return r;
+}
+
+Status Journal::append(uint32_t runSeconds, uint32_t totalCount, uint32_t epoch, uint8_t flags) {
+  return append(runSeconds, totalCount, epoch, flags, hasRecord_ ? latest_.seq + 1 : 1);
+}
+
+Status Journal::append(uint32_t runSeconds, uint32_t totalCount, uint32_t epoch, uint8_t flags, uint32_t seq) {
+  return append(makeRecord(runSeconds, totalCount, epoch, flags, seq));
+}
+
+Status Journal::append(const JournalRecord& r) {
   const uint32_t slot = (latestSlot_ + 1) % layout::kJournalSlots;
   TRY(eeprom_.put(slotAddress(slot), r));  // At24c verifies the write
   latest_ = r;

@@ -10,7 +10,7 @@ Engine hour meter and totalizer with persistent storage, real-time clock, and an
 | Wiring the hardware | [docs/WIRING.md](docs/WIRING.md) |
 | Working on the firmware | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/CODING-STANDARD.md](docs/CODING-STANDARD.md) |
 | A TypeScript developer new to C++ | [docs/CPP-FOR-TYPESCRIPT.md](docs/CPP-FOR-TYPESCRIPT.md) |
-| Curious how data survives power cuts | [docs/EEPROM-LAYOUT.md](docs/EEPROM-LAYOUT.md) |
+| Curious how data survives power cuts | [docs/STORAGE.md](docs/STORAGE.md), [docs/EEPROM-LAYOUT.md](docs/EEPROM-LAYOUT.md) |
 | Setting up the IMU | [docs/CALIBRATION.md](docs/CALIBRATION.md) |
 | Testing modules before soldering | [docs/TESTING-MODULES.md](docs/TESTING-MODULES.md) (bench firmware: `pio run -e bench -t upload`) |
 | Configuring / watching the device | `hour-meter` TUI (`cd ../configurator && deno task start`, or `--demo` without hardware), see [configurator/README.md](../configurator/README.md) |
@@ -62,7 +62,7 @@ esp32/
 │   ├── Ds3231/           RTC driver + UTC date math
 │   ├── Mpu9250/          IMU + magnetometer driver
 │   ├── Filters/          Kalman, compass, vibration, running stats
-│   ├── Storage/          EEPROM layout, counter journal, settings A/B
+│   ├── Storage/          counter journal + settings A/B in EEPROM and in flash (FlashStore), StorageMirror
 │   └── App/              protocol tags, settings schema, hour meter, IMU pipeline, commands, telemetry
 ├── test/                 fakes/ + test_drivers, test_storage, test_filters, test_app
 ├── scripts/check-docs.ts consistency checker (Deno)

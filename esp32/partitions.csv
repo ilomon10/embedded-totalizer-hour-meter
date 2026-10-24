@@ -1,0 +1,12 @@
+# Hour meter partition table: huge_app.csv (3 MB app for Bluetooth Classic, no OTA) plus
+# "hmdata", 64 KB of the old spiffs area for the flash copy of the settings and counters
+# (lib/Storage/src/FlashStore.h, docs/STORAGE.md). nvs, otadata and app0 keep their offsets,
+# so a firmware update keeps the Bluetooth pairing, and "hmdata" lies after the firmware image,
+# so neither an update nor `hour-meter firmware flash` overwrites it.
+# Name,   Type, SubType,   Offset,   Size,     Flags
+nvs,      data, nvs,       0x9000,   0x5000,
+otadata,  data, ota,       0xe000,   0x2000,
+app0,     app,  ota_0,     0x10000,  0x300000,
+hmdata,   data, undefined, 0x310000, 0x10000,
+spiffs,   data, spiffs,    0x320000, 0xD0000,
+coredump, data, coredump,  0x3F0000, 0x10000,
