@@ -28,7 +28,7 @@ import { StdioTransport } from './src/transport/stdio.ts';
 import { TcpTransport } from './src/transport/tcp.ts';
 
 /** Simulator version (shipped in release v<VERSION>, scripts/release.ts). Protocol version: FIRMWARE_VERSION. */
-export const SIM_VERSION = '1.5.0';
+export const SIM_VERSION = '1.6.0';
 const POLL_MS = 10;
 const DEFAULT_WEB_PORT = 8080;
 

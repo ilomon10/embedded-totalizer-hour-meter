@@ -98,6 +98,17 @@ const IMU_CALIB_SAMPLES = 512;
 const MAG_CALIB_MS = 20_000;
 const MODULES = [Device.eeprom, Device.rtc, Device.imu, Device.mag];
 
+/** Firmware storage_mirror::combine: the other history added to the counters `own` counted from zero. */
+function combine(own: Stored, other: Stored): Stored {
+  return {
+    ...own,
+    runSeconds: own.runFromZero ? own.runSeconds + other.runSeconds : own.runSeconds,
+    totalCount: own.countFromZero ? own.totalCount + other.totalCount : own.totalCount,
+    runFromZero: false,
+    countFromZero: false,
+  };
+}
+
 export interface DeviceOptions {
   deviceId: number;
   runSeconds: number;
@@ -113,8 +124,12 @@ export interface DeviceOptions {
   btPin: number;
   /** Random source for sensor noise (seeded by main.ts). */
   random: () => number;
-  /** First boot after 3 unplanned restarts: no I2C at all, counting in RAM (safe-mode scenario). */
+  /** First boot after 3 unplanned restarts: no I2C at all (safe-mode scenario). */
   safeMode?: boolean;
+  /** false: no "hmdata" partition (an old partition table): flashStoreMissing, the EEPROM is the only store. */
+  flashStore?: boolean;
+  /** The flash copy is empty: the first boot after updating to 2.6.0 (the EEPROM's values move to the flash). */
+  freshFlash?: boolean;
   /** What the first boot reports as the previous run's end (default: power-on, cause none). */
   firstBoot?: RestartInfo;
 }
@@ -127,6 +142,17 @@ interface TimeState {
   epochAtSync: number;
   syncMs: number;
   backedUp: boolean; // false = RAM only (timeNotBackedUp)
+}
+
+/** A saved counter record (firmware JournalRecord), in the flash or in the EEPROM. */
+interface Stored {
+  runSeconds: number;
+  totalCount: number;
+  savedEpoch: number;
+  journalSeq: number;
+  lineage: number; // which history (firmware StorageMirror.h); 0 = written by firmware 2.5.0 or older
+  runFromZero: boolean; // the hour meter started at 0, its real value unknown
+  countFromZero: boolean;
 }
 
 export class SimDevice {
@@ -145,8 +171,13 @@ export class SimDevice {
   private devices = 0;
   private fitted: number;
   private misses = new Map<number, number>();
-  private eepromMerged = false;
-  private stored: { runSeconds: number; totalCount: number; savedEpoch: number; journalSeq: number };
+  // Firmware 2.6.0 keeps the counters twice (StorageMirror.h): the ESP32's flash is the main store, the EEPROM a copy.
+  private stored: Stored; // the EEPROM's copy
+  private readonly flashAvailable: boolean; // false without the "hmdata" partition
+  private flashStored: Stored | null; // the flash copy; null while empty
+  private lineage = 0; // this device's history
+  private runFromZero = false;
+  private countFromZero = false;
   private runSeconds = 0;
   private runMsRemainder = 0;
   private totalCount = 0;
@@ -178,9 +209,15 @@ export class SimDevice {
     this.stored = {
       runSeconds: opts.runSeconds,
       totalCount: opts.totalCount,
-      savedEpoch: clock.hostEpochS() - 60, // last EEPROM save a minute before power-on
+      savedEpoch: clock.hostEpochS() - 60, // last save a minute before power-on
       journalSeq: 812,
+      lineage: 0x2a2a2a2a,
+      runFromZero: false,
+      countFromZero: false,
     };
+    this.flashAvailable = opts.flashStore !== false;
+    this.flashStored = this.flashAvailable && !opts.freshFlash ? { ...this.stored } : null; // both stores in step
+    if (opts.freshFlash) this.stored.lineage = 0; // the EEPROM was last written by firmware 2.5.0
     if (opts.bluetoothSession) this.settings.bluetooth = true;
     this.settings.btPin = opts.btPin;
     this.inputState.manual.pulses.perSecond = opts.pulsesPerSecond;
@@ -241,7 +278,7 @@ export class SimDevice {
     this.lastStage = info.stage;
     this.hung = false;
     this.seq = 0;
-    this.bootFlags = this.safeMode ? Flag.safeMode | Flag.settingsDefaults | Flag.journalEmpty : 0;
+    this.bootFlags = this.safeMode ? Flag.safeMode : 0;
     this.devices = this.safeMode ? 0 : this.fitted; // safe mode never touches I2C
     this.misses.clear();
     this.calib = null;
@@ -274,26 +311,67 @@ export class SimDevice {
     }
   }
 
+  // Firmware StorageMirror::adopt: the flash is the main store; an EEPROM from another history is added to the
+  // counters the device counted from zero; a store that does not hold the values in use is brought up to date.
+  // Not simulated: an EEPROM ahead of the flash in the same history (it ran in another ESP32, or flash writes
+  // failed), where the firmware takes the newer save. One simulated board with a working flash never gets one.
   private bootCounters(nowMs: number): void {
     this.runSeconds = 0;
     this.totalCount = 0;
     this.runMsRemainder = 0;
     this.lastSavedEpoch = 0;
     this.journalSeq = 0;
-    this.eepromMerged = false;
     this.dirty = false;
     this.lastPersistMs = nowMs;
-    if ((this.devices & Device.eeprom) !== 0) this.mergeStored();
+    const eeprom = (this.devices & Device.eeprom) !== 0 ? this.stored : null;
+    if (!this.flashAvailable && !eeprom) this.bootFlags |= Flag.settingsDefaults; // no store held the settings
+    let r = this.flashStored ?? eeprom;
+    if (r && this.flashStored && eeprom && eeprom.lineage !== r.lineage) r = combine(r, eeprom);
+    if (!r) {
+      this.lineage = this.newLineage(); // nothing stored anywhere: a new history, counted from zero
+      this.runFromZero = true;
+      this.countFromZero = true;
+      this.bootFlags |= Flag.journalEmpty;
+      return;
+    }
+    this.lineage = r.lineage !== 0 ? r.lineage : this.newLineage();
+    this.runFromZero = r.runFromZero;
+    this.countFromZero = r.countFromZero;
+    this.runSeconds = r.runSeconds;
+    this.totalCount = r.totalCount;
+    this.lastSavedEpoch = r.savedEpoch;
+    this.journalSeq = r.journalSeq;
+    const same = (s: Stored | null) =>
+      s !== null && s.lineage === this.lineage && s.journalSeq === r.journalSeq && s.runSeconds === r.runSeconds &&
+      s.totalCount === r.totalCount;
+    if ((this.flashAvailable && !same(this.flashStored)) || (eeprom && !same(eeprom))) this.persist(nowMs);
   }
 
-  private mergeStored(): void {
-    const counted = this.runSeconds !== 0 || this.totalCount !== 0;
-    this.runSeconds += this.stored.runSeconds;
-    this.totalCount += this.stored.totalCount;
-    this.lastSavedEpoch = this.stored.savedEpoch;
-    this.journalSeq = this.stored.journalSeq;
-    this.eepromMerged = true;
-    this.dirty = this.dirty || counted;
+  /** Firmware onEepromArrived: told the device's values; from another history, added where it counted from zero. */
+  private onEepromArrived(nowMs: number): void {
+    const other = this.stored.lineage !== this.lineage;
+    let added = false;
+    if (other && this.runFromZero) {
+      this.runSeconds += this.stored.runSeconds; // engine time without storage is still engine time
+      this.runFromZero = false;
+      added = true;
+    }
+    if (other && this.countFromZero) {
+      this.totalCount += this.stored.totalCount;
+      this.countFromZero = false;
+      added = true;
+    }
+    if (added) this.bootFlags &= ~Flag.journalEmpty;
+    if (added || other || this.stored.journalSeq !== this.journalSeq) this.persist(nowMs);
+    this.settingsNotSaved = false; // the settings in use are saved to it now
+  }
+
+  private newLineage(): number {
+    return Math.floor(this.opts.random() * 0xfffffffe) + 1; // non-zero
+  }
+
+  private anyStore(): boolean {
+    return this.flashAvailable || (this.devices & Device.eeprom) !== 0;
   }
 
   // -------------------------------------------------------- scenario hooks ----
@@ -440,16 +518,24 @@ export class SimDevice {
     }
   }
 
+  // Firmware persistCounters: every store there is, one new seq above anything either holds.
   private persist(nowMs: number): void {
-    if ((this.devices & Device.eeprom) === 0) return;
-    this.journalSeq = (this.journalSeq + 1) >>> 0;
+    const eeprom = (this.devices & Device.eeprom) !== 0;
+    if (!this.anyStore()) return;
+    const highest = Math.max(this.journalSeq, this.flashStored?.journalSeq ?? 0, eeprom ? this.stored.journalSeq : 0);
+    this.journalSeq = (highest + 1) >>> 0;
     this.lastSavedEpoch = this.epochNow(nowMs);
-    this.stored = {
+    const saved: Stored = {
       runSeconds: this.runSeconds,
       totalCount: this.totalCount,
       savedEpoch: this.lastSavedEpoch,
       journalSeq: this.journalSeq,
+      lineage: this.lineage,
+      runFromZero: this.runFromZero,
+      countFromZero: this.countFromZero,
     };
+    if (this.flashAvailable) this.flashStored = saved;
+    if (eeprom) this.stored = { ...saved };
     this.dirty = false;
     this.lastPersistMs = nowMs;
   }
@@ -460,7 +546,7 @@ export class SimDevice {
     for (const bit of MODULES) this.checkModule(bit);
     if (this.devices === before) return;
     if ((this.devices & Device.imu) !== 0 && (before & Device.imu) === 0) this.imuSinceMs = nowMs;
-    if ((this.devices & Device.eeprom) !== 0 && !this.eepromMerged) this.mergeStored();
+    if ((this.devices & Device.eeprom) !== 0 && (before & Device.eeprom) === 0) this.onEepromArrived(nowMs);
     if ((this.devices & Device.imu) === 0) this.calib = null;
     this.emit(buildDevicesChangedEvent(this.status()), true);
   }
@@ -552,7 +638,7 @@ export class SimDevice {
   }
 
   private applySettings(next: Settings, nowMs: number): void {
-    this.settingsNotSaved = (this.devices & Device.eeprom) === 0;
+    this.settingsNotSaved = !this.anyStore(); // firmware 2.6.0: saved in flash even without an EEPROM
     const streamChanged = next.imuStreamHz !== this.settings.imuStreamHz;
     const telemetryChanged = next.telemetryIntervalMs !== this.settings.telemetryIntervalMs;
     this.settings = next;
@@ -570,7 +656,7 @@ export class SimDevice {
       else if (r.tag === CMD.setTotalCount) count = readUint(r, 0xffffffff);
       else if (r.tag === CMD.setTime) this.setTime(Number(r.raw), nowMs);
       else if (r.tag === CMD.resetCounters) {
-        if ((this.devices & Device.eeprom) === 0) return { status: Ack.DeviceMissing, rejectedTag: r.tag };
+        if (!this.anyStore()) return { status: Ack.DeviceMissing, rejectedTag: r.tag };
         this.preset(0, 0, nowMs);
       } else if (r.tag === CMD.calibrate) {
         const status = this.startCalibration(Number(r.raw), nowMs);
@@ -578,7 +664,7 @@ export class SimDevice {
       } else if (r.tag === CMD.reboot) this.rebootAtMs = nowMs + REBOOT_DELAY_MS;
     }
     if (run === null && count === null) return null;
-    if ((this.devices & Device.eeprom) === 0) {
+    if (!this.anyStore()) {
       return { status: Ack.DeviceMissing, rejectedTag: run !== null ? CMD.setRunSeconds : CMD.setTotalCount };
     }
     this.preset(run, count, nowMs);
@@ -598,6 +684,8 @@ export class SimDevice {
     }
     if (count !== null) this.totalCount = count;
     this.dirty = true;
+    this.runFromZero = this.runFromZero && run === null; // known now: a later EEPROM is not added to these
+    this.countFromZero = this.countFromZero && count === null;
     this.persist(nowMs);
   }
 
@@ -653,6 +741,7 @@ export class SimDevice {
     if (!has(Device.imu)) f |= Flag.imuMissing;
     if (!has(Device.mag)) f |= Flag.magMissing;
     if (this.settingsNotSaved) f |= Flag.settingsNotSaved;
+    if (!this.flashAvailable) f |= Flag.flashStoreMissing;
     if (!this.time.valid) f |= Flag.timeInvalid;
     if (this.time.valid && !this.time.backedUp) f |= Flag.timeNotBackedUp;
     if ((this.cal.flags & 1) === 0) f |= Flag.imuNotCalibrated;
@@ -672,7 +761,7 @@ export class SimDevice {
       i2cErrors: errors.i2cErrors >>> 0,
       overruns: errors.overruns >>> 0,
       resetReason: this.resetReason,
-      settingsSource: 1,
+      settingsSource: this.flashAvailable ? 3 : has(Device.eeprom) ? 1 : 0, // flash copy A, else EEPROM copy A
       btState: this.btState(),
       lastCause: this.lastCause,
       lastStage: this.lastStage,

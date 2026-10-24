@@ -143,12 +143,23 @@ const SCENARIOS: Record<string, { help: string; make: Factory }> = {
   },
   'safe-mode': {
     help: 'safe-mode               boots as after 3 unplanned restarts: no I2C (devices 0, all *Missing flags + ' +
-      'safeMode), counting in RAM, no IMU stream; lastCause 1, lastStage 7; a power cycle, reboot or the panic signal leaves it',
+      'safeMode), counters from the flash copy, no IMU stream; lastCause 1, lastStage 7; a power cycle, reboot or the ' +
+      'panic signal leaves it',
     make: () => ({
       label: 'safe mode (no I2C)',
       configure: (opts) => {
         opts.safeMode = true;
         opts.firstBoot = { reason: ResetReason.taskWatchdog, cause: LastCause.watchdog, stage: Stage.imu };
+      },
+    }),
+  },
+  'old-partitions': {
+    help: 'old-partitions          a partition table from before firmware 2.6.0 (app-only update): flag ' +
+      'flashStoreMissing, the EEPROM is the only store',
+    make: () => ({
+      label: 'no flash store (old partition table)',
+      configure: (opts) => {
+        opts.flashStore = false;
       },
     }),
   },

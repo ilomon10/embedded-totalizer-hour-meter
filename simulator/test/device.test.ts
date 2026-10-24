@@ -132,11 +132,71 @@ Deno.test('RTC without battery: rtcBatteryLost and timeInvalid at power-on, head
   assertEquals(lastOf(MSG.TELEMETRY)?.timestamp, 3);
 });
 
-Deno.test('presets without EEPROM answer DeviceMissing', () => {
-  const { device, last } = makeDevice({ fitted: Device.rtc | Device.imu | Device.mag });
+Deno.test('without an EEPROM the flash keeps the counters (2.6.0); with neither store presets answer DeviceMissing', () => {
+  const noEeprom = { fitted: Device.rtc | Device.imu | Device.mag };
+  const { device, last } = makeDevice(noEeprom);
   device.powerOn();
-  device.onCommand(command(1, { setRunSeconds: 10 }));
-  assertEquals([last().values.ackStatus, last().values.rejectedTag], [Ack.DeviceMissing, 102]);
+  assertEquals(last().values.runHours, 1250); // from the flash copy
+  assertEquals(last().values.settingsSource, 3);
+  device.onCommand(command(1, { setRunSeconds: 36000, get: 3 }));
+  assertEquals(last().values.ackStatus, Ack.Ok);
+  const flags = Number(last().values.statusFlags);
+  assertEquals([flags & Flag.eepromMissing, flags & Flag.settingsNotSaved], [Flag.eepromMissing, 0]);
+  device.powerOn(); // power cycle: the preset survives in the flash
+  assertEquals(last().values.runSeconds, 36000);
+
+  const old = makeDevice({ ...noEeprom, flashStore: false }); // an old partition table and no EEPROM
+  old.device.powerOn();
+  const bootFlags = Number(old.last().values.statusFlags);
+  assertEquals(bootFlags & Flag.flashStoreMissing, Flag.flashStoreMissing);
+  assertEquals(bootFlags & Flag.journalEmpty, Flag.journalEmpty);
+  old.device.onCommand(command(1, { setRunSeconds: 10 }));
+  assertEquals([old.last().values.ackStatus, old.last().values.rejectedTag], [Ack.DeviceMissing, 102]);
+});
+
+Deno.test('every save goes to flash and EEPROM; a returning EEPROM is brought up to date, not added', () => {
+  const { device, run, last } = makeDevice({ fitted: Device.rtc | Device.imu | Device.mag });
+  device.powerOn();
+  device.onCommand(command(1, { setRunSeconds: 7200 })); // saved in the flash only
+  device.setFitted(Device.eeprom, true); // the EEPROM (1250 h, an older save) answers again
+  run(2100); // next presence check
+  device.onCommand(command(2, { get: 1 }));
+  const afterReturn = Number(last().values.runSeconds);
+  assert(afterReturn >= 7200 && afterReturn < 7300, `${afterReturn}`); // the engine runs; 1250 h were NOT added
+  device.setFitted(Device.eeprom, false);
+  run(6100); // lost after 3 missed checks
+  device.powerOn(); // and the flash still has it
+  device.onCommand(command(3, { get: 1 }));
+  const afterPowerCycle = Number(last().values.runSeconds);
+  assert(afterPowerCycle >= 7200 && afterPowerCycle < 7300, `${afterPowerCycle}`);
+});
+
+Deno.test('first boot after the update: the EEPROM moves into the flash; a late EEPROM adds to counts from zero', () => {
+  const noEeprom = Device.rtc | Device.imu | Device.mag;
+  const moved = makeDevice({ freshFlash: true });
+  moved.device.powerOn();
+  assertEquals(moved.last().values.runHours, 1250); // from the EEPROM
+  moved.device.setFitted(Device.eeprom, false);
+  moved.run(6100);
+  moved.device.powerOn(); // the EEPROM is gone: the flash carries on
+  moved.device.onCommand(command(1, { get: 1 }));
+  assert(Number(moved.last().values.runSeconds) >= 1250 * 3600);
+
+  const late = makeDevice({ freshFlash: true, fitted: noEeprom }); // the EEPROM did not answer at that boot
+  late.device.powerOn();
+  assertEquals(Number(late.last().values.statusFlags) & Flag.journalEmpty, Flag.journalEmpty); // counting from 0
+  late.run(3000);
+  late.device.setFitted(Device.eeprom, true); // it answers now
+  late.run(2100);
+  late.device.onCommand(command(2, { get: 1 }));
+  const total = Number(late.last().values.runSeconds);
+  assert(total >= 1250 * 3600 && total < 1250 * 3600 + 60, `${total}`); // its 1250 h added to what was counted
+  late.device.setFitted(Device.eeprom, false);
+  late.run(6100);
+  late.device.setFitted(Device.eeprom, true); // contact lost and back: its record is the device's own now
+  late.run(2100);
+  late.device.onCommand(command(3, { get: 1 }));
+  assert(Number(late.last().values.runSeconds) < 1250 * 3600 + 120, 'added only once');
 });
 
 Deno.test('reboot: ACK first, then a boot EVENT with resetReason 3 and seq restarting at 0', () => {

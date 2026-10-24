@@ -1,6 +1,6 @@
 # Hour meter simulator
 
-**A fake hour-meter device on a virtual serial port.** It speaks the real protocol (SensorFrame v1, firmware 2.5.0): it sends TELEMETRY, IMU stream and EVENT frames and answers your COMMANDs with the same ACKs, error codes and quirks as the firmware. Use it to write and test a driver without the hardware.
+**A fake hour-meter device on a virtual serial port.** It speaks the real protocol (SensorFrame v1, firmware 2.6.0): it sends TELEMETRY, IMU stream and EVENT frames and answers your COMMANDs with the same ACKs, error codes and quirks as the firmware. Use it to write and test a driver without the hardware.
 
 ```bash
 cd simulator
@@ -41,7 +41,7 @@ On Windows there is no socat: use `hour-meter-sim.exe --tcp 5555`, or pair it wi
 | **Panic signal** | 64 `0x00` bytes in a row on a wired link (tty, TCP, stdio) restart the device at once, with no ACK: next boot EVENT has `resetReason` 3, `lastCause` 4, `lastStage` 8, counters saved first. A `--bt` session ignores it. The web *Panic signal* button does the same |
 | **Restart cause** | The full status block (boot EVENT, `get=3`) carries `lastCause` (tag 62: 0 none, 1 watchdog, 2 i2cStuck, 3 usbStalled, 4 panicSignal, 5 rebootCommand, 6 crash) and `lastStage` (tag 63), 0/0 at power-on. Flag bit 18 is `safeMode` |
 | **Port open** | Opening the tty reboots the device (boot EVENT, `seq` back to 0), like an ESP32 DevKit whose DTR line resets it. `--no-reset` turns this off |
-| **State** | The engine runs 40 s on / 40 s off, the hour meter and totalizer count up, and counters are saved every `persistIntervalS`. Settings and time persist across reboots, as with EEPROM and the RTC |
+| **State** | The engine runs 40 s on / 40 s off, the hour meter and totalizer count up, and counters are saved every `persistIntervalS`, to the flash copy and the EEPROM (firmware 2.6.0). Settings and time persist across reboots, as with the stores and the RTC |
 | **Values** | Each sensor animates by itself (engine cycle, gentle tilt, engine vibration, noise) until you set it in the [web UI](#web-ui) |
 | **Not simulated** | Real sensor physics, the UART pins (the simulated port is the USB port) |
 
@@ -82,7 +82,7 @@ The hour meter rides in a vehicle on a real map. The simulator turns the vehicle
 
 ### Dead reckoning: what the numbers mean
 
-Firmware 2.5.0 sends no position or speed, so moving without GPS is the host's job, integrating the IMU stream. The page draws the **true path** (solid) and a **reference estimate** (dashed orange) built only from the IMU frames the host receives (same rate, same 1 mg / 0.1 °/s resolution), plus the error in metres. *GPS fix* re-anchors the estimate to the truth, like a real fix.
+The firmware sends no position or speed, so moving without GPS is the host's job, integrating the IMU stream. The page draws the **true path** (solid) and a **reference estimate** (dashed orange) built only from the IMU frames the host receives (same rate, same 1 mg / 0.1 °/s resolution), plus the error in metres. *GPS fix* re-anchors the estimate to the truth, like a real fix.
 
 - **Ground vehicles:** gravity is learned while parked, and a zero-velocity update zeroes the speed whenever the truck stands still (judged by vibration, not by the mean: a truck cruising at constant speed reads pure gravity too, but shakes far more than an idling one). Heading integrates the gyro about "up".
 - **Aircraft:** a 3D strapdown INS. In a coordinated turn the accelerometer feels no sideways force, so gravity can't be read off it (the firmware's roll even reads level while banking 45°); attitude must come from the gyro.
@@ -162,12 +162,13 @@ deno task start --scenario no-rtc-battery --scenario corrupt=5
 | `acc-wire` | Models the wrong wiring: the engine input is ON whenever the key is on (always), but the engine really runs only from 20 s to 80 s of every 120 s; vibration RMS 8-12 mg when stopped, 40-80 mg when running. TELEMETRY shows `altInput` true while `alternator` is false during the off phase | Without `runVibMinMg` the run hours grow the whole time (the bug). With `hour-meter set runVibMinMg=30` they grow only while the engine runs; `alternator` = counting, `altInput` = raw input |
 | `no-rtc-battery` | Time lost at power-on: `timeValid` false, `rtcBatteryLost` + `timeInvalid`, header timestamp = uptime | Send `setTime` (UTC) |
 | `no-rtc` | No RTC: `rtcMissing`; after `setTime`, `timeNotBackedUp` | Send `setTime` after every boot |
-| `no-eeprom` | No EEPROM: presets answer `DeviceMissing`, settings set `settingsNotSaved` | Warn that counters are not persistent |
+| `no-eeprom` | No EEPROM: `eepromMissing`. Since firmware 2.6.0 the counters and settings are kept in the ESP32's flash, so presets work and nothing is lost | Show `eepromMissing` as a warning, not an error |
+| `old-partitions` | A partition table from before 2.6.0 (an app-only update): `flashStoreMissing`, the EEPROM is the only store. With `no-eeprom` as well: presets answer `DeviceMissing`, settings set `settingsNotSaved` | Tell the user to flash the full image; with no EEPROM either, warn that counters are not persistent |
 | `no-imu`, `no-mag` | Module absent: its records disappear from TELEMETRY | Treat missing tags as "no data", not as zero |
 | `module-flap[=module,periodS]` | Unplug/replug `imu` (default), `eeprom` or `rtc` every period (default 30 s) → EVENT kind 3. Lost after 3 missed checks (~6 s), so shorter periods are ignored, as on the device | Update the module list on EVENT kind 3 |
 | `reboot[=periodS]` | Watchdog reset every period (default 120 s): boot EVENT, `resetReason` 6, `lastCause` 1, `lastStage` 7, `seq` restarts at 0 | Log unexpected reboots; don't treat a `seq` jump as lost frames |
 | `hang[=afterS]` | Frozen MCU after afterS (default 30 s): sends nothing, ignores commands. Only the panic signal (64 zero bytes) or a restart/power cycle from the web UI ends it; the panic signal is honoured because a real watchdog would reboot the device anyway | Time out, then send the panic signal and wait for the boot EVENT (`lastCause` 4) |
-| `safe-mode` | Boots as after 3 unplanned restarts: `devices` 0, `eepromMissing`/`rtcMissing`/`imuMissing`/`magMissing` + `settingsDefaults`/`journalEmpty` + `safeMode` (flag 18), counting in RAM, no IMU stream; `lastCause` 1, `lastStage` 7. A power cycle, `reboot` or the panic signal leaves it | Show a "safe mode" banner; don't treat missing modules as hardware faults |
+| `safe-mode` | Boots as after 3 unplanned restarts: `devices` 0, `eepromMissing`/`rtcMissing`/`imuMissing`/`magMissing` + `safeMode` (flag 18), counters and settings from the flash copy, no IMU stream; `lastCause` 1, `lastStage` 7. A power cycle, `reboot` or the panic signal leaves it | Show a "safe mode" banner; don't treat missing modules as hardware faults |
 | `noise[=p]` | Random junk bytes (zeros included) before a fraction `p` of frames (default 0.2) | Drop bad frames, resync on the next `0x00` |
 | `corrupt[=N]` | One byte flipped in 1 of N frames (default 10) → CRC / COBS errors | Count and drop; never crash |
 
