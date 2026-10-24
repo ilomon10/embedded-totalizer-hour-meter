@@ -37,25 +37,36 @@ async function openSerial(path: string, baudRate: number): Promise<Link> {
       `serial ports are not supported on Windows yet: use tcp://host:port (serial-to-TCP bridge) or --demo`,
     );
   }
-  // Open first, then configure: macOS resets the line settings when the last handle closes.
-  const file = await Deno.open(path, { read: true, write: true });
+  // One handle to read, one to write: Deno runs the operations on one handle one after the other, so a read
+  // waiting for data would hold back every write (a command would only leave after the device sent something;
+  // the ROM bootloader never does). Open first, then configure: macOS resets the line settings when the last
+  // handle closes.
+  const input = await Deno.open(path, { read: true });
+  let output: Deno.FsFile | undefined;
   try {
-    await stty(path, baudRate);
+    output = await Deno.open(path, { write: true });
+    await setBaud(path, baudRate);
   } catch (err) {
-    closeQuietly(file);
+    if (output) closeQuietly(output);
+    closeQuietly(input);
     throw err;
   }
+  const out = output;
   return {
-    readable: file.readable,
+    readable: input.readable,
     write: async (bytes) => {
       let done = 0;
-      while (done < bytes.length) done += await file.write(bytes.subarray(done));
+      while (done < bytes.length) done += await out.write(bytes.subarray(done));
     },
-    close: () => closeQuietly(file),
+    close: () => {
+      closeQuietly(out);
+      closeQuietly(input);
+    },
   };
 }
 
-async function stty(path: string, baudRate: number): Promise<void> {
+/** Set an open serial port to `baudRate`, 8N1, raw (stty). Also used to change speed while open (flash.ts). */
+export async function setBaud(path: string, baudRate: number): Promise<void> {
   const device = Deno.build.os === 'darwin' ? '-f' : '-F';
   const args = [device, path, String(baudRate), 'raw', '-echo', 'cs8', '-cstopb', '-parenb', '-crtscts', 'clocal'];
   let output: Deno.CommandOutput;

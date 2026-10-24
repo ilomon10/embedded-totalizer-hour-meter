@@ -1,5 +1,6 @@
 // state.ts: the TUI's view of the device, built from incoming frames.
 // Pure functions only (no I/O), so it is unit-tested in state.test.ts.
+import { compareVersions, findRelease, type FirmwareRelease, formatFirmware } from '../releases.ts';
 import { bootText, causeText } from '../restart.ts';
 import { ACK_STATUS, decodeStatusFlags, EVENT_KIND, MSG, SETTINGS } from '../tags.ts';
 
@@ -56,10 +57,34 @@ export function activeFlags(state: DeviceState): string[] {
   return typeof flags === 'number' ? decodeStatusFlags(flags) : [];
 }
 
-/** 0x00MMmmpp -> "M.m.p" */
-export function formatFirmware(v: Value | undefined): string {
-  if (typeof v !== 'number') return '?';
-  return `${(v >> 16) & 0xff}.${(v >> 8) & 0xff}.${v & 0xff}`;
+export { formatFirmware };
+
+const SERIOUS = new Set([
+  'eepromMissing',
+  'storageError',
+  'timeInvalid',
+  'rtcBatteryLost',
+  'imuStuck',
+  'i2cErrors',
+  'safeMode',
+]);
+const FLASH_STORE_FIRMWARE = 0x00020600; // 2.6.0 keeps settings + counters in the ESP32's flash too
+
+/** Red for flags that need action now. A missing EEPROM is only a warning when the flash keeps the values. */
+export function flagColor(flag: string, flags: string[], fwVersion: Value | undefined): 'red' | 'yellow' {
+  if (flag === 'eepromMissing') {
+    const flashKeeps = typeof fwVersion === 'number' && fwVersion >= FLASH_STORE_FIRMWARE &&
+      !flags.includes('flashStoreMissing');
+    return flashKeeps ? 'yellow' : 'red';
+  }
+  return SERIOUS.has(flag) ? 'red' : 'yellow';
+}
+
+/** The newest release's version if it is newer than the device's firmware (header: "update available"). */
+export function updateAvailable(fwVersion: Value | undefined, releases: FirmwareRelease[] | undefined) {
+  const latest = releases && findRelease(releases, 'latest');
+  if (!latest || typeof fwVersion !== 'number') return undefined;
+  return compareVersions(latest.version, formatFirmware(fwVersion)) > 0 ? latest.version : undefined;
 }
 
 function describeEvent(values: Record<string, Value>): { level: Level; text: string } {

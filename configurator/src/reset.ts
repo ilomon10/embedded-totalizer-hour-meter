@@ -4,8 +4,10 @@
 //                 Wired ports only (USB, UART pins, tcp:// bridges of those), never Bluetooth.
 //   hard reset    pulse EN through the USB-serial adapter's modem lines, like esptool's hard_reset:
 //                 DTR off (IO0 high, so normal boot), RTS on (EN low) 100 ms, RTS off.
+//   bootloader    the same lines, but IO0 is held low while EN comes up: the ESP32 starts its ROM
+//                 bootloader (download mode) instead of the firmware. Used by flash.ts.
 //
-// The pure parts (constants per OS, the step list, runSteps) are unit-tested; only hardReset() touches libc
+// The pure parts (constants per OS, the step lists, runSteps) are unit-tested; only runModemSteps() touches libc
 // through Deno.dlopen (needs --allow-ffi, which -A includes), so test/ never calls it.
 import type { Link } from './links.ts';
 import { PANIC_ZERO_RUN } from './tags.ts';
@@ -16,6 +18,22 @@ export type Step = { set: Line; on: boolean } | { wait: number };
 /** DTR off, RTS on (EN low) for 100 ms, RTS off. IO0 (DTR) stays high, so the chip runs, not download mode. */
 export function hardResetSteps(): Step[] {
   return [{ set: 'dtr', on: false }, { set: 'rts', on: true }, { wait: 100 }, { set: 'rts', on: false }];
+}
+
+/**
+ * Into the ROM bootloader (esptool's classic reset): EN low for 100 ms with IO0 high, then IO0 low (DTR on) while
+ * EN comes up, held `holdMs` (esptool tries 50 ms, then 550 ms for boards with a slow EN capacitor), then IO0 free.
+ */
+export function bootloaderSteps(holdMs = 50): Step[] {
+  return [
+    { set: 'dtr', on: false },
+    { set: 'rts', on: true },
+    { wait: 100 },
+    { set: 'dtr', on: true },
+    { set: 'rts', on: false },
+    { wait: holdMs },
+    { set: 'dtr', on: false },
+  ];
 }
 
 /** Bytes of the panic signal: exactly PANIC_ZERO_RUN zeros. */
@@ -97,17 +115,22 @@ const ERRNO: Record<number, string> = {
  * the last handle closes, which is not the case here.
  */
 export async function hardReset(path: string): Promise<void> {
+  await runModemSteps(path, hardResetSteps());
+}
+
+/** Drive DTR/RTS of serial port `path` through `steps` (see hardReset). `job` names the caller in errors. */
+export async function runModemSteps(path: string, steps: Step[], job = 'hard reset'): Promise<void> {
   const k = serialConstants(Deno.build.os);
-  const libc = loadLibc(k.libc);
+  const libc = loadLibc(k.libc, job);
   try {
     const fail = (what: string): never => {
       const e = libc.errno();
-      throw new Error(`hard reset: ${what} ${path} failed: ${ERRNO[e] ?? `errno ${e}`}`);
+      throw new Error(`${job}: ${what} ${path} failed: ${ERRNO[e] ?? `errno ${e}`}`);
     };
     const fd = libc.open(new TextEncoder().encode(`${path}\0`), k.O_RDWR | k.O_NOCTTY | k.O_NONBLOCK);
     if (fd < 0) fail('open');
     try {
-      await runSteps(hardResetSteps(), {
+      await runSteps(steps, {
         set: (line, on) => {
           const bits = new Int32Array([line === 'dtr' ? k.TIOCM_DTR : k.TIOCM_RTS]);
           if (libc.ioctl(fd, on ? k.TIOCMBIS : k.TIOCMBIC, bits) < 0) fail('setting the modem lines of');
@@ -132,7 +155,7 @@ interface Libc {
 
 // ioctl() is variadic. Apple arm64 passes variadic arguments on the stack, so there the pointer is declared as the
 // 9th parameter (the first 8 integers fill registers, the 9th lands on the stack where ioctl looks for it).
-function loadLibc(names: string[]): Libc {
+function loadLibc(names: string[], job: string): Libc {
   const mac = Deno.build.os === 'darwin';
   const stackArgs = mac && Deno.build.arch === 'aarch64';
   const ioctlParams = stackArgs
@@ -166,5 +189,5 @@ function loadLibc(names: string[]): Libc {
       last = err;
     }
   }
-  throw new Error(`hard reset: cannot load libc (${names.join(', ')}): ${(last as Error)?.message}`);
+  throw new Error(`${job}: cannot load libc (${names.join(', ')}): ${(last as Error)?.message}`);
 }

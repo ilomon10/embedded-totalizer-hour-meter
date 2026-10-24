@@ -165,6 +165,7 @@ export const STATUS_FLAGS: readonly string[] = Object.freeze([
   'timeNotBackedUp',
   'settingsNotSaved',
   'safeMode',
+  'flashStoreMissing',
 ]);
 
 export const GET: Readonly<Record<string, number>> = Object.freeze({ hour: 1, settings: 2, status: 3, calib: 4 });
@@ -184,7 +185,7 @@ export const SETTINGS: Record<string, SettingSpec> = {
   imuSampleHz: { tag: 111, min: 10, max: 500, unit: 'Hz', help: 'IMU read + filter rate' },
   imuStreamHz: { tag: 112, min: 0, max: 100, unit: 'Hz', help: 'IMU stream rate (0 = off, <= imuSampleHz)' },
   streamMode: { tag: 113, min: 0, max: 3, help: 'IMU stream content', options: STREAM_MODE },
-  persistIntervalS: { tag: 114, min: 10, max: 3600, unit: 's', help: 'max time between EEPROM saves' },
+  persistIntervalS: { tag: 114, min: 10, max: 3600, unit: 's', help: 'max time between saves (flash + EEPROM)' },
   vibrationWindowMs: { tag: 115, min: 100, max: 10000, unit: 'ms', help: 'vibration RMS/peak window' },
   rtcSyncIntervalS: { tag: 116, min: 1, max: 3600, unit: 's', help: 'RTC re-read period' },
   output: { tag: 117, min: 1, max: 3, help: 'where periodic data goes (applied after ACK)', options: OUTPUT },
@@ -240,6 +241,7 @@ export const LAST_STAGE: readonly string[] = Object.freeze([
   'inputs',
   'telemetry',
   'presence check',
+  'flash store',
 ]);
 
 /** The panic signal: this many 0x00 bytes in a row on a wired port restart the device (no frame, no ACK). */

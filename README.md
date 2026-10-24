@@ -24,7 +24,7 @@ Firmware version: **2.6.0** (see `kFirmwareVersion` in [`Protocol.h`](esp32/lib/
 | Path | What it is |
 |---|---|
 | [`esp32/`](esp32/README.md) | PlatformIO firmware. Envs: `esp32dev` (firmware), `bench` (module test firmware), `native` (unit tests on the PC) |
-| [`configurator/`](configurator/README.md) | `hour-meter` (Deno, released as a standalone binary): full-screen TUI, live reader (`read`), single commands (`get`, `set`, ...) and the `DeviceClient` library |
+| [`configurator/`](configurator/README.md) | `hour-meter` (Deno, released as a standalone binary): full-screen TUI, live reader (`read`), single commands (`get`, `set`, ...), firmware update over USB (`firmware`) and the `DeviceClient` library |
 | [`sensorframe/`](sensorframe/README.md) | The wire format: [SPEC.md](sensorframe/SPEC.md), header-only C++ library (`arduino/`), zero-dependency npm package (`js/`), shared golden test vectors |
 | [`schematic/hour-meter-board/`](schematic/hour-meter-board/README.md) | Main board rev B (KiCad, draft): chip-down, one schematic sheet per former module, 4-layer 100 × 90 mm, JLCPCB in-stock parts, runs from 5 V |
 | [`schematic/hour-meter-psu-b/`](schematic/hour-meter-psu-b/README.md) | Plug-on 9–36 V → 5.3 V supply (TPS54360B) for the rev-B board |
@@ -56,6 +56,7 @@ deno task start --demo              # try the TUI with a simulated device (no ha
 deno task start /dev/ttyUSB0        # the real device
 deno task start set-time --port /dev/ttyUSB0   # set the RTC from the PC clock (UTC)
 deno task start get hour --port /dev/ttyUSB0   # read the hour meter
+deno task start firmware flash --port /dev/ttyUSB0   # update to the newest release (no PlatformIO needed)
 ```
 
 No device at hand? `deno task start --demo` runs a simulated one inside the configurator, or `cd simulator && deno task start` creates one at `/tmp/ttyHourMeter` for any tool or driver.
@@ -95,6 +96,8 @@ It stops before changing anything if:
 - the tag or release already exists. Use `--bump` in that case.
 
 It warns when a part changed since the previous release but still has the same version. Without `--notes`, the notes are generated from the Conventional Commit messages since the previous release. Releases before 1.0.0 were separate per part (`firmware-v*`, `configurator-v*`, `simulator-v*`).
+
+`hour-meter firmware` finds the firmware in a release by its file name, `hour-meter-<firmware version>-esp32dev-merged.bin`, and checks it against the release's `SHA256SUMS`. Keep both. The configurator's tests fail if `assetNames()` in `scripts/release-lib.ts` stops matching.
 
 ## Documentation
 

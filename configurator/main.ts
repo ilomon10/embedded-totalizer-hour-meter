@@ -3,9 +3,11 @@
 //   hour-meter [port] [--demo] [--pin N]     full-screen configurator + live viewer (TUI)
 //   hour-meter read [port] [--imu]           one line per frame
 //   hour-meter get hour --port <port>        one command, one ACK (see `hour-meter help`)
+//   hour-meter firmware [version|list|download|flash]   firmware releases, update over USB
 //
 // A port is a serial device (/dev/ttyUSB0, /dev/rfcomm0, /dev/cu.usbserial-*) or tcp://host:port.
 import { COMMANDS, run as runCommand, USAGE } from './src/commands.ts';
+import { FIRMWARE_USAGE, run as runFirmware } from './src/firmware.ts';
 import { run as runReader } from './src/reader.ts';
 import { run as runTui } from './src/tui/main.tsx';
 import { TOOL_VERSION } from './src/version.ts';
@@ -21,6 +23,8 @@ Port: a serial device (default /dev/ttyUSB0, or $HOUR_METER_PORT) or tcp://host:
 PIN:  only for Bluetooth sessions (or $HOUR_METER_PIN).
 
 ${USAGE}
+
+${FIRMWARE_USAGE}
 `;
 
 async function main(argv: string[]): Promise<number> {
@@ -35,6 +39,7 @@ async function main(argv: string[]): Promise<number> {
   }
   if (first === 'read') return await runReader(rest);
   if (first === 'tui') return await runTui(rest);
+  if (first === 'firmware') return await runFirmware(rest);
   if (first !== undefined && COMMANDS.has(first)) return await runCommand(argv);
   return await runTui(argv); // no subcommand: the TUI (argv may hold a port and flags)
 }

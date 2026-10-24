@@ -1,9 +1,9 @@
 // App.tsx: the hour-meter configurator & live viewer (Ink = React for terminals).
 //
-//   [1] Dashboard  [2] IMU  [3] Settings  [4] Actions  [5] Log      q = quit
+//   [1] Dashboard  [2] IMU  [3] Settings  [4] Actions  [5] Log  [6] Firmware      q = quit
 //
-// All device I/O goes through the DeviceClient passed in; the screen is a pure
-// function of DeviceState (see state.ts).
+// All device I/O goes through the DeviceClient passed in (a firmware update hands
+// back a new one); the screen is a pure function of DeviceState (see state.ts).
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import TextInput from 'ink-text-input';
@@ -18,7 +18,11 @@ import {
   tags,
   unitsToPulses,
 } from '../tags.ts';
+import { progressLine } from '../firmware.ts';
+import type { FlashProgress } from '../flash.ts';
+import type { FirmwareRelease } from '../releases.ts';
 import { causeText } from '../restart.ts';
+import { type FirmwareActions, type FirmwarePrompt, FirmwareView } from './FirmwareView.tsx';
 import {
   activeFlags,
   addLog,
@@ -27,9 +31,11 @@ import {
   type DecodedMessage,
   devicesPresent,
   type DeviceState,
+  flagColor,
   formatFirmware,
   type Level,
   noDataBanner,
+  updateAvailable,
   type Value,
 } from './state.ts';
 
@@ -43,19 +49,9 @@ export interface Client {
   off(event: string, listener: Listener): unknown;
 }
 
-const TABS = ['Dashboard', 'IMU', 'Settings', 'Actions', 'Log'] as const;
+const TABS = ['Dashboard', 'IMU', 'Settings', 'Actions', 'Log', 'Firmware'] as const;
 type Tab = (typeof TABS)[number];
 const LEVEL_COLOR: Record<Level, string> = { info: 'white', ok: 'green', warn: 'yellow', error: 'red' };
-const SERIOUS = new Set([
-  'eepromMissing',
-  'storageError',
-  'timeInvalid',
-  'rtcBatteryLost',
-  'imuStuck',
-  'i2cErrors',
-  'safeMode',
-]);
-
 // ------------------------------------------------------------------ helpers --
 
 function num(v: Value | undefined, digits = 2): string {
@@ -102,7 +98,7 @@ export function parseSetting(name: string, text: string): { value?: number | boo
 
 // --------------------------------------------------------------- components --
 
-function Header({ state, tab }: { state: DeviceState; tab: Tab }) {
+function Header({ state, tab, update }: { state: DeviceState; tab: Tab; update?: string }) {
   const age = state.lastFrameMs ? (Date.now() - state.lastFrameMs) / 1000 : Infinity;
   const live = age < 5;
   const conn = state.connection === 'demo' ? 'DEMO' : live ? 'connected' : state.frames ? 'no data' : 'waiting';
@@ -111,7 +107,10 @@ function Header({ state, tab }: { state: DeviceState; tab: Tab }) {
       <Box justifyContent='space-between'>
         <Text bold>HOUR METER</Text>
         <Text color={live ? 'green' : 'yellow'}>● {conn} {state.port}</Text>
-        <Text>dev {state.deviceId?.toString(16) ?? '-'} fw {formatFirmware(state.values.fwVersion)}</Text>
+        <Text>
+          dev {state.deviceId?.toString(16) ?? '-'} fw {formatFirmware(state.values.fwVersion)}
+          {update ? <Text color='yellow'>{` → ${update} available (6)`}</Text> : null}
+        </Text>
       </Box>
       <Box gap={2}>
         {TABS.map((t, i) => <Text key={t} inverse={t === tab} bold={t === tab}>{` ${i + 1} ${t} `}</Text>)}
@@ -182,12 +181,19 @@ function Dashboard({ state }: { state: DeviceState }) {
       <Panel title='Status'>
         {flags.length === 0 ? <Text color='green'>all OK</Text> : (
           <Box flexWrap='wrap' gap={2}>
-            {flags.map((f) => <Text key={f} color={SERIOUS.has(f) ? 'red' : 'yellow'}>▲ {f}</Text>)}
+            {flags.map((f) => <Text key={f} color={flagColor(f, flags, v.fwVersion)}>▲ {f}</Text>)}
           </Box>
         )}
         {lastRestart ? <Text color='gray'>Last restart: {lastRestart}</Text> : null}
         {flags.includes('safeMode')
           ? <Text color='red'>Safe mode: I2C is off after repeated restarts. Power-cycle or reboot to leave it.</Text>
+          : null}
+        {flags.includes('flashStoreMissing')
+          ? (
+            <Text color='yellow'>
+              No flash store (old partition table): flash the full image (tab 6) so values survive without the EEPROM.
+            </Text>
+          )
           : null}
       </Panel>
     </Box>
@@ -341,17 +347,26 @@ function LogView({ state }: { state: DeviceState }) {
 
 // --------------------------------------------------------------------- app --
 
+/** Same stage and same whole percent: not worth a new frame on the terminal. */
+function sameStep(old: FlashProgress | undefined, p: FlashProgress): boolean {
+  const pct = (x: FlashProgress) => Math.floor((100 * x.done) / (x.total || 1));
+  return old !== undefined && old.stage === p.stage && pct(old) === pct(p);
+}
+
 /**
  * `hardReset` pulses EN through the USB adapter; it is only given for a local serial port.
- * `hardResetNote` says why it is missing (shown instead).
+ * `hardResetNote` says why it is missing (shown instead). `firmware` lists, downloads and flashes (tab 6);
+ * a flash hands back a new client, which replaces `client`.
  */
-export function App({ client, initial, hardReset, hardResetNote }: {
+export function App({ client: firstClient, initial, hardReset, hardResetNote, firmware }: {
   client: Client;
   initial: DeviceState;
   hardReset?: () => Promise<void>;
   hardResetNote?: string;
+  firmware: FirmwareActions;
 }) {
   const { exit } = useApp();
+  const [client, setClient] = useState(firstClient);
   const [state, setState] = useState(initial);
   const [tab, setTab] = useState<Tab>('Dashboard');
   const [cursor, setCursor] = useState(0);
@@ -359,7 +374,13 @@ export function App({ client, initial, hardReset, hardResetNote }: {
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [, setTick] = useState(0);
-  const startMs = useRef(Date.now()).current;
+  const startMs = useRef(Date.now()); // since connecting, or since the last flash (no-data banner)
+  const [releases, setReleases] = useState<FirmwareRelease[] | undefined>();
+  const [releasesNote, setReleasesNote] = useState<string | undefined>();
+  const [fwPrompt, setFwPrompt] = useState<FirmwarePrompt | undefined>();
+  const [progress, setProgress] = useState<FlashProgress | undefined>();
+  const [flashing, setFlashing] = useState(false);
+  const job = useRef<'flash' | 'download' | undefined>(undefined); // one firmware job at a time
 
   const log = useCallback((level: Level, text: string) => setState((s) => addLog(s, level, text, Date.now())), []);
 
@@ -400,7 +421,8 @@ export function App({ client, initial, hardReset, hardResetNote }: {
     void refresh();
     const timer = setInterval(() => setTick((t) => t + 1), 1000); // keep "last frame" age fresh
     // Uptime, I2C errors, RTC temperature... only come with a full status: poll it quietly.
-    const status = setInterval(() => void send('get status', { get: 3 }, true), 10000);
+    // Not during a flash: the old client is closed then.
+    const status = setInterval(() => job.current === 'flash' || void send('get status', { get: 3 }, true), 10000);
     return () => {
       client.off('frame', onFrame);
       client.off('timeSynced', onSynced);
@@ -475,15 +497,115 @@ export function App({ client, initial, hardReset, hardResetNote }: {
     }
   };
 
+  // ---- firmware (tab 6)
+
+  const checkReleases = useCallback(async () => {
+    setReleasesNote('checking the GitHub releases...');
+    try {
+      const list = await firmware.list();
+      setReleases(list);
+      setReleasesNote(list.length ? undefined : 'no firmware releases found');
+    } catch (err) {
+      setReleasesNote(`no release list: ${(err as Error).message}`);
+    }
+  }, [firmware]);
+
+  useEffect(() => {
+    void checkReleases(); // in the background: the header then says when an update is available
+  }, [checkReleases]);
+
+  /** A release's image: from the cache folder, else downloaded. Checked against SHA256SUMS either way. */
+  const getImage = async (release: FirmwareRelease) => {
+    log('info', `getting firmware ${release.version} (${release.tag})...`);
+    const image = await firmware.image(release);
+    if (image.notSaved) {
+      log('warn', `firmware ${image.label} checked against SHA256SUMS, not kept in the cache (${image.notSaved})`);
+    } else {
+      const how = image.cached ? 'was in the cache' : 'downloaded';
+      log('ok', `firmware ${image.label} ${how}, checked against SHA256SUMS: ${image.path}`);
+    }
+    return image;
+  };
+
+  const downloadRelease = async (release: FirmwareRelease) => {
+    if (job.current) return log('warn', 'wait: a firmware download or flash is running');
+    job.current = 'download';
+    try {
+      await getImage(release);
+    } catch (err) {
+      log('error', `download: ${(err as Error).message}`);
+    } finally {
+      job.current = undefined;
+    }
+  };
+
+  const runFlash = async (target: Extract<FirmwarePrompt, { kind: 'confirm' }>) => {
+    if (!firmware.flash) return log('warn', `flash: ${firmware.flashNote ?? 'not available'}`);
+    if (job.current) return log('warn', 'wait: a firmware download or flash is running');
+    job.current = 'flash';
+    setFlashing(true);
+    try {
+      const image = target.image ?? await getImage(target.release!);
+      log('info', `flashing ${image.label}: keep the board plugged in`);
+      const result = await firmware.flash(
+        image,
+        (p) => setProgress((old) => (sameStep(old, p) ? old : p)),
+        (n) => log(n.level, n.text),
+      );
+      startMs.current = Date.now();
+      setState((s) => ({ ...s, lastFrameMs: undefined }));
+      if (result.client) setClient(result.client); // the effects above subscribe to it and refresh everything
+      else log('error', 'no connection to the board: plug it in, then quit (q) and start hour-meter again');
+      log(result.ok ? 'ok' : 'error', result.ok ? `firmware update done: ${image.label}` : 'firmware update failed');
+    } catch (err) {
+      log('error', `firmware update: ${(err as Error).message}`);
+    } finally {
+      job.current = undefined;
+      setFlashing(false);
+      setProgress(undefined);
+    }
+  };
+
+  // q and Ctrl+C (Ink's own Ctrl+C exit is off, see main.tsx): never in the middle of a flash.
+  const quit = () => (flashing ? log('warn', 'a firmware update is running: wait for it') : exit());
+
+  const askFirmware = (prompt: FirmwarePrompt) => {
+    if (!firmware.flash) return log('warn', `flash: ${firmware.flashNote ?? 'not available'}`);
+    setFwPrompt(prompt);
+    setDraft('');
+    setEditing(true);
+  };
+
+  const submitFirmware = async (text: string) => {
+    const prompt = fwPrompt;
+    setEditing(false);
+    setFwPrompt(undefined);
+    if (prompt?.kind === 'path') {
+      if (!text.trim()) return;
+      try {
+        const image = await firmware.file(text.trim());
+        askFirmware({ kind: 'confirm', label: image.label, image });
+      } catch (err) {
+        log('error', (err as Error).message);
+      }
+      return;
+    }
+    if (!prompt) return;
+    if (text.trim() !== 'FLASH') return log('warn', 'flash cancelled');
+    await runFlash(prompt);
+  };
+
   useInput((input, key) => {
+    if (key.ctrl && input === 'c') return quit();
     if (editing) {
       if (key.escape) {
         setEditing(false);
         setError(undefined);
+        setFwPrompt(undefined);
       }
       return; // TextInput owns the keyboard while editing
     }
-    if (input === 'q') return exit();
+    if (input === 'q') return quit();
     const n = Number(input);
     if (n >= 1 && n <= TABS.length) {
       setTab(TABS[n - 1]);
@@ -495,9 +617,25 @@ export function App({ client, initial, hardReset, hardResetNote }: {
       setCursor(0);
       return;
     }
-    const count = tab === 'Settings' ? SETTING_NAMES.length : tab === 'Actions' ? ACTIONS.length : 0;
+    const count = tab === 'Settings'
+      ? SETTING_NAMES.length
+      : tab === 'Actions'
+      ? ACTIONS.length
+      : tab === 'Firmware'
+      ? releases?.length ?? 0
+      : 0;
     if (key.upArrow && count) setCursor((c) => (c + count - 1) % count);
     if (key.downArrow && count) setCursor((c) => (c + 1) % count);
+    if (flashing) return; // look around, but the port belongs to the flasher
+    if (tab === 'Firmware') {
+      const release = releases?.[cursor];
+      if (input === 'c') void checkReleases();
+      if (input === 'd' && release) void downloadRelease(release);
+      if (input === 'f') askFirmware({ kind: 'path' });
+      if (key.return && release) {
+        askFirmware({ kind: 'confirm', label: `${release.version} (${release.tag})`, release });
+      }
+    }
     if (input === 'g') void refresh();
     if (input === 'H' || input === 'h') void runHardReset();
     if (tab === 'IMU') {
@@ -539,12 +677,12 @@ export function App({ client, initial, hardReset, hardResetNote }: {
   };
 
   const lastLog = state.log[state.log.length - 1];
-  const banner = state.connection === 'demo'
+  const banner = state.connection === 'demo' || flashing
     ? undefined
-    : noDataBanner(state.lastFrameMs, startMs, Date.now(), hardReset ? undefined : hardResetNote);
+    : noDataBanner(state.lastFrameMs, startMs.current, Date.now(), hardReset ? undefined : hardResetNote);
   return (
     <Box flexDirection='column'>
-      <Header state={state} tab={tab} />
+      <Header state={state} tab={tab} update={updateAvailable(state.values.fwVersion, releases)} />
       {banner ? <Text color='yellow' bold>▲ {banner}</Text> : null}
       {tab === 'Dashboard' && <Dashboard state={state} />}
       {tab === 'IMU' && <ImuView state={state} />}
@@ -571,9 +709,27 @@ export function App({ client, initial, hardReset, hardResetNote }: {
         />
       )}
       {tab === 'Log' && <LogView state={state} />}
+      {tab === 'Firmware' && (
+        <FirmwareView
+          fwVersion={state.values.fwVersion}
+          releases={releases}
+          releasesNote={releasesNote}
+          cursor={cursor}
+          prompt={editing ? fwPrompt : undefined}
+          draft={draft}
+          setDraft={setDraft}
+          onSubmit={submitFirmware}
+          progress={progress}
+          flashNote={firmware.flash ? undefined : firmware.flashNote}
+        />
+      )}
       <Box paddingX={1}>
-        <Text color='gray'>1-5/Tab switch g refresh H hard reset q quit</Text>
-        {lastLog ? <Text color={LEVEL_COLOR[lastLog.level]}>{lastLog.text}</Text> : null}
+        <Text color='gray'>1-6/Tab switch g refresh H hard reset q quit</Text>
+        {progress && tab !== 'Firmware'
+          ? <Text color='yellow'>{progressLine(progress)}</Text>
+          : lastLog
+          ? <Text color={LEVEL_COLOR[lastLog.level]}>{lastLog.text}</Text>
+          : null}
       </Box>
     </Box>
   );

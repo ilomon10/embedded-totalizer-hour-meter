@@ -6,10 +6,13 @@ import {
   applyMessage,
   confirmSettings,
   devicesPresent,
+  flagColor,
   formatFirmware,
   initialState,
   MAX_LOG,
+  updateAvailable,
 } from '../src/tui/state.ts';
+import type { FirmwareRelease } from '../src/releases.ts';
 import { parseSetting } from '../src/tui/App.tsx';
 
 Deno.test('frames merge into a flat value map and settings are tracked', () => {
@@ -50,6 +53,33 @@ Deno.test('helpers', () => {
   let s = initialState('x', true);
   for (let i = 0; i < MAX_LOG + 10; i++) s = addLog(s, 'info', `#${i}`, i);
   assertEquals(s.log.length, MAX_LOG);
+});
+
+Deno.test('the header names a newer release, never a prerelease', () => {
+  const release = (version: string, prerelease = false): FirmwareRelease => ({
+    version,
+    tag: `v-${version}`,
+    date: '2026-10-24T00:00:00Z',
+    prerelease,
+    asset: `hour-meter-${version}-esp32dev-merged.bin`,
+    url: '',
+    sumsUrl: '',
+  });
+  const releases = [release('2.7.0', true), release('2.6.0'), release('2.5.0')];
+  assertEquals(updateAvailable(0x00020500, releases), '2.6.0');
+  assertEquals(updateAvailable(0x00020600, releases), undefined);
+  assertEquals(updateAvailable(0x00030000, releases), undefined); // the device is newer
+  assertEquals(updateAvailable(undefined, releases), undefined); // version not read yet
+  assertEquals(updateAvailable(0x00020500, undefined), undefined); // GitHub not asked yet
+});
+
+Deno.test('a missing EEPROM is red only when nothing else keeps the values', () => {
+  assertEquals(flagColor('eepromMissing', ['eepromMissing'], 0x00020500), 'red'); // 2.5.0: nothing saved
+  assertEquals(flagColor('eepromMissing', ['eepromMissing'], 0x00020600), 'yellow'); // 2.6.0: the flash keeps them
+  assertEquals(flagColor('eepromMissing', ['eepromMissing', 'flashStoreMissing'], 0x00020600), 'red');
+  assertEquals(flagColor('eepromMissing', ['eepromMissing'], undefined), 'red'); // version not read yet
+  assertEquals(flagColor('storageError', [], 0x00020600), 'red');
+  assertEquals(flagColor('flashStoreMissing', [], 0x00020600), 'yellow');
 });
 
 Deno.test('setting input is validated like the firmware does', () => {
