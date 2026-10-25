@@ -29,6 +29,7 @@ Firmware version: **2.6.0** (see `kFirmwareVersion` in [`Protocol.h`](esp32/lib/
 | [`schematic/hour-meter-board/`](schematic/hour-meter-board/README.md) | Main board rev B (KiCad, draft): chip-down, one schematic sheet per former module, 4-layer 100 × 90 mm, JLCPCB in-stock parts, runs from 5 V |
 | [`schematic/hour-meter-board-2layer/`](schematic/hour-meter-board-2layer/README.md) | The same rev-B board routed on 2 copper layers, for a cheaper PCB. It is a KiCad *Save As* copy, so the 4-layer design stays as it is |
 | [`schematic/hour-meter-board-compact/`](schematic/hour-meter-board-compact/README.md) | The rev-B board on 80 × 70 mm and 2 layers: milled isolation slots around the vehicle inputs, fault-protected RS485, fused 5 V header pins, coin cell on the underside |
+| [`schematic/fault-analysis/`](schematic/fault-analysis/README.md) | ngspice fault simulations for the rev-B boards and PSU-B: load dump, ISO 7637 pulses, reverse polarity, shorted outputs, miswired connectors |
 | [`schematic/hour-meter-psu-b/`](schematic/hour-meter-psu-b/README.md) | Plug-on 9–36 V → 5.3 V supply (TPS54360B) for the rev-B board |
 | [`schematic/hour-meter-esp32/`](schematic/hour-meter-esp32/README.md) | Carrier PCB rev A (KiCad): schematic, 2-layer THT board for the loose modules, JLCPCB Gerbers + BOM in `production/`, generator scripts `tools-*.py`. Superseded by rev B |
 | `schematic/totalizator-hour-meter-schematic/` | Early KiCad draft (DevKit pin headers only), superseded by `hour-meter-esp32/` |

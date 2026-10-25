@@ -9,6 +9,10 @@ A 40 × 30 mm, 2-layer board that plugs onto the [main board](../hour-meter-boar
 | Script | `tools-pcb.py` with `check`, `place` or `route` (shares helpers with the main board's `tools-build-pcb.py`) |
 | Ready to order | `production/`: Gerber zip, `BOM-hour-meter-psu-b.csv`, `CPL-hour-meter-psu-b.csv`, written by `../hour-meter-board/tools-production.py ../hour-meter-psu-b/hour-meter-psu-b.kicad_pcb` |
 
+**Vehicle faults** ([simulated](../fault-analysis/README.md)):
+- **Passes:** reverse polarity, a 36 V jump start, ISO 7637-2 pulses 1 and 2a, and a 12 V vehicle's clamped load dump (35 V).
+- **Fails:** a **24 V vehicle's clamped load dump (58–65 V for up to 400 ms)**. D1 starts conducting at 40 V and would have to absorb 21–87 J; it survives about 16 J. For 24 V vehicles, use a supply with a 100 V-class converter and a TVS that stays off at 58 V. It plugs into the same J102.
+
 **Checks:** ERC 0 errors and 0 warnings. DRC 0 errors, 0 unconnected, 0 schematic-parity issues; the 10 warnings are reference-text silkscreen overlaps. All parts are in JLCPCB stock for 10 boards (2026-10-21).
 
 ## Circuit
