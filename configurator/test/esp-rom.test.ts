@@ -1,4 +1,6 @@
 // esp-rom.test.ts: SLIP framing, command/answer packets, and the ROM loader client against test/fake-rom.ts.
+import { test } from 'bun:test';
+
 import { assertEquals, assertRejects } from './assert.ts';
 import {
   blockChecksum,
@@ -12,7 +14,7 @@ import {
 } from '../src/esp-rom.ts';
 import { fakeRom } from './fake-rom.ts';
 
-Deno.test('SLIP escapes END and ESC, and finds packets after boot text and in split reads', () => {
+test('SLIP escapes END and ESC, and finds packets after boot text and in split reads', () => {
   const packet = Uint8Array.of(0x01, 0xc0, 0x02, 0xdb, 0x03);
   const framed = slipEncode(packet);
   assertEquals(Array.from(framed), [0xc0, 0x01, 0xdb, 0xdc, 0x02, 0xdb, 0xdd, 0x03, 0xc0]);
@@ -23,7 +25,7 @@ Deno.test('SLIP escapes END and ESC, and finds packets after boot text and in sp
   assertEquals(got, [Array.from(packet), Array.from(packet)]);
 });
 
-Deno.test('a bad SLIP escape drops only that packet', () => {
+test('a bad SLIP escape drops only that packet', () => {
   const got: number[][] = [];
   const slip = new SlipDecoder((p) => got.push(Array.from(p)));
   slip.push(Uint8Array.of(0xc0, 0x01, 0xdb, 0x00, 0x02, 0xc0)); // 0xDB 0x00 is not an escape
@@ -31,7 +33,7 @@ Deno.test('a bad SLIP escape drops only that packet', () => {
   assertEquals(got, [[0x05]]);
 });
 
-Deno.test('command packets carry op, size and checksum; answers parse', () => {
+test('command packets carry op, size and checksum; answers parse', () => {
   assertEquals(
     Array.from(commandPacket(OP.READ_REG, u32le(0x40001000))),
     [0x00, 0x0a, 4, 0, 0, 0, 0, 0, 0x00, 0x10, 0x00, 0x40],
@@ -43,7 +45,7 @@ Deno.test('command packets carry op, size and checksum; answers parse', () => {
   assertEquals(parseAnswer(commandPacket(OP.SYNC, new Uint8Array(0))), undefined); // a command, not an answer
 });
 
-Deno.test('sync, chip detection and MAC address against the fake ROM', async () => {
+test('sync, chip detection and MAC address against the fake ROM', async () => {
   const rom = fakeRom();
   const client = new EspRom(rom.host);
   await client.sync();
@@ -51,7 +53,7 @@ Deno.test('sync, chip detection and MAC address against the fake ROM', async () 
   rom.host.close();
 });
 
-Deno.test('a failed command gives the ROM error text; another chip is refused', async () => {
+test('a failed command gives the ROM error text; another chip is refused', async () => {
   const failing = fakeRom({ failOp: OP.SPI_ATTACH, error: 0x06 });
   const client = new EspRom(failing.host);
   await client.sync();
@@ -65,13 +67,13 @@ Deno.test('a failed command gives the ROM error text; another chip is refused', 
   s3.host.close();
 });
 
-Deno.test('no bootloader on the line: sync gives up', async () => {
+test('no bootloader on the line: sync gives up', async () => {
   const rom = fakeRom({ silent: true });
   await assertRejects(() => new EspRom(rom.host).sync(2), /no answer from the ESP32 bootloader/);
   rom.host.close();
 });
 
-Deno.test('a port that takes no data fails the command instead of hanging', async () => {
+test('a port that takes no data fails the command instead of hanging', async () => {
   const stuck = { readable: new ReadableStream<Uint8Array>(), write: () => new Promise<void>(() => {}), close() {} };
   const client = new EspRom(stuck);
   await assertRejects(() => client.command(OP.READ_REG, u32le(0), { timeoutMs: 50 }), /the port takes no data/);

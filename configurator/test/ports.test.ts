@@ -1,17 +1,19 @@
 // ports.test.ts: the connect screen's port listing on a fake file system, and the words for a port that fails.
-import { assertEquals, assertMatch } from './assert.ts';
+import { test } from 'bun:test';
+
+import { assertEquals, assertMatch, sysError } from './assert.ts';
 import { byIdLabel, findAgain, listPorts, newPorts, openProblem, type PortFs, preferredPort } from '../src/ports.ts';
 
 function fakeFs(dirs: Record<string, string[]>, links: Record<string, string> = {}): PortFs {
   return {
     names: (dir) => Promise.resolve(dirs[dir] ?? []),
-    realPath: (path) => links[path] ? Promise.resolve(links[path]) : Promise.reject(new Deno.errors.NotFound()),
+    realPath: (path) => links[path] ? Promise.resolve(links[path]) : Promise.reject(sysError('ENOENT')),
   };
 }
 
 const CP2102 = 'usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0';
 
-Deno.test('linux: USB serial ports first, named by their adapter, Bluetooth after, ttyS left out', async () => {
+test('linux: USB serial ports first, named by their adapter, Bluetooth after, ttyS left out', async () => {
   const fs = fakeFs(
     {
       '/dev': ['ttyS0', 'ttyS1', 'rfcomm0', 'ttyUSB10', 'ttyACM0', 'ttyUSB2', 'tty0', 'null'],
@@ -31,7 +33,7 @@ Deno.test('linux: USB serial ports first, named by their adapter, Bluetooth afte
   assertEquals(ports[3].kind, 'bluetooth');
 });
 
-Deno.test('macOS: cu.* ports without the built-in ones; Windows: none', async () => {
+test('macOS: cu.* ports without the built-in ones; Windows: none', async () => {
   const fs = fakeFs({
     '/dev': ['cu.Bluetooth-Incoming-Port', 'cu.debug-console', 'cu.usbserial-1410', 'tty.usbserial-1410'],
   });
@@ -39,7 +41,7 @@ Deno.test('macOS: cu.* ports without the built-in ones; Windows: none', async ()
   assertEquals(await listPorts(fs, 'windows'), []);
 });
 
-Deno.test('by-id names read as words', () => {
+test('by-id names read as words', () => {
   assertEquals(byIdLabel('usb-1a86_USB_Serial-if00-port0'), '1a86 USB Serial');
   assertEquals(
     byIdLabel('usb-Espressif_USB_JTAG_serial_debug_unit_AA:BB-if00'),
@@ -47,7 +49,7 @@ Deno.test('by-id names read as words', () => {
   );
 });
 
-Deno.test('preselect: the last port used, else $HOUR_METER_PORT, else the first that looks like a board', () => {
+test('preselect: the last port used, else $HOUR_METER_PORT, else the first that looks like a board', () => {
   const ports = [
     { path: '/dev/ttyACM0', label: '', kind: 'usb' as const, boardLike: false },
     { path: '/dev/ttyUSB0', label: '', kind: 'usb' as const, boardLike: true },
@@ -59,7 +61,7 @@ Deno.test('preselect: the last port used, else $HOUR_METER_PORT, else the first 
   assertEquals(preferredPort([]), 0);
 });
 
-Deno.test('a replugged board is found by its adapter id, else by its path; new ports are told apart', () => {
+test('a replugged board is found by its adapter id, else by its path; new ports are told apart', () => {
   const a = { path: '/dev/ttyUSB1', label: '', kind: 'usb' as const, id: 'usb-X', boardLike: true };
   const b = { path: '/dev/ttyUSB0', label: '', kind: 'usb' as const, id: 'usb-Y', boardLike: true };
   assertEquals(findAgain([b, a], '/dev/ttyUSB0', 'usb-X'), a);
@@ -68,12 +70,12 @@ Deno.test('a replugged board is found by its adapter id, else by its path; new p
   assertEquals(newPorts([b], [b, a]), [a]);
 });
 
-Deno.test('a port that does not open says why and what to do', async () => {
-  assertMatch(await openProblem(new Deno.errors.NotFound('x'), '/dev/ttyUSB0'), /is not there: plug in the board/);
+test('a port that does not open says why and what to do', async () => {
+  assertMatch(await openProblem(sysError('ENOENT', 'x'), '/dev/ttyUSB0'), /is not there: plug in the board/);
   assertMatch(
-    await openProblem(new Deno.errors.PermissionDenied('x'), '/dev/nonexistent-port', 'linux'),
+    await openProblem(sysError('EACCES', 'x'), '/dev/nonexistent-port', 'linux'),
     /no permission .* dialout group \(sudo usermod -aG dialout \$USER\)/,
   );
-  assertMatch(await openProblem(new Deno.errors.Busy('x'), '/dev/ttyUSB0'), /in use by another program/);
-  assertMatch(await openProblem(new Deno.errors.ConnectionRefused('x'), 'tcp://127.0.0.1:5555'), /nothing answers/);
+  assertMatch(await openProblem(sysError('EBUSY', 'x'), '/dev/ttyUSB0'), /in use by another program/);
+  assertMatch(await openProblem(sysError('ECONNREFUSED', 'x'), 'tcp://127.0.0.1:5555'), /nothing answers/);
 });

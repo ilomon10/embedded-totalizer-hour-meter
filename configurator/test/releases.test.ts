@@ -1,5 +1,7 @@
 // releases.test.ts: the GitHub release list, picking a release, checked downloads, the cache folder.
 // No network: fetch is a fake answering from a table.
+import { test } from 'bun:test';
+
 import { assertEquals, assertRejects } from './assert.ts';
 import {
   cacheDir,
@@ -89,7 +91,7 @@ function fakeFetch(
 
 const API = 'https://api.github.com/repos/ilomon10/embedded-totalizer-hour-meter/releases?per_page=100';
 
-Deno.test('releases: one entry per firmware, newest first; drafts and releases without firmware are skipped', () => {
+test('releases: one entry per firmware, newest first; drafts and releases without firmware are skipped', () => {
   const list = parseReleases(RELEASES);
   assertEquals(list.map((r) => `${r.version} ${r.tag}${r.prerelease ? ' pre' : ''}`), [
     '2.6.0 v1.1.0 pre',
@@ -103,12 +105,12 @@ Deno.test('releases: one entry per firmware, newest first; drafts and releases w
   assertEquals(list[1].url, 'https://dl.example/hour-meter-2.5.0-esp32dev-merged.bin');
 });
 
-Deno.test('the release script names its firmware asset the way the downloader looks for it', () => {
+test('the release script names its firmware asset the way the downloader looks for it', () => {
   const name = assetNames('firmware', '2.5.0')[0];
   assertEquals(name.match(FIRMWARE_ASSET)?.[1], '2.5.0');
 });
 
-Deno.test('versions compare numerically; fwVersion formats', () => {
+test('versions compare numerically; fwVersion formats', () => {
   assertEquals(compareVersions('2.10.0', '2.9.1') > 0, true);
   assertEquals(compareVersions('2.5.0', '2.5.0'), 0);
   assertEquals(compareVersions('2.4.9', '2.5.0') < 0, true);
@@ -116,7 +118,7 @@ Deno.test('versions compare numerically; fwVersion formats', () => {
   assertEquals(formatFirmware(undefined), '?');
 });
 
-Deno.test('listFirmware asks the GitHub API; the token goes only there; errors say why', async () => {
+test('listFirmware asks the GitHub API; the token goes only there; errors say why', async () => {
   const seen: Request[] = [];
   const list = await listFirmware({ fetch: fakeFetch({ [API]: JSON.stringify(RELEASES) }, seen), token: 'abc' });
   assertEquals(list.length, 3);
@@ -132,7 +134,7 @@ Deno.test('listFirmware asks the GitHub API; the token goes only there; errors s
   );
 });
 
-Deno.test('over the API limit the list comes from the web: feed, SHA256SUMS, releases/latest', async () => {
+test('over the API limit the list comes from the web: feed, SHA256SUMS, releases/latest', async () => {
   const web = 'https://github.com/ilomon10/embedded-totalizer-hour-meter/releases';
   const entry = (tag: string, date: string) =>
     `<entry><id>tag:github.com,2008:Repository/1/${tag}</id><updated>${date}</updated>` +
@@ -163,7 +165,7 @@ Deno.test('over the API limit the list comes from the web: feed, SHA256SUMS, rel
   assertEquals(list[1].sumsUrl, `${web}/download/v1.0.0/SHA256SUMS`);
 });
 
-Deno.test('downloads are checked against SHA256SUMS; a tampered image is refused', async () => {
+test('downloads are checked against SHA256SUMS; a tampered image is refused', async () => {
   const release = parseReleases(RELEASES)[1];
   const image = new TextEncoder().encode('firmware bytes');
   const sum = sha256Hex(image);
@@ -184,7 +186,7 @@ Deno.test('downloads are checked against SHA256SUMS; a tampered image is refused
   );
 });
 
-Deno.test('the cache folder follows each OS', () => {
+test('the cache folder follows each OS', () => {
   const env = (vars: Record<string, string>) => (name: string) => vars[name];
   assertEquals(cacheDir(env({ HOME: '/home/a' }), 'linux'), '/home/a/.cache/hour-meter');
   assertEquals(cacheDir(env({ HOME: '/home/a', XDG_CACHE_HOME: '/c' }), 'linux'), '/c/hour-meter');

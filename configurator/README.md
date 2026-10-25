@@ -1,6 +1,6 @@
 # hour-meter: configurator for the hour meter
 
-One tool for the hour-meter device: a full-screen **configurator and live viewer** (TUI), a **live reader**, a **command line** for single commands, and a **firmware updater**. It is one Deno program, also shipped as a standalone binary, so no Node, npm or Deno install is needed to use it.
+One tool for the hour-meter device: a full-screen **configurator and live viewer** (TUI), a **live reader**, a **command line** for single commands, and a **firmware updater**. It is one Bun program, also shipped as a standalone binary, so no Bun, Node or npm install is needed to use it.
 
 ```bash
 hour-meter                              # pick the board's port on the connect screen
@@ -12,14 +12,15 @@ hour-meter firmware flash               # update the firmware to the newest rele
 
 ## Install
 
-**Binary:** download `hour-meter-<version>-<platform>` from the [releases page](https://github.com/ilomon10/embedded-totalizer-hour-meter/releases) (each release `v*` carries the firmware, this tool and the simulator; older ones are tagged `configurator-v*`), unpack it, and run `hour-meter`. Verify the download with `sha256sum -c SHA256SUMS`. On macOS, if Gatekeeper blocks the unsigned binary, run `xattr -d com.apple.quarantine hour-meter` once.
+**Binary:** download `hour-meter-<version>-<platform>` from the [releases page](https://github.com/ilomon10/embedded-totalizer-hour-meter/releases) (each release `v*` carries the firmware, this tool and the simulator; older ones are tagged `configurator-v*`), unpack it, and run `hour-meter`. Verify the download with `sha256sum -c SHA256SUMS`. Binaries are built for Linux x64 and Windows x64; on macOS or an ARM board, run it from source.
 
-**From source** (needs [Deno](https://deno.com) 2):
+**From source** (needs [Bun](https://bun.com) 1.4.4 or newer):
 
 ```bash
 cd configurator
-deno task start --demo                  # same options as the binary
-deno task start /dev/ttyUSB0
+bun install                             # once: ink and React
+bun run start --demo                    # same options as the binary
+bun run start /dev/ttyUSB0
 ```
 
 **Ports:** a serial device (`/dev/ttyUSB0`, `/dev/rfcomm0`, `/dev/cu.usbserial-*` on macOS) or `tcp://host:port`. The TUI without a port opens the [connect screen](#connect-screen). Commands and `read` without a port use `$HOUR_METER_PORT`, else `/dev/ttyUSB0`. Serial ports work on **Linux and macOS** (the port is configured with `stty`, 115200 8N1).
@@ -182,7 +183,7 @@ Commands take `--port <port>` (or `$HOUR_METER_PORT`), `--pin <PIN>` for Bluetoo
 
 `hour-meter reset` first sends the **panic signal** (64 zero bytes: the firmware restarts at once, with no frame and no ACK; not accepted over Bluetooth). If no boot EVENT follows within 3 s and the port is a local serial port, it does a **hard reset**: the DTR/RTS lines of the USB-serial adapter pulse the ESP32 EN pin for 100 ms (like `esptool --after hard_reset`; IO0 stays high, so it boots normally). It then waits for the boot EVENT and prints one line, for example `device restarted (reset reason 1 power-on, last cause: panicSignal while serial / command)`.
 
-The hard reset talks to the adapter through libc (`ioctl`), so it needs Linux or macOS and the binary's usual `-A` permission. It is untested on real hardware on macOS Apple Silicon. On Windows use `--signal`.
+The hard reset talks to the adapter through libc (`ioctl`, via `bun:ffi`), so it needs Linux or macOS. It is untested on real hardware on macOS Apple Silicon. On Windows use `--signal`.
 
 ### Hours count with the key on but the engine off
 
@@ -211,12 +212,14 @@ The protocol is documented for other languages in [`esp32/docs/INTEGRATION-GUIDE
 ## Development
 
 ```bash
-deno task test         # command words, DeviceClient protocol rules, TUI reducer, a --demo round trip,
+bun install            # once
+bun run test           # command words, DeviceClient protocol rules, TUI reducer, a --demo round trip,
                        # port listing, reconnecting after an unplug (fake ports),
                        # the ROM bootloader protocol and whole flashes against a fake ROM, release lists
-deno task check        # type-check
-deno lint && deno fmt --check
-deno task compile      # release binaries for 5 platforms into dist/ (+ SHA256SUMS)
+bun check              # type-check
+bun run lint           # oxlint
+bun fmt --check        # formatting (settings in bunfig.toml)
+bun run compile        # release binaries for Linux x64 and Windows x64 into dist/ (+ SHA256SUMS)
 ```
 
 ```
@@ -229,11 +232,12 @@ configurator/
 │   ├── device.ts       DeviceClient: request/ACK matching, retries, auto time sync
 │   ├── reset.ts        panic signal, USB hard reset and bootloader reset (DTR/RTS through libc ioctl)
 │   ├── restart.ts      boot EVENT cause/stage text
-│   ├── links.ts        serial (Deno.open + stty), TCP, in-memory link pair
+│   ├── links.ts        serial (plain file I/O + stty), TCP, in-memory link pair
 │   ├── ports.ts        the serial ports now (connect screen), plain words for a port that does not open
 │   ├── connection.ts   the TUI's link: reconnects after an unplug, hands the port to the flasher
 │   ├── demo.ts         --demo: the simulator's device in-process
 │   ├── cli.ts          shared flags and connect()
+│   ├── platform.ts     the OS name ('windows', not 'win32') and errno codes
 │   ├── commands.ts     one command, one ACK
 │   ├── reader.ts       live view
 │   ├── esp-rom.ts      ESP32 ROM bootloader protocol: SLIP, sync, compressed writes, MD5
@@ -246,6 +250,6 @@ configurator/
 └── test/
 ```
 
-Why not the npm `serialport` package? Under Deno its native add-on opens the port, but every read and write then fails with `EBADF`. So serial ports are opened with `Deno.open` and set up with `stty`. The port is opened twice, once to read and once to write: Deno runs the operations on one handle one after the other, so a read waiting for data would hold back every write. That keeps the binary free of native code, but rules out Windows COM ports for now. Opening device files needs Deno's `-A` permission, which `deno task start` and the release binary use.
+Why not the npm `serialport` package? It is a native add-on, so every release binary would have to carry the right build of it. Serial ports are plain files instead: opened with `node:fs` and set up with `stty`. The port is opened twice: a non-blocking handle that Bun polls for reading, and one for writing, so a read waiting for data never holds back a write (the ROM bootloader only answers what it is sent). That keeps the binary free of native code, but rules out Windows COM ports for now.
 
-To release: bump `TOOL_VERSION` in `src/version.ts`, commit, and run [`scripts/release.ts`](../scripts/release.ts) from the repository root (see [Releasing](../README.md#releasing)). `deno task compile` alone builds the binaries into `dist/`.
+To release: bump `TOOL_VERSION` in `src/version.ts`, commit, and run [`scripts/release.ts`](../scripts/release.ts) from the repository root (see [Releasing](../README.md#releasing)). `bun run compile` alone builds the binaries into `dist/`.

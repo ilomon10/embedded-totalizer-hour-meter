@@ -1,4 +1,6 @@
 // flash.test.ts: image checks, the regions written (NVS kept), and whole flashes against test/fake-rom.ts.
+import { test } from 'bun:test';
+
 import { assert, assertEquals, assertRejects, assertThrows } from './assert.ts';
 import {
   APP_OFFSET,
@@ -39,7 +41,7 @@ function mergedImage(appLength = 100_001): Uint8Array {
   return image;
 }
 
-Deno.test('images: merged and app are recognised, a bootloader or junk is refused', () => {
+test('images: merged and app are recognised, a bootloader or junk is refused', () => {
   const merged = mergedImage();
   assertEquals(inspectImage(merged), 'merged');
   assertEquals(inspectImage(appImage(5000)), 'app');
@@ -48,7 +50,7 @@ Deno.test('images: merged and app are recognised, a bootloader or junk is refuse
   assertThrows(() => inspectImage(new Uint8Array(5 * 1024 * 1024)), /more than the 4 MB flash/);
 });
 
-Deno.test('the partition table is read from the image', () => {
+test('the partition table is read from the image', () => {
   assertEquals(partitionTable(mergedImage()).map((p) => `${p.label} ${p.type}/${p.subtype} ${p.offset.toString(16)}`), [
     'nvs 1/2 9000',
     'otadata 1/0 e000',
@@ -56,7 +58,7 @@ Deno.test('the partition table is read from the image', () => {
   ]);
 });
 
-Deno.test('regions: a merged image skips 0x0-0x1000 and NVS; an app goes to 0x10000; both padded to 4 bytes', () => {
+test('regions: a merged image skips 0x0-0x1000 and NVS; an app goes to 0x10000; both padded to 4 bytes', () => {
   const merged = mergedImage(100_001);
   const regions = flashRegions(merged);
   assertEquals(regions.map((r) => [r.offset, r.data.length]), [[0x1000, 0x8000], [0xe000, merged.length - 0xe000 + 3]]);
@@ -64,7 +66,7 @@ Deno.test('regions: a merged image skips 0x0-0x1000 and NVS; an app goes to 0x10
   assertEquals(flashRegions(appImage(1001)).map((r) => [r.offset, r.data.length]), [[APP_OFFSET, 1004]]);
 });
 
-Deno.test('regions: a partition table whose NVS would hide the app, or is not 4 KB aligned, is refused', () => {
+test('regions: a partition table whose NVS would hide the app, or is not 4 KB aligned, is refused', () => {
   const huge = mergedImage();
   huge.set(partition('nvs', 1, 2, 0x9000, 0x200000), 0x8000); // reaches over the app at 0x10000
   assertThrows(() => flashRegions(huge), /partition table looks wrong: nvs at 0x9000, 0x200000 bytes/);
@@ -73,7 +75,7 @@ Deno.test('regions: a partition table whose NVS would hide the app, or is not 4 
   assertThrows(() => flashRegions(odd), /partition table looks wrong/);
 });
 
-Deno.test('regions: a merged image padded to 4 MB still leaves hmdata (settings + counters) alone', () => {
+test('regions: a merged image padded to 4 MB still leaves hmdata (settings + counters) alone', () => {
   const image = new Uint8Array(4 * 1024 * 1024).fill(0xff); // esptool merge_bin --pad-to-size 4MB
   image.set(mergedImage(), 0);
   image.set(partition('hmdata', 1, 0x06, 0x310000, 0x10000), 0x8060);
@@ -85,12 +87,12 @@ Deno.test('regions: a merged image padded to 4 MB still leaves hmdata (settings 
   ]);
 });
 
-Deno.test('segments end on 64 KB boundaries of the flash', () => {
+test('segments end on 64 KB boundaries of the flash', () => {
   const parts = segments({ offset: 0xe000, data: new Uint8Array(0x20000) });
   assertEquals(parts.map((s) => [s.offset, s.data.length]), [[0xe000, 0x2000], [0x10000, 0x10000], [0x20000, 0xe000]]);
 });
 
-Deno.test('bootloader reset: EN low, then IO0 low while EN rises, then IO0 released', () => {
+test('bootloader reset: EN low, then IO0 low while EN rises, then IO0 released', () => {
   assertEquals(bootloaderSteps(550), [
     { set: 'dtr', on: false },
     { set: 'rts', on: true },
@@ -102,7 +104,7 @@ Deno.test('bootloader reset: EN low, then IO0 low while EN rises, then IO0 relea
   ]);
 });
 
-Deno.test('flashDevice writes every region, keeps NVS, verifies and resets into the new firmware', async () => {
+test('flashDevice writes every region, keeps NVS, verifies and resets into the new firmware', async () => {
   const rom = fakeRom();
   rom.flash.fill(0x5a, 0x9000, 0xe000); // the Bluetooth pairing
   const image = mergedImage();
@@ -127,7 +129,7 @@ Deno.test('flashDevice writes every region, keeps NVS, verifies and resets into 
   assert(stages.includes('write') && stages.includes('verify'));
 });
 
-Deno.test('flashDevice stays at 115200 when the port cannot switch, and --no-reset leaves the lines alone', async () => {
+test('flashDevice stays at 115200 when the port cannot switch, and --no-reset leaves the lines alone', async () => {
   const rom = fakeRom();
   const { io, modem } = fakeIo(rom, 460800);
   const notes: string[] = [];
@@ -138,7 +140,7 @@ Deno.test('flashDevice stays at 115200 when the port cannot switch, and --no-res
   assert(notes.some((n) => /cannot run at 460800 baud/.test(n)));
 });
 
-Deno.test('flashDevice: a failed restart after a verified write is not a failed flash', async () => {
+test('flashDevice: a failed restart after a verified write is not a failed flash', async () => {
   const rom = fakeRom();
   const { io } = fakeIo(rom);
   const modem = io.modem;
@@ -149,7 +151,7 @@ Deno.test('flashDevice: a failed restart after a verified write is not a failed 
   assert(notes.some((n) => /could not restart the board \(ioctl failed\)/.test(n)));
 });
 
-Deno.test('flashDevice: a port that fails during sync reports the port error, not "no bootloader"', async () => {
+test('flashDevice: a port that fails during sync reports the port error, not "no bootloader"', async () => {
   const broken = {
     readable: new ReadableStream<Uint8Array>(),
     write: () => Promise.reject(new Error('Input/output error (os error 5)')),
@@ -159,7 +161,7 @@ Deno.test('flashDevice: a port that fails during sync reports the port error, no
   await assertRejects(() => flashDevice('/dev/ttyUSB0', appImage(3000), {}, io), /Input\/output error/);
 });
 
-Deno.test('flashDevice: a ROM write error stops the flash; no bootloader tries both reset timings', async () => {
+test('flashDevice: a ROM write error stops the flash; no bootloader tries both reset timings', async () => {
   const failing = fakeRom({ failOp: OP.FLASH_DEFL_DATA, error: 0x08 });
   await assertRejects(() => flashDevice('/dev/ttyUSB0', appImage(3000), {}, fakeIo(failing).io), /flash write error/);
 

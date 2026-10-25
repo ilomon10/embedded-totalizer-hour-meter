@@ -23,11 +23,7 @@ export function takeFlag(argv: string[], name: string): { value: boolean; rest: 
 }
 
 export function env(name: string): string | undefined {
-  try {
-    return Deno.env.get(name);
-  } catch {
-    return undefined; // no --allow-env: behave as if unset
-  }
+  return process.env[name];
 }
 
 export interface Target {

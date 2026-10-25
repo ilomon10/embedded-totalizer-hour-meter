@@ -1,4 +1,6 @@
 // reset.test.ts: panic signal, hard-reset steps/constants, restart text, `reset` arguments. No FFI here.
+import { test } from 'bun:test';
+
 import { assert, assertEquals, assertRejects, assertThrows } from './assert.ts';
 import { parseResetArgs } from '../src/commands.ts';
 import { hardResetSteps, isLocalSerial, panicPayload, runSteps, sendPanic, serialConstants } from '../src/reset.ts';
@@ -7,7 +9,7 @@ import { bootText, resetResultText } from '../src/restart.ts';
 import { applyMessage, initialState, noDataBanner } from '../src/tui/state.ts';
 import { PANIC_ZERO_RUN } from '../src/tags.ts';
 
-Deno.test('panic payload is exactly 64 zero bytes and is written as one chunk', async () => {
+test('panic payload is exactly 64 zero bytes and is written as one chunk', async () => {
   const p = panicPayload();
   assertEquals(PANIC_ZERO_RUN, 64);
   assertEquals(p.length, 64);
@@ -17,7 +19,7 @@ Deno.test('panic payload is exactly 64 zero bytes and is written as one chunk', 
   assertEquals(written, [new Uint8Array(64)]);
 });
 
-Deno.test('hard reset steps: DTR off, RTS on 100 ms, RTS off; IO0 (DTR) never asserted', async () => {
+test('hard reset steps: DTR off, RTS on 100 ms, RTS off; IO0 (DTR) never asserted', async () => {
   const expected: Step[] = [{ set: 'dtr', on: false }, { set: 'rts', on: true }, { wait: 100 }, {
     set: 'rts',
     on: false,
@@ -31,7 +33,7 @@ Deno.test('hard reset steps: DTR off, RTS on 100 ms, RTS off; IO0 (DTR) never as
   assertEquals(seen, ['dtr=false', 'rts=true', 'wait 100', 'rts=false']);
 });
 
-Deno.test('serial constants per OS; Windows is refused', () => {
+test('serial constants per OS; Windows is refused', () => {
   const linux = serialConstants('linux');
   assertEquals([linux.TIOCMBIS, linux.TIOCMBIC, linux.O_NOCTTY, linux.O_NONBLOCK], [0x5416, 0x5417, 0x100, 0x800]);
   assertEquals(linux.libc, ['libc.so.6']);
@@ -42,14 +44,14 @@ Deno.test('serial constants per OS; Windows is refused', () => {
   assertThrows(() => serialConstants('windows'), /use --signal/);
 });
 
-Deno.test('only wired serial ports can be hard-reset', () => {
+test('only wired serial ports can be hard-reset', () => {
   assert(isLocalSerial('/dev/ttyUSB0'));
   assert(!isLocalSerial('tcp://127.0.0.1:5555'));
   assert(!isLocalSerial('/dev/rfcomm0'));
   assert(!isLocalSerial('/dev/ttyUSB0', true));
 });
 
-Deno.test('reset arguments', () => {
+test('reset arguments', () => {
   assertEquals(parseResetArgs([]), 'auto');
   assertEquals(parseResetArgs(['--hard']), 'hard');
   assertEquals(parseResetArgs(['--signal']), 'signal');
@@ -57,7 +59,7 @@ Deno.test('reset arguments', () => {
   assertThrows(() => parseResetArgs(['--now']), /unexpected/);
 });
 
-Deno.test('boot text names the cause and stage', () => {
+test('boot text names the cause and stage', () => {
   assertEquals(
     bootText({ resetReason: 6, lastCause: 1, lastStage: 7 }),
     'device restarted: watchdog while IMU (reset reason 6)',
@@ -72,7 +74,7 @@ Deno.test('boot text names the cause and stage', () => {
   assertEquals(resetResultText({ resetReason: 3 }), 'device restarted (reset reason 3 software)');
 });
 
-Deno.test('a boot EVENT with a cause is logged as a warning', () => {
+test('a boot EVENT with a cause is logged as a warning', () => {
   const s = applyMessage(initialState('/dev/ttyUSB0', false), {
     msgType: 2,
     seq: 1,
@@ -84,7 +86,7 @@ Deno.test('a boot EVENT with a cause is logged as a warning', () => {
   assertEquals(s.log[0].text, 'device restarted: watchdog while IMU (reset reason 6)');
 });
 
-Deno.test('no-data banner after 5 s of silence', () => {
+test('no-data banner after 5 s of silence', () => {
   assertEquals(noDataBanner(undefined, 1000, 5999), undefined);
   assertEquals(noDataBanner(undefined, 1000, 6000), 'No data from the device. Press H to hard-reset.');
   assertEquals(noDataBanner(10000, 1000, 14000), undefined);
@@ -94,7 +96,7 @@ Deno.test('no-data banner after 5 s of silence', () => {
   );
 });
 
-Deno.test('hard reset is refused on a non-serial link before anything is opened', async () => {
+test('hard reset is refused on a non-serial link before anything is opened', async () => {
   const { run } = await import('../src/commands.ts');
   await assertRejects(() => run(['reset', '--hard', '--demo']), /--hard needs a real serial port/);
   await assertRejects(() => run(['reset', '--hard', '--port', 'tcp://127.0.0.1:1']), /local serial port/);

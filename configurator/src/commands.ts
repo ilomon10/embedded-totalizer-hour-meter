@@ -3,6 +3,7 @@
 // buildRequest() turns the words into command values and is pure (test/commands.test.ts);
 // run() connects, sends, prints the ACK, and for counters shows the value before and after.
 import { connect, connectHelp, DEFAULT_PORT, env, takeFlag, takeOption, type Target } from './cli.ts';
+import { OS } from './platform.ts';
 import { hardReset, isLocalSerial, NO_HARD_RESET, panicPayload } from './reset.ts';
 import { resetResultText } from './restart.ts';
 import type { CommandValues } from './device.ts';
@@ -161,7 +162,7 @@ async function runReset(mode: ResetMode, target: Target): Promise<number> {
         : `--hard needs a local serial port, not ${target.port} (try --signal)`,
     );
   }
-  if (mode === 'hard' && Deno.build.os === 'windows') throw new Error(NO_HARD_RESET);
+  if (mode === 'hard' && OS === 'windows') throw new Error(NO_HARD_RESET);
   // No PIN: the panic signal is not accepted over Bluetooth anyway, and a hung device cannot answer an unlock.
   const dev = await connect({ ...target, pin: undefined }, 1500).catch((err) => {
     throw new Error(`${(err as Error).message}\n${connectHelp()}`);

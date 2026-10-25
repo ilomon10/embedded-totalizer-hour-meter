@@ -1,10 +1,13 @@
 // connection.test.ts: the TUI's link to the device across unplugs, missing ports and a firmware flash, with
 // fake ports: each "board" is a DeviceClient over an in-memory link pair, unplugged by closing its far end.
-import { assert, assertEquals } from './assert.ts';
+import { test } from 'bun:test';
+
+import { assert, assertEquals, sysError } from './assert.ts';
 import type { Target } from '../src/cli.ts';
 import { Connection, type ConnectionOptions, type ConnState } from '../src/connection.ts';
 import { DeviceClient } from '../src/device.ts';
 import { type Link, linkPair } from '../src/links.ts';
+import { errorCode } from '../src/platform.ts';
 import type { PortInfo } from '../src/ports.ts';
 
 interface Board {
@@ -23,7 +26,7 @@ function fakeOpen(answers: Array<Board | Error>) {
   const open = (target: Target) => {
     opened.push(target);
     const next = answers.shift();
-    if (!next) return Promise.reject(new Deno.errors.NotFound('no more boards'));
+    if (!next) return Promise.reject(sysError('ENOENT', 'no more boards'));
     return next instanceof Error ? Promise.reject(next) : Promise.resolve(next.dev);
   };
   return { open, opened };
@@ -44,7 +47,7 @@ function connection(options: Partial<ConnectionOptions> & Pick<ConnectionOptions
     target: { demo: false, port: '/dev/ttyUSB0' },
     retryMs: 10,
     present: () => Promise.resolve(true),
-    problem: (err) => Promise.resolve((err as Error).name),
+    problem: (err) => Promise.resolve(errorCode(err) ?? (err as Error).message),
     ...options,
   });
   conn.on('state', (s: ConnState) => states.push(s));
@@ -52,9 +55,9 @@ function connection(options: Partial<ConnectionOptions> & Pick<ConnectionOptions
   return { conn, states, clients };
 }
 
-Deno.test('an unplugged board is waited for and connected again', async () => {
+test('an unplugged board is waited for and connected again', async () => {
   const first = board(), second = board();
-  const { open } = fakeOpen([new Deno.errors.NotFound('gone'), second]);
+  const { open } = fakeOpen([sysError('ENOENT', 'gone'), second]);
   const { conn, states, clients } = connection({ open, client: first.dev });
   assertEquals(conn.state.kind, 'connected');
   first.unplug();
@@ -71,11 +74,11 @@ Deno.test('an unplugged board is waited for and connected again', async () => {
   conn.close();
 });
 
-Deno.test('a port that does not open yet is tried again, with the reason', async () => {
+test('a port that does not open yet is tried again, with the reason', async () => {
   const b = board();
   const { open, opened } = fakeOpen([
-    new Deno.errors.PermissionDenied('no'),
-    new Deno.errors.PermissionDenied('no'),
+    sysError('EACCES', 'no'),
+    sysError('EACCES', 'no'),
     b,
   ]);
   const { conn, states } = connection({ open });
@@ -83,11 +86,11 @@ Deno.test('a port that does not open yet is tried again, with the reason', async
   await until(() => conn.state.kind === 'connected');
   assertEquals(opened.length, 3);
   const first = states[0];
-  assert(first.kind === 'waiting' && first.problem === 'PermissionDenied' && !first.lost);
+  assert(first.kind === 'waiting' && first.problem === 'EACCES' && !first.lost);
   conn.close();
 });
 
-Deno.test('a board back under another name is found by its adapter id', async () => {
+test('a board back under another name is found by its adapter id', async () => {
   const first = board(), second = board();
   const { open, opened } = fakeOpen([second]);
   const ports: PortInfo[] = [{ path: '/dev/ttyUSB1', label: '', kind: 'usb', id: 'usb-CP2102-0001', boardLike: true }];
@@ -104,7 +107,7 @@ Deno.test('a board back under another name is found by its adapter id', async ()
   conn.close();
 });
 
-Deno.test('a port file that disappears counts as unplugged, even while the read still waits', async () => {
+test('a port file that disappears counts as unplugged, even while the read still waits', async () => {
   const first = board(), second = board();
   let there = true;
   const { open } = fakeOpen([second]);
@@ -119,7 +122,7 @@ Deno.test('a port file that disappears counts as unplugged, even while the read 
   first.unplug();
 });
 
-Deno.test('a flash: pause closes the client without reconnecting, resume takes the flasher client', async () => {
+test('a flash: pause closes the client without reconnecting, resume takes the flasher client', async () => {
   const first = board(), flashed = board();
   const { open, opened } = fakeOpen([]);
   const { conn, clients } = connection({ open, client: first.dev });
@@ -133,7 +136,7 @@ Deno.test('a flash: pause closes the client without reconnecting, resume takes t
   conn.close();
 });
 
-Deno.test('the port did not come back after a flash: it is waited for', async () => {
+test('the port did not come back after a flash: it is waited for', async () => {
   const b = board();
   const { open } = fakeOpen([b]);
   const { conn } = connection({ open, client: board().dev });
@@ -144,7 +147,7 @@ Deno.test('the port did not come back after a flash: it is waited for', async ()
   conn.close();
 });
 
-Deno.test('closed: no more attempts, and a connect that finishes late is closed', async () => {
+test('closed: no more attempts, and a connect that finishes late is closed', async () => {
   let release: (dev: DeviceClient) => void = () => {};
   const late = board();
   let closed = false;
@@ -158,7 +161,7 @@ Deno.test('closed: no more attempts, and a connect that finishes late is closed'
   assertEquals(conn.client, undefined);
 });
 
-Deno.test('a reconnect still opening when a flash starts: pause waits for it, and it is never adopted', async () => {
+test('a reconnect still opening when a flash starts: pause waits for it, and it is never adopted', async () => {
   let release: (dev: DeviceClient) => void = () => {};
   const first = board(), late = board(), flashed = board();
   let lateClosed = false;
@@ -181,7 +184,7 @@ Deno.test('a reconnect still opening when a flash starts: pause waits for it, an
   conn.close();
 });
 
-Deno.test('a failed open that ends after close() does not start retrying again', async () => {
+test('a failed open that ends after close() does not start retrying again', async () => {
   let fail: (err: Error) => void = () => {};
   let opens = 0;
   const { conn } = connection({
@@ -193,7 +196,7 @@ Deno.test('a failed open that ends after close() does not start retrying again',
   });
   conn.start();
   await until(() => opens === 1);
-  fail(new Deno.errors.PermissionDenied('no'));
+  fail(sysError('EACCES', 'no'));
   await new Promise((r) => setTimeout(r, 5)); // inside problem()
   conn.close();
   await new Promise((r) => setTimeout(r, 80));
@@ -201,7 +204,7 @@ Deno.test('a failed open that ends after close() does not start retrying again',
   assertEquals(opens, 1);
 });
 
-Deno.test('resume after close: the flasher client is closed, not adopted', () => {
+test('resume after close: the flasher client is closed, not adopted', () => {
   const b = board();
   let closed = false;
   b.dev.close = () => (closed = true);

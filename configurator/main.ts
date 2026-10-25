@@ -46,12 +46,13 @@ async function main(argv: string[]): Promise<number> {
 }
 
 if (import.meta.main) {
-  const argv = Deno.args[0] === '--' ? Deno.args.slice(1) : Deno.args; // `deno task x -- ...` keeps the --
+  const args = process.argv.slice(2);
+  const argv = args[0] === '--' ? args.slice(1) : args; // `bun run start -- ...` may pass the -- on
   main(argv).then(
-    (code) => Deno.exit(code),
+    (code) => process.exit(code),
     (err) => {
       console.error(`hour-meter: ${(err as Error).message}`);
-      Deno.exit(1);
+      process.exit(1);
     },
   );
 }

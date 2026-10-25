@@ -149,7 +149,7 @@ export function ConnectView(props: ConnectProps) {
   });
 
   const submitPath = (text: string) => {
-    const spec = text.trim().replace(/^~(?=\/)/, Deno.env.get('HOME') ?? '~');
+    const spec = text.trim().replace(/^~(?=\/)/, process.env.HOME ?? '~');
     if (!spec) return setMode('list');
     choose(spec, ports?.find((p) => p.path === spec));
   };

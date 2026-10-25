@@ -23,6 +23,7 @@ import {
   snapshot,
   updateDevice,
 } from '../firmware.ts';
+import { OS } from '../platform.ts';
 import { listPorts, loadLastPort, openProblem, type PortInfo, saveLastPort } from '../ports.ts';
 import { listFirmware } from '../releases.ts';
 import { hardReset, isLocalSerial } from '../reset.ts';
@@ -107,7 +108,7 @@ function Root({ start, preselect, pin, open, newConnection, onConnection }: {
       />
     );
   }
-  const wired = isLocalSerial(conn.port, conn.demo) && Deno.build.os !== 'windows';
+  const wired = isLocalSerial(conn.port, conn.demo) && OS !== 'windows';
   return (
     <App
       conn={conn}

@@ -1,0 +1,24 @@
+{
+  "name": "hour-meter",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "scripts": {
+    "start": "bun main.ts",
+    "test": "bun test --timeout 30000",
+    "lint": "oxlint",
+    "compile": "bun tools/compile.ts"
+  },
+  "dependencies": {
+    "ink": "6.8.0",
+    "ink-text-input": "6.0.0",
+    "react": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "@types/react": "19.3.0",
+    "oxlint": "^1.89.0"
+  }
+}

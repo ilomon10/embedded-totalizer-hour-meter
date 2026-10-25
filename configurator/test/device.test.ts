@@ -1,5 +1,7 @@
 // device.test.ts: DeviceClient protocol rules over an in-memory link, plus a full
 // round trip against the simulated device used by --demo.
+import { test } from 'bun:test';
+
 import { assert, assertEquals, assertRejects } from './assert.ts';
 import { createDemoLink } from '../src/demo.ts';
 import { ackErrorText, DeviceClient } from '../src/device.ts';
@@ -41,14 +43,14 @@ function client(link: Link): DeviceClient {
   return new DeviceClient(link);
 }
 
-Deno.test('request resolves with the matching ACK', async () => {
+test('request resolves with the matching ACK', async () => {
   const { host } = fakeDevice((cmd) => ack(cmd, 0, { runSeconds: 42 }));
   const dev = client(host);
   assertEquals((await dev.request({ get: 1 })).values.runSeconds, 42);
   dev.close();
 });
 
-Deno.test('request retries with the same seq after a lost frame', async () => {
+test('request retries with the same seq after a lost frame', async () => {
   const { host, commands } = fakeDevice((cmd, n) => (n === 1 ? null : ack(cmd))); // drop the first
   const dev = client(host);
   assertEquals((await dev.request({ get: 1 }, { timeoutMs: 50 })).values.ackStatus, 0);
@@ -57,14 +59,14 @@ Deno.test('request retries with the same seq after a lost frame', async () => {
   dev.close();
 });
 
-Deno.test('request rejects on an error ACK', async () => {
+test('request rejects on an error ACK', async () => {
   const { host } = fakeDevice((cmd) => ack(cmd, 2, { rejectedTag: 110 }));
   const dev = client(host);
   await assertRejects(() => dev.request({ telemetryIntervalMs: 5 }), /InvalidValue \(tag 110: telemetryIntervalMs\)/);
   dev.close();
 });
 
-Deno.test('auto time sync answers an unknown device time with setTime, rate-limited', async () => {
+test('auto time sync answers an unknown device time with setTime, rate-limited', async () => {
   const { host, commands, push } = fakeDevice((cmd) => ack(cmd));
   let clock = 1791376496000;
   const dev = client(host).enableAutoTimeSync({ minIntervalMs: 30000, now: () => clock });
@@ -92,7 +94,7 @@ Deno.test('auto time sync answers an unknown device time with setTime, rate-limi
   dev.close();
 });
 
-Deno.test('--demo device: boot, telemetry and a get=1 round trip', async () => {
+test('--demo device: boot, telemetry and a get=1 round trip', async () => {
   const dev = await DeviceClient.connect(createDemoLink(), { readyTimeoutMs: 2000 });
   const telemetry = await new Promise<DecodedMessage>((resolve) => {
     const onFrame = (msg: DecodedMessage) => {
@@ -109,7 +111,7 @@ Deno.test('--demo device: boot, telemetry and a get=1 round trip', async () => {
   dev.close();
 });
 
-Deno.test('a counter change answered DeviceMissing says which store is missing', () => {
+test('a counter change answered DeviceMissing says which store is missing', () => {
   const answer = (statusFlags?: number, rejectedTag = 102) =>
     ackErrorText({ msgType: MSG.ACK, seq: 1, values: { ackSeq: 1, ackStatus: 4, rejectedTag, statusFlags } } as never);
   const eepromMissing = 1 << 0;

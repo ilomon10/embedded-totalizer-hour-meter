@@ -42,7 +42,7 @@ import {
 } from './state.ts';
 
 // EventEmitter's listener type (DeviceClient extends node:events EventEmitter).
-// deno-lint-ignore no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Listener = (...args: any[]) => void;
 
 export interface Client {

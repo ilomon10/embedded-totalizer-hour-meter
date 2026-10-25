@@ -9,8 +9,10 @@
 // shared address (office, mobile carrier NAT) uses up quickly; then the list is built from the web pages instead,
 // which have no such limit: the release feed, each release's SHA256SUMS, and where releases/latest points.
 import { createHash } from 'node:crypto';
+import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { OS } from './platform.ts';
 import { TOOL_VERSION } from './version.ts';
 
 export const REPO = 'ilomon10/embedded-totalizer-hour-meter';
@@ -223,25 +225,25 @@ export async function downloadFirmware(
 ): Promise<Download> {
   const sha256 = await expectedSha256(release, options);
   const path = join(dir, release.asset);
-  const existing = await Deno.readFile(path).catch(() => undefined);
+  const existing = await Bun.file(path).bytes().catch(() => undefined);
   if (existing && sha256Hex(existing) === sha256) return { path, bytes: existing, sha256, cached: true };
   const bytes = await fetchVerified(release, sha256, options);
   // Written under a temporary name, then renamed: a cut download never looks finished, and two downloads of the
   // same image (TUI and CLI at once) do not trip over each other's file.
   const part = `${path}.${crypto.randomUUID().slice(0, 8)}.part`;
   try {
-    await Deno.mkdir(dir, { recursive: true });
-    await Deno.writeFile(part, bytes);
-    await Deno.rename(part, path);
+    await mkdir(dir, { recursive: true });
+    await writeFile(part, bytes);
+    await rename(part, path);
   } catch (err) {
-    await Deno.remove(part).catch(() => {});
+    await rm(part).catch(() => {});
     return { path, bytes, sha256, cached: false, notSaved: (err as Error).message };
   }
   return { path, bytes, sha256, cached: false };
 }
 
 /** The tool's own folder for downloads and backups: ~/.cache/hour-meter, ~/Library/Caches/hour-meter on macOS. */
-export function cacheDir(env: (name: string) => string | undefined, os: string = Deno.build.os): string {
+export function cacheDir(env: (name: string) => string | undefined, os: string = OS): string {
   const home = env('HOME') ?? env('USERPROFILE') ?? '.';
   if (os === 'darwin') return join(home, 'Library', 'Caches', 'hour-meter');
   if (os === 'windows') return join(env('LOCALAPPDATA') ?? home, 'hour-meter');

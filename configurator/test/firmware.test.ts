@@ -1,5 +1,7 @@
 // firmware.test.ts: `hour-meter firmware` words, which ports can flash, the backup/restore plan, and a whole
 // update: flash through test/fake-rom.ts, then reconnect to the simulated device used by --demo.
+import { test } from 'bun:test';
+
 import { assert, assertEquals, assertThrows } from './assert.ts';
 import { createDemoLink } from '../src/demo.ts';
 import { DeviceClient } from '../src/device.ts';
@@ -61,7 +63,7 @@ function fakeRequester(
   return { dev, sent };
 }
 
-Deno.test('firmware words', () => {
+test('firmware words', () => {
   assertEquals(parseFirmwareArgs([]), { sub: 'version' });
   assertEquals(parseFirmwareArgs(['list']), { sub: 'list' });
   assertEquals(parseFirmwareArgs(['download']), { sub: 'download', spec: 'latest', dir: '.' });
@@ -85,7 +87,7 @@ Deno.test('firmware words', () => {
   assertThrows(() => parseFirmwareArgs(['list', 'x']), /unexpected 'x'/);
 });
 
-Deno.test("release words versus files; only the board's USB port can flash", () => {
+test("release words versus files; only the board's USB port can flash", () => {
   for (const word of ['latest', '2.5.0', 'v1.0.0', 'firmware-v2.4.0']) assert(isReleaseWord(word), word);
   for (const file of ['firmware.bin', './2.5.0', '/tmp/v1.0.0.bin']) assert(!isReleaseWord(file), file);
   assertEquals(flashPortProblem({ demo: false, port: '/dev/ttyUSB0' }, 'linux'), undefined);
@@ -96,7 +98,7 @@ Deno.test("release words versus files; only the board's USB port can flash", () 
   assert(/Windows/.test(flashPortProblem({ demo: false, port: 'COM3' }, 'windows')!));
 });
 
-Deno.test('restore plan: counters that went back, changed settings, lost settings, a reformat', () => {
+test('restore plan: counters that went back, changed settings, lost settings, a reformat', () => {
   const same = planRestore(snap(), snap({ runSeconds: 4_500_010 }));
   assertEquals(same, { counters: {}, settings: {}, settingsLost: false, formatted: false });
 
@@ -119,7 +121,7 @@ Deno.test('restore plan: counters that went back, changed settings, lost setting
   assertEquals([plan.settings, plan.settingsLost], [{ telemetryIntervalMs: 1000 }, false]);
 });
 
-Deno.test('after a reformat: counters and settings are put back, the version is checked', async () => {
+test('after a reformat: counters and settings are put back, the version is checked', async () => {
   const { dev, sent } = fakeRequester();
   const after = snap({
     runSeconds: 0,
@@ -137,7 +139,7 @@ Deno.test('after a reformat: counters and settings are put back, the version is 
   assert(/2 restored/.test(notes[3].text));
 });
 
-Deno.test('a setting the new firmware refuses: the others are put back one by one', async () => {
+test('a setting the new firmware refuses: the others are put back one by one', async () => {
   const { dev, sent } = fakeRequester({}, (cmd) => 'output' in cmd);
   const after = snap({
     runSeconds: 4_600_000, // counted on: only the totalizer went back
@@ -153,7 +155,7 @@ Deno.test('a setting the new firmware refuses: the others are put back one by on
   assertEquals(notes[2], { level: 'warn', text: '1 settings restored; the new firmware refused output' });
 });
 
-Deno.test('after an update: a wrong version is an error, changed settings are only listed, another board is left', async () => {
+test('after an update: a wrong version is an error, changed settings are only listed, another board is left', async () => {
   const { dev, sent } = fakeRequester();
   const notes = await restoreAfterUpdate(dev, snap(), snap({ settings: { ...snap().settings, output: 1 } }), '2.6.0');
   assertEquals(sent, []);
@@ -166,7 +168,7 @@ Deno.test('after an update: a wrong version is an error, changed settings are on
   assert(/another device answered.*nothing restored/.test(other[1].text));
 });
 
-Deno.test('after an update: a board without the flash store partition is an error', async () => {
+test('after an update: a board without the flash store partition is an error', async () => {
   const { dev } = fakeRequester();
   const missing = snap({ fwVersion: 0x00020600, statusFlags: flag('flashStoreMissing') | flag('eepromMissing') });
   const notes = await restoreAfterUpdate(dev, undefined, missing, '2.6.0');
@@ -176,7 +178,7 @@ Deno.test('after an update: a board without the flash store partition is an erro
   assertEquals(fine.map((n) => n.level), ['ok']);
 });
 
-Deno.test('snapshot reads status, counters and settings', async () => {
+test('snapshot reads status, counters and settings', async () => {
   const { dev, sent } = fakeRequester({
     1: { runSeconds: 3600, totalCount: 42 },
     2: { telemetryIntervalMs: 500, kalmanQAccel: 0.001, altActiveHigh: false },
@@ -194,7 +196,7 @@ Deno.test('snapshot reads status, counters and settings', async () => {
   assertEquals(s.settings, { telemetryIntervalMs: 500, kalmanQAccel: 0.001, altActiveHigh: false });
 });
 
-Deno.test('updateDevice: flash, reconnect, check the version and restore counters that went back', async () => {
+test('updateDevice: flash, reconnect, check the version and restore counters that went back', async () => {
   const demo = await DeviceClient.connect(createDemoLink(), { readyTimeoutMs: 500 });
   const before = await snapshot(demo);
   demo.close();
@@ -222,7 +224,7 @@ Deno.test('updateDevice: flash, reconnect, check the version and restore counter
   }
 });
 
-Deno.test('updateDevice: the port is reopened after a short absence; if it stays away, nothing throws', async () => {
+test('updateDevice: the port is reopened after a short absence; if it stays away, nothing throws', async () => {
   const rom = fakeRom();
   let opens = 0;
   const flaky = await updateDevice({
@@ -253,7 +255,7 @@ Deno.test('updateDevice: the port is reopened after a short absence; if it stays
   assertEquals(notes.at(-1), { level: 'error', text: 'the port did not come back (No such file or directory)' });
 });
 
-Deno.test('updateDevice: a failed flash still hands back an open client', async () => {
+test('updateDevice: a failed flash still hands back an open client', async () => {
   const rom = fakeRom({ silent: true });
   const notes: Note[] = [];
   const { dev, ok } = await updateDevice({

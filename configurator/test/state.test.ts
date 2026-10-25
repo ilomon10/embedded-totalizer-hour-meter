@@ -1,4 +1,6 @@
 // state.test.ts: the TUI's pure reducer and setting validation.
+import { test } from 'bun:test';
+
 import { assertEquals, assertMatch } from './assert.ts';
 import {
   activeFlags,
@@ -16,7 +18,7 @@ import {
 import type { FirmwareRelease } from '../src/releases.ts';
 import { linkBanner, parseSetting } from '../src/tui/App.tsx';
 
-Deno.test('frames merge into a flat value map and settings are tracked', () => {
+test('frames merge into a flat value map and settings are tracked', () => {
   let s = initialState('/dev/ttyUSB0', false);
   s = applyMessage(s, {
     msgType: 1,
@@ -39,7 +41,7 @@ Deno.test('frames merge into a flat value map and settings are tracked', () => {
   assertEquals(s.frames, 2);
 });
 
-Deno.test('events are logged in plain language', () => {
+test('events are logged in plain language', () => {
   let s = initialState('x', true);
   s = applyMessage(s, { msgType: 2, seq: 1, deviceId: 1, timestamp: 0, values: { eventKind: 3, devices: 0b0101 } }, 1);
   s = applyMessage(s, { msgType: 2, seq: 2, deviceId: 1, timestamp: 0, values: { eventKind: 2, calibResult: 8 } }, 2);
@@ -48,7 +50,7 @@ Deno.test('events are logged in plain language', () => {
   assertMatch(s.log[1].text, /Failed/);
 });
 
-Deno.test('helpers', () => {
+test('helpers', () => {
   assertEquals(formatFirmware(0x00020200), '2.2.0');
   assertEquals(devicesPresent(0b1011).map(([, p]) => p), [true, true, false, true]);
   let s = initialState('x', true);
@@ -56,7 +58,7 @@ Deno.test('helpers', () => {
   assertEquals(s.log.length, MAX_LOG);
 });
 
-Deno.test('the header names a newer release, never a prerelease', () => {
+test('the header names a newer release, never a prerelease', () => {
   const release = (version: string, prerelease = false): FirmwareRelease => ({
     version,
     tag: `v-${version}`,
@@ -74,7 +76,7 @@ Deno.test('the header names a newer release, never a prerelease', () => {
   assertEquals(updateAvailable(0x00020500, undefined), undefined); // GitHub not asked yet
 });
 
-Deno.test('a missing EEPROM is red only when nothing else keeps the values', () => {
+test('a missing EEPROM is red only when nothing else keeps the values', () => {
   assertEquals(flagColor('eepromMissing', ['eepromMissing'], 0x00020500), 'red'); // 2.5.0: nothing saved
   assertEquals(flagColor('eepromMissing', ['eepromMissing'], 0x00020600), 'yellow'); // 2.6.0: the flash keeps them
   assertEquals(flagColor('eepromMissing', ['eepromMissing', 'flashStoreMissing'], 0x00020600), 'red');
@@ -83,7 +85,7 @@ Deno.test('a missing EEPROM is red only when nothing else keeps the values', () 
   assertEquals(flagColor('flashStoreMissing', [], 0x00020600), 'yellow');
 });
 
-Deno.test('setting input is validated like the firmware does', () => {
+test('setting input is validated like the firmware does', () => {
   assertEquals(parseSetting('telemetryIntervalMs', '500'), { value: 500 });
   assertMatch(parseSetting('telemetryIntervalMs', '50').error!, /range/);
   assertMatch(parseSetting('telemetryIntervalMs', '500.5').error!, /whole/);
@@ -93,14 +95,14 @@ Deno.test('setting input is validated like the firmware does', () => {
   assertEquals(parseSetting('kalmanQAccel', '0.001'), { value: 0.001 });
 });
 
-Deno.test('an Ok ACK confirms the settings that were sent', () => {
+test('an Ok ACK confirms the settings that were sent', () => {
   let s = initialState('x', true);
   s = applyMessage(s, { msgType: 4, seq: 1, deviceId: 1, timestamp: 0, values: { streamMode: 2 } }, 1);
   s = confirmSettings(s, { streamMode: 3, setTime: 123 });
   assertEquals(s.settings, { streamMode: 3 }); // commands are not settings
 });
 
-Deno.test('the link: a disconnect and the reconnect are logged once each, the demo stays the demo', () => {
+test('the link: a disconnect and the reconnect are logged once each, the demo stays the demo', () => {
   let s = initialState('/dev/ttyUSB0', false);
   s = applyConnState(s, { kind: 'connected' }, '/dev/ttyUSB0', 1000);
   assertEquals(s.log, []); // the first connect is not news
@@ -139,7 +141,7 @@ Deno.test('the link: a disconnect and the reconnect are logged once each, the de
   assertEquals(applyConnState(demo, { kind: 'connected' }, 'demo', 0), demo);
 });
 
-Deno.test('another board on the port: the old values are dropped', () => {
+test('another board on the port: the old values are dropped', () => {
   const frame = (deviceId: number, values: Record<string, number>) => ({
     msgType: 1,
     seq: 1,

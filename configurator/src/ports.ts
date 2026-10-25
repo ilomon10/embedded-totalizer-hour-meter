@@ -8,6 +8,9 @@
 //   Windows none: COM ports are not supported yet (tcp:// or the demo).
 //
 // The listing reads the file system through PortFs, so the tests run it on a fake one.
+import { mkdir, readdir, readFile, realpath, stat, writeFile } from 'node:fs/promises';
+
+import { errorCode, OS } from './platform.ts';
 import { cacheDir } from './releases.ts';
 
 export interface PortInfo {
@@ -31,15 +34,13 @@ export interface PortFs {
 
 export const systemFs: PortFs = {
   async names(dir) {
-    const out: string[] = [];
     try {
-      for await (const e of Deno.readDir(dir)) out.push(e.name);
+      return await readdir(dir);
     } catch {
-      // no such folder (no USB serial adapter was ever plugged in), or no permission
+      return []; // no such folder (no USB serial adapter was ever plugged in), or no permission
     }
-    return out;
   },
-  realPath: (path) => Deno.realPath(path),
+  realPath: (path) => realpath(path),
 };
 
 const BOARD_CHIPS = /CP21|CP210|Silicon_Labs|CH34|CH910|QinHeng|1a86|FTDI|FT232|Espressif|USB_JTAG/i;
@@ -51,7 +52,7 @@ export function byIdLabel(name: string): string {
 }
 
 /** Serial ports, USB ones first, then by path (ttyUSB2 before ttyUSB10). */
-export async function listPorts(fs: PortFs = systemFs, os: string = Deno.build.os): Promise<PortInfo[]> {
+export async function listPorts(fs: PortFs = systemFs, os: string = OS): Promise<PortInfo[]> {
   if (os === 'windows') return [];
   const ports: PortInfo[] = [];
   if (os === 'darwin') {
@@ -116,8 +117,8 @@ export function newPorts(before: PortInfo[], now: PortInfo[]): PortInfo[] {
 /** The group that owns a port, for the "add yourself to the group" hint (Linux: dialout, uucp on Arch). */
 async function portGroup(path: string): Promise<string | undefined> {
   try {
-    const gid = (await Deno.stat(path)).gid;
-    const line = (await Deno.readTextFile('/etc/group')).split('\n').find((l) => l.split(':')[2] === String(gid));
+    const gid = (await stat(path)).gid;
+    const line = (await readFile('/etc/group', 'utf8')).split('\n').find((l) => l.split(':')[2] === String(gid));
     return line?.split(':')[0];
   } catch {
     return undefined;
@@ -125,22 +126,23 @@ async function portGroup(path: string): Promise<string | undefined> {
 }
 
 /** A port that did not open, in plain words with what to do about it. */
-export async function openProblem(err: unknown, spec: string, os: string = Deno.build.os): Promise<string> {
+export async function openProblem(err: unknown, spec: string, os: string = OS): Promise<string> {
   const e = err as Error;
+  const code = errorCode(err);
   if (spec.startsWith('tcp://')) {
-    if (e instanceof Deno.errors.ConnectionRefused) {
+    if (code === 'ECONNREFUSED') {
       return `nothing answers on ${spec}: is the simulator or bridge running?`;
     }
     return `${spec}: ${e.message}`;
   }
-  if (e instanceof Deno.errors.NotFound) return `${spec} is not there: plug in the board, or pick another port`;
-  if (e instanceof Deno.errors.PermissionDenied) {
+  if (code === 'ENOENT') return `${spec} is not there: plug in the board, or pick another port`;
+  if (code === 'EACCES' || code === 'EPERM') {
     if (os !== 'linux') return `no permission to open ${spec}`;
     const group = await portGroup(spec) ?? 'dialout';
     return `no permission to open ${spec}: add yourself to the ${group} group ` +
       `(sudo usermod -aG ${group} $USER), then log out and back in`;
   }
-  if (e instanceof Deno.errors.Busy || /busy/i.test(e.message)) {
+  if (code === 'EBUSY' || /busy/i.test(e.message)) {
     return `${spec} is in use by another program (another hour-meter, a serial monitor, ModemManager)`;
   }
   return `${spec}: ${e.message}`;
@@ -153,7 +155,7 @@ const prefsFile = (env: (name: string) => string | undefined) => `${cacheDir(env
 /** The port the TUI last connected to (preselected on the connect screen). */
 export async function loadLastPort(env: (name: string) => string | undefined): Promise<string | undefined> {
   try {
-    const prefs = JSON.parse(await Deno.readTextFile(prefsFile(env)));
+    const prefs = JSON.parse(await readFile(prefsFile(env), 'utf8'));
     return typeof prefs.lastPort === 'string' ? prefs.lastPort : undefined;
   } catch {
     return undefined;
@@ -162,8 +164,8 @@ export async function loadLastPort(env: (name: string) => string | undefined): P
 
 export async function saveLastPort(env: (name: string) => string | undefined, port: string): Promise<void> {
   try {
-    await Deno.mkdir(cacheDir(env), { recursive: true });
-    await Deno.writeTextFile(prefsFile(env), JSON.stringify({ lastPort: port }) + '\n');
+    await mkdir(cacheDir(env), { recursive: true });
+    await writeFile(prefsFile(env), JSON.stringify({ lastPort: port }) + '\n');
   } catch {
     // only a convenience: the next start preselects another port
   }

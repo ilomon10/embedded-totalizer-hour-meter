@@ -8,8 +8,11 @@
 //                 bootloader (download mode) instead of the firmware. Used by flash.ts.
 //
 // The pure parts (constants per OS, the step lists, runSteps) are unit-tested; only runModemSteps() touches libc
-// through Deno.dlopen (needs --allow-ffi, which -A includes), so test/ never calls it.
+// through bun:ffi, so test/ never calls it.
+import { dlopen, FFIType, read } from 'bun:ffi';
+
 import type { Link } from './links.ts';
+import { OS } from './platform.ts';
 import { PANIC_ZERO_RUN } from './tags.ts';
 
 export type Line = 'dtr' | 'rts';
@@ -120,7 +123,7 @@ export async function hardReset(path: string): Promise<void> {
 
 /** Drive DTR/RTS of serial port `path` through `steps` (see hardReset). `job` names the caller in errors. */
 export async function runModemSteps(path: string, steps: Step[], job = 'hard reset'): Promise<void> {
-  const k = serialConstants(Deno.build.os);
+  const k = serialConstants(OS);
   const libc = loadLibc(k.libc, job);
   try {
     const fail = (what: string): never => {
@@ -156,23 +159,23 @@ interface Libc {
 // ioctl() is variadic. Apple arm64 passes variadic arguments on the stack, so there the pointer is declared as the
 // 9th parameter (the first 8 integers fill registers, the 9th lands on the stack where ioctl looks for it).
 function loadLibc(names: string[], job: string): Libc {
-  const mac = Deno.build.os === 'darwin';
-  const stackArgs = mac && Deno.build.arch === 'aarch64';
-  const ioctlParams = stackArgs
-    ? ['i32', 'u64', 'u64', 'u64', 'u64', 'u64', 'u64', 'u64', 'buffer']
-    : ['i32', 'u64', 'buffer'];
+  const mac = OS === 'darwin';
+  const stackArgs = mac && process.arch === 'arm64';
+  const { i32, u64, ptr } = FFIType;
+  const ioctlArgs = stackArgs ? [i32, u64, u64, u64, u64, u64, u64, u64, ptr] : [i32, u64, ptr];
+  const errnoName = mac ? '__error' : '__errno_location'; // libc's per-thread errno, as a pointer
   const symbols = {
-    open: { parameters: ['buffer', 'i32'], result: 'i32' },
-    ioctl: { parameters: ioctlParams, result: 'i32' },
-    close: { parameters: ['i32'], result: 'i32' },
-    errno: { name: mac ? '__error' : '__errno_location', parameters: [], result: 'pointer' },
-  } as const;
+    open: { args: [ptr, i32], returns: i32 },
+    ioctl: { args: ioctlArgs, returns: i32 },
+    close: { args: [i32], returns: i32 },
+    [errnoName]: { args: [], returns: ptr },
+  };
   let last: unknown;
   for (const name of names) {
     try {
       // The symbol table is built at run time (arm64 variant), so its type is erased here.
-      // deno-lint-ignore no-explicit-any
-      const lib = Deno.dlopen(name, symbols as any) as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const lib = dlopen(name, symbols) as any;
       const s = lib.symbols;
       return {
         open: (path, flags) => s.open(path, flags),
@@ -180,8 +183,8 @@ function loadLibc(names: string[], job: string): Libc {
           stackArgs ? s.ioctl(fd, request, 0, 0, 0, 0, 0, 0, bits) : s.ioctl(fd, request, bits),
         close: (fd) => s.close(fd),
         errno: () => {
-          const p = s.errno();
-          return p ? new Deno.UnsafePointerView(p).getInt32() : 0;
+          const p = s[errnoName]();
+          return p ? read.i32(p, 0) : 0;
         },
         unload: () => lib.close(),
       };

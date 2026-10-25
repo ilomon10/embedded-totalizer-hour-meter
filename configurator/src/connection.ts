@@ -12,9 +12,11 @@
 // it still connects when it comes back as /dev/ttyUSB1. pause() hands the port to the flasher; resume() takes
 // the flasher's client back, or reconnects.
 import { EventEmitter } from 'node:events';
+import { stat } from 'node:fs/promises';
 
 import type { Target } from './cli.ts';
 import type { DeviceClient } from './device.ts';
+import { errorCode } from './platform.ts';
 import { findAgain, openProblem, type PortInfo } from './ports.ts';
 import { isLocalSerial } from './reset.ts';
 
@@ -49,7 +51,7 @@ export interface ConnectionOptions {
 
 const exists = async (path: string) => {
   try {
-    await Deno.stat(path);
+    await stat(path);
     return true;
   } catch {
     return false;
@@ -200,7 +202,7 @@ export class Connection extends EventEmitter {
       if (stale()) return; // paused or closed while the words were found
       const previous = this.state;
       // An unplug stays the reason shown while the port is missing; a new reason (e.g. no permission) replaces it.
-      const keep = previous.kind === 'waiting' && previous.lost && err instanceof Deno.errors.NotFound;
+      const keep = previous.kind === 'waiting' && previous.lost && errorCode(err) === 'ENOENT';
       this.setState({
         kind: 'waiting',
         problem: keep ? previous.problem : problem,

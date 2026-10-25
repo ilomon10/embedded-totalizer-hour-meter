@@ -1,12 +1,12 @@
 // sensorframe.ts: the ONLY bridge to ../sensorframe/js (the shared codec, CommonJS).
-// It loads through createRequire, so `deno compile` must --include those files
-// (tools/compile.ts does).
-import { createRequire } from 'node:module';
+// A static import, so `bun build --compile` bundles the codec into the binary.
+import * as sensorframeModule from '../../sensorframe/js/index.js';
 
 import { tags } from './tags.ts';
 
-const require = createRequire(import.meta.url);
-const sensorframe = require('../../sensorframe/js/index.js');
+// The codec's own .d.ts is written for Node (Buffer values, a wider TagDef); this file declares the shapes it uses.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sensorframe: any = sensorframeModule;
 
 export type Value = number | boolean | bigint | Uint8Array;
 

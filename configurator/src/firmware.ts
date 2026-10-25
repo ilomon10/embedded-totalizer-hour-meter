@@ -10,11 +10,13 @@
 // firmware with another EEPROM layout reformats it at boot. After the flash the version is checked and what the
 // update lost is put back (updateDevice, shared with the TUI). parseFirmwareArgs() and planRestore() are pure
 // (test/firmware.test.ts).
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { connect, connectHelp, DEFAULT_PORT, env, takeFlag, takeOption, type Target } from './cli.ts';
 import type { CommandValues, DeviceClient } from './device.ts';
 import { BAUDS, DEFAULT_BAUD, flashDevice, type FlashIo, type FlashProgress, inspectImage, systemIo } from './flash.ts';
+import { OS } from './platform.ts';
 import {
   cacheDir,
   compareVersions,
@@ -82,7 +84,7 @@ export function isReleaseWord(spec: string): boolean {
 }
 
 /** Why `target` cannot be flashed, or undefined. Only the board's own USB port reaches the ROM bootloader. */
-export function flashPortProblem(target: Pick<Target, 'demo' | 'port'>, os: string = Deno.build.os) {
+export function flashPortProblem(target: Pick<Target, 'demo' | 'port'>, os: string = OS) {
   if (target.demo) return 'flashing needs the real board on its USB port, not --demo';
   if (target.port.startsWith('tcp://')) return `flashing needs the board's USB port, not ${target.port}`;
   if (/rfcomm/i.test(target.port)) return "flashing needs the board's USB port: Bluetooth cannot reach the bootloader";
@@ -121,7 +123,7 @@ export async function releaseImage(release: FirmwareRelease, github: GitHubOptio
 export async function fileImage(path: string): Promise<FirmwareImage> {
   let bytes: Uint8Array;
   try {
-    bytes = await Deno.readFile(path);
+    bytes = await Bun.file(path).bytes();
   } catch {
     throw new Error(`no such file or release: '${path}' (hour-meter firmware list shows the releases)`);
   }
@@ -188,9 +190,9 @@ export async function snapshot(dev: Requester): Promise<Snapshot> {
 /** Keep a snapshot as JSON in `dir`; returns the file. */
 export async function saveBackup(snap: Snapshot, dir: string = backupDir()): Promise<string> {
   // Only the user may read it: the settings include the Bluetooth PIN.
-  await Deno.mkdir(dir, { recursive: true, mode: 0o700 });
+  await mkdir(dir, { recursive: true, mode: 0o700 });
   const path = join(dir, `${hex(snap.deviceId)}-${snap.at.replace(/[:.]/g, '-')}.json`);
-  await Deno.writeTextFile(path, `${JSON.stringify(snap, null, 2)}\n`, { mode: 0o600 });
+  await writeFile(path, `${JSON.stringify(snap, null, 2)}\n`, { mode: 0o600 });
   return path;
 }
 
@@ -410,14 +412,13 @@ export function progressLine(p: FlashProgress, width = 20): string {
 
 /** Progress on one rewritten line on a terminal, one line per stage otherwise. */
 function progressPrinter() {
-  const tty = Deno.stdout.isTerminal();
-  const encoder = new TextEncoder();
+  const tty = process.stdout.isTTY === true;
   let open = false;
   let stage = '';
   return {
     progress(p: FlashProgress) {
       if (tty) {
-        Deno.stdout.writeSync(encoder.encode(`\r${progressLine(p)}\x1b[K`));
+        process.stdout.write(`\r${progressLine(p)}\x1b[K`);
         open = true;
       } else if (p.stage !== stage) {
         console.log(`${STAGE[p.stage]}...`);
