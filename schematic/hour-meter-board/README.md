@@ -13,6 +13,9 @@ One PCB that replaces the rev-A module carrier. Every module the hour meter used
 | Order files | `production/`: Gerber zip, `BOM-hour-meter-board.csv`, `CPL-hour-meter-board.csv` (JLCPCB columns) |
 | PDF | `hour-meter-board.pdf`: root + 8 module sheets |
 | Stock check | `../../scripts/jlc-stock.ts <bom.csv> --boards N` (live JLCPCB API) |
+| 2-layer variant | [`../hour-meter-board-2layer`](../hour-meter-board-2layer/README.md): the same circuit and placement, routed on 2 copper layers |
+| Compact variant | [`../hour-meter-board-compact`](../hour-meter-board-compact/README.md): 80 × 70 mm, 2 layers, isolation slots, and the fault fixes below |
+| Fault analysis | [`../fault-analysis`](../fault-analysis/README.md): on this board, an RS485 wire shorted to the vehicle supply destroys the RS485 port, and a shorted J804 / GPS 5 V pin overloads D101; the compact variant fixes both |
 
 **Checks at this revision (2026-10-21):**
 - **ERC (full hierarchy):** 0 errors, 2 warnings (both [intended](#erc-and-drc-notes)).
@@ -182,4 +185,5 @@ python3 tools-production.py ../hour-meter-psu-b/hour-meter-psu-b.kicad_pcb   # s
 
 - **Routing results vary:** Freerouting gives different traces on every run, so `tools-route-pcb.py N` routes N times and keeps the board with the fewest unconnected items. Every try starts from the placed board.
 - **Netclasses:** Default, Power, Plane and Vehicle are stored in `hour-meter-board.kicad_pro`.
+- **2-layer variant:** `../hour-meter-board-2layer/tools-pcb.py` runs these same scripts on its own copy of the project, with 2 copper layers.
 - **Hand edits:** to refine by hand, open the project in KiCad, move parts and use the interactive router. The scripts are only needed for a full regeneration.

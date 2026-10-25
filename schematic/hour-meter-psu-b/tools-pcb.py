@@ -94,9 +94,9 @@ LABELS = [
 ]
 
 
-def build():
+def build(pcb=PCB):
     comps, nets = lib.export_netlist(SCH)
-    board = pcbnew.NewBoard(PCB)
+    board = pcbnew.NewBoard(pcb)   # an empty board bound to this project, written to `pcb` at once
     ds = board.GetDesignSettings()
     ds.m_TrackMinWidth = mm(0.15)
     ds.m_MinClearance = mm(0.15)
@@ -157,7 +157,7 @@ def route(board):
 
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "check"
-    board = build()
+    board = build(PCB if mode in ("place", "route") else lib.throwaway(PCB))
     issues = lib.courtyard_overlaps(board, (X0, Y0, W, H))
     print(f"courtyard issues ({len(issues)}):", "; ".join(issues) or "none")
     if mode in ("place", "route"):

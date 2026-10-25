@@ -12,11 +12,15 @@ Coordinates are millimetres on the KiCad page; the board spans X 100..200, Y 100
 (100 x 90 mm, 4 layers: F.Cu signal, In1.Cu GND plane, In2.Cu signal + 3V3 pour, B.Cu signal).
 Move parts by editing PLACEMENT (x, y = courtyard centre, rotation, side). Netclasses live in
 hour-meter-board.kicad_pro (set with Konnect create_netclass / assign_net_to_class).
+The 2-layer variant (../hour-meter-board-2layer) is built by build(..., layers=2) from its own copy
+of the schematic, with the same PLACEMENT.
 """
+import math
 import os
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+from typing import NamedTuple
 
 import pcbnew
 
@@ -118,12 +122,39 @@ LABELS = [
     ("VEHICLE SIDE - ISOLATED", 120.0, 132.3, 0.9, True),
 ]
 
+class Layout(NamedTuple):
+    """Everything about a board's geometry that the build, route and finish scripts use. A variant
+    with its own outline and placement (../hour-meter-board-compact) sets LAYOUT to its own."""
+    outline: tuple            # (x0, y0, w, h)
+    psu_area: tuple           # (x1, y1, x2, y2): where PSU-B sits; parts below it stay <= 5 mm tall
+    vehicle_area: tuple       # (x1, y1, x2, y2): isolated opto input side, no pours
+    antenna_keepout: tuple    # (x1, y1, x2, y2): ESP32 antenna band, no copper on any layer
+    overhang: frozenset       # parts whose courtyard may leave the board
+    placement: dict           # ref: (x, y, rotation_deg, side), x, y = courtyard centre
+    labels: list              # silkscreen labels: (text, x, y, size_mm, bold)
+    slots: tuple = ()         # milled slots: ((x1, y1), (x2, y2), width) centre line, rounded ends
+
+
+LAYOUT = Layout((X0, Y0, W, H), PSU_AREA, VEHICLE_AREA, ANTENNA_KEEPOUT, frozenset(OVERHANG), PLACEMENT, LABELS)
+
 STANDARD_FIELDS = {"Reference", "Value", "Footprint", "Datasheet", "Description"}
 REF_TEXT_MM = 0.8   # small reference designators keep the dense areas readable
 
 
 def mm(v):
     return pcbnew.FromMM(v)
+
+
+def routing_dir(pcb):
+    """The git-ignored work folder next to a board: DSN/SES files, routing tries, DRC reports."""
+    work = os.path.join(os.path.dirname(pcb), "routing")
+    os.makedirs(work, exist_ok=True)
+    return work
+
+
+def throwaway(pcb):
+    """Where a dry run builds instead of `pcb`: pcbnew.NewBoard() writes an empty board to its path at once."""
+    return os.path.join(routing_dir(pcb), "check-" + os.path.basename(pcb))
 
 
 def export_netlist(sch=SCH):
@@ -193,6 +224,35 @@ def rect_shape(board, layer, rect, width=0.1):
         board.Add(seg)
 
 
+def add_slot(board, slot):
+    """A milled slot on Edge.Cuts: two straight sides and two rounded ends around the centre line."""
+    (x1, y1), (x2, y2), width = slot
+    length = math.hypot(x2 - x1, y2 - y1)
+    dx, dy = (x2 - x1) / length, (y2 - y1) / length
+    nx, ny, r = -dy, dx, width / 2
+
+    def pt(x, y):
+        return pcbnew.VECTOR2I(mm(x), mm(y))
+
+    for (ax, ay), (bx, by) in (((x1 + nx * r, y1 + ny * r), (x2 + nx * r, y2 + ny * r)),
+                               ((x2 - nx * r, y2 - ny * r), (x1 - nx * r, y1 - ny * r))):
+        seg = pcbnew.PCB_SHAPE(board)
+        seg.SetShape(pcbnew.SHAPE_T_SEGMENT)
+        seg.SetStart(pt(ax, ay))
+        seg.SetEnd(pt(bx, by))
+        seg.SetLayer(pcbnew.Edge_Cuts)
+        seg.SetWidth(mm(0.1))
+        board.Add(seg)
+    for (cx, cy), sign in (((x2, y2), 1), ((x1, y1), -1)):
+        arc = pcbnew.PCB_SHAPE(board)
+        arc.SetShape(pcbnew.SHAPE_T_ARC)
+        arc.SetArcGeometry(pt(cx + sign * nx * r, cy + sign * ny * r), pt(cx + sign * dx * r, cy + sign * dy * r),
+                           pt(cx - sign * nx * r, cy - sign * ny * r))
+        arc.SetLayer(pcbnew.Edge_Cuts)
+        arc.SetWidth(mm(0.1))
+        board.Add(arc)
+
+
 def add_labels(board, labels=LABELS):
     for text, x, y, size, bold in labels:
         t = pcbnew.PCB_TEXT(board)
@@ -205,17 +265,20 @@ def add_labels(board, labels=LABELS):
         board.Add(t)
 
 
-def setup_board(board):
-    board.SetCopperLayerCount(4)
-    board.SetLayerName(pcbnew.In1_Cu, "In1.Cu")
-    board.SetLayerName(pcbnew.In2_Cu, "In2.Cu")
-    board.SetLayerType(pcbnew.In1_Cu, pcbnew.LT_POWER)
-    board.SetLayerType(pcbnew.In2_Cu, pcbnew.LT_SIGNAL)   # routed, then poured with +3V3
+def setup_board(board, layers=4):
+    board.SetCopperLayerCount(layers)
+    if layers == 4:
+        board.SetLayerName(pcbnew.In1_Cu, "In1.Cu")
+        board.SetLayerName(pcbnew.In2_Cu, "In2.Cu")
+        board.SetLayerType(pcbnew.In1_Cu, pcbnew.LT_POWER)
+        board.SetLayerType(pcbnew.In2_Cu, pcbnew.LT_SIGNAL)   # routed, then poured with +3V3
+    # JLCPCB minimums (2026-10): track 0.09 mm on 4 layers, 0.10 mm on 2; via hole 0.15 mm on both,
+    # and holes of 0.2-0.25 mm cost nothing extra while the via diameter is >= 0.45 mm
     ds = board.GetDesignSettings()
-    ds.m_TrackMinWidth = mm(0.1)    # Freerouting necks down to 0.1 mm at fine-pitch pads (JLCPCB 4-layer: 0.09)
+    ds.m_TrackMinWidth = mm(0.1)    # Freerouting necks down to 0.1 mm at fine-pitch pads
     ds.m_MinClearance = mm(0.15)
     ds.m_ViasMinSize = mm(0.45)
-    ds.m_MinThroughDrill = mm(0.2)   # ESP32 thermal-pad vias are 0.2 mm (fine for JLCPCB 4-layer)
+    ds.m_MinThroughDrill = mm(0.2)   # ESP32 thermal-pad vias are 0.2 mm
     ds.m_HoleToHoleMin = mm(0.25)
     ds.m_CopperEdgeClearance = mm(0.3)
 
@@ -271,15 +334,18 @@ def add_track(board, footprints, ref, pad_a, pad_b, layer, width):
     board.Add(track)
 
 
-def build():
-    comps, nets = export_netlist()
-    board = pcbnew.NewBoard(PCB)   # always start from an empty board bound to this project
-    setup_board(board)
-    footprints = add_footprints_and_nets(board, comps, nets, PLACEMENT)
+def build(sch=SCH, pcb=PCB, layers=4):
+    comps, nets = export_netlist(sch)
+    board = pcbnew.NewBoard(pcb)   # an empty board bound to this project, written to `pcb` at once
+    setup_board(board, layers)
+    footprints = add_footprints_and_nets(board, comps, nets, LAYOUT.placement)
     add_track(board, footprints, "J102", "3", "4", pcbnew.B_Cu, 0.8)   # the two +5V_PSU pins
-    rect_shape(board, pcbnew.Edge_Cuts, (X0, Y0, X0 + W, Y0 + H))
-    rect_shape(board, pcbnew.F_SilkS, PSU_AREA, 0.15)     # where the PSU-B board sits
-    add_labels(board)
+    x0, y0, w, h = LAYOUT.outline
+    rect_shape(board, pcbnew.Edge_Cuts, (x0, y0, x0 + w, y0 + h))
+    for slot in LAYOUT.slots:
+        add_slot(board, slot)
+    rect_shape(board, pcbnew.F_SilkS, LAYOUT.psu_area, 0.15)     # where the PSU-B board sits
+    add_labels(board, LAYOUT.labels)
     title = board.GetTitleBlock()
     title.SetTitle("Hour Meter main board")
     title.SetRevision("B")
@@ -301,9 +367,10 @@ def pads_box(fp):
     return box
 
 
-def courtyard_overlaps(board, outline=(X0, Y0, W, H), overhang=OVERHANG):
+def courtyard_overlaps(board, outline=None, overhang=None):
     """Courtyard polygons that intersect, and parts whose courtyard (or pads) leave the board."""
-    x0, y0, w, h = outline
+    x0, y0, w, h = outline or LAYOUT.outline
+    overhang = LAYOUT.overhang if overhang is None else overhang
     items = [(fp.GetReference(), fp, courtyard(fp), courtyard_box(fp)) for fp in footprints_of(board)]
     issues = []
     for i in range(len(items)):
@@ -328,7 +395,7 @@ def courtyard_overlaps(board, outline=(X0, Y0, W, H), overhang=OVERHANG):
 
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "place"
-    board = build()
+    board = build(pcb=PCB if mode == "place" else throwaway(PCB))
     issues = courtyard_overlaps(board)
     print(f"courtyard issues ({len(issues)}):", "; ".join(issues) or "none")
     if mode == "place":
