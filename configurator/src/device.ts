@@ -11,7 +11,7 @@ import { EventEmitter } from 'node:events';
 
 import { type Link, openLink } from './links.ts';
 import { codec, type DecodedMessage, FrameSplitter } from './sensorframe.ts';
-import { ACK_STATUS, MSG, tags } from './tags.ts';
+import { ACK_STATUS, decodeStatusFlags, MSG, tags } from './tags.ts';
 
 const TIME_INVALID_BIT = 1 << 2; // statusFlags bit 2 (see tags.ts STATUS_FLAGS)
 
@@ -22,6 +22,33 @@ export class AckError extends Error {
   constructor(message: string, readonly ack: DecodedMessage) {
     super(message);
   }
+}
+
+const COUNTER_TAGS = new Set([102, 103, 104]); // setRunSeconds, setTotalCount, resetCounters
+
+/** Why a counter change got DeviceMissing: the device has nowhere to keep it. Its status flags come with the ACK. */
+function counterHint(status: number, tag: number, statusFlags: unknown): string {
+  if (ACK_STATUS[status] !== 'DeviceMissing' || !COUNTER_TAGS.has(tag) || statusFlags === undefined) return '';
+  const flags = decodeStatusFlags(Number(statusFlags));
+  if (flags.includes('flashStoreMissing')) {
+    return '. Nowhere to keep it: no EEPROM, and no flash store (flashStoreMissing). Flash the full image ' +
+      '(hour-meter firmware flash) so the partition table gets the hmdata partition';
+  }
+  if (flags.includes('eepromMissing')) {
+    return '. Nowhere to keep it: no EEPROM, and firmware before 2.6.0 keeps the counters only there. ' +
+      'Update with hour-meter firmware flash';
+  }
+  return '';
+}
+
+/** The message for an error ACK: status, rejected tag, and the reason when the status flags tell it. */
+export function ackErrorText(ack: DecodedMessage): string {
+  const status = Number(ack.values.ackStatus);
+  const tag = Number(ack.values.rejectedTag);
+  const rejected = tag ? ` (tag ${tag}: ${tags[tag]?.name ?? '?'})` : '';
+  return `device answered ${ACK_STATUS[status] ?? status}${rejected}${
+    counterHint(status, tag, ack.values.statusFlags)
+  }`;
 }
 
 export interface OpenOptions {
@@ -75,12 +102,7 @@ export class DeviceClient extends EventEmitter {
     for (let attempt = 0; attempt <= retries; attempt++) {
       const ack = await this.sendAndWait(seq, bytes, timeoutMs);
       if (!ack) continue; // timeout: resend the same seq (device answers duplicates again)
-      const status = Number(ack.values.ackStatus);
-      if (status !== 0) {
-        const tag = Number(ack.values.rejectedTag);
-        const rejected = tag ? ` (tag ${tag}: ${tags[tag]?.name ?? '?'})` : '';
-        throw new AckError(`device answered ${ACK_STATUS[status] ?? status}${rejected}`, ack);
-      }
+      if (Number(ack.values.ackStatus) !== 0) throw new AckError(ackErrorText(ack), ack);
       return ack;
     }
     throw new Error(`no ACK after ${retries + 1} attempts`);

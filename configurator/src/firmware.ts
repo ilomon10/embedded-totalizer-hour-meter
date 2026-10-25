@@ -246,6 +246,13 @@ export async function restoreAfterUpdate(
       ? { level: 'error', text: `the device reports firmware ${now}, not ${expected}` }
       : { level: 'ok', text: `the device runs firmware ${now}` },
   );
+  if (decodeStatusFlags(after.statusFlags).includes('flashStoreMissing')) {
+    notes.push({
+      level: 'error',
+      text: 'no flash store (flashStoreMissing): the partition table on the board has no hmdata partition, ' +
+        'so the counters can only be kept in an EEPROM. Flash the full merged image again',
+    });
+  }
   if (!before) return notes;
   if (before.deviceId !== after.deviceId) {
     const text = `another device answered (${hex(after.deviceId)}; the backup is of ${hex(before.deviceId)})`;

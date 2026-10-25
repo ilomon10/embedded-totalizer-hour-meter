@@ -2,7 +2,7 @@
 // round trip against the simulated device used by --demo.
 import { assert, assertEquals, assertRejects } from './assert.ts';
 import { createDemoLink } from '../src/demo.ts';
-import { DeviceClient } from '../src/device.ts';
+import { ackErrorText, DeviceClient } from '../src/device.ts';
 import { type Link, linkPair } from '../src/links.ts';
 import { codec, type DecodedMessage } from '../src/sensorframe.ts';
 import { MSG } from '../src/tags.ts';
@@ -107,4 +107,17 @@ Deno.test('--demo device: boot, telemetry and a get=1 round trip', async () => {
   assertEquals(hour.values.journalSeq, 812);
   assert(Number(hour.values.runSeconds) >= 4500000);
   dev.close();
+});
+
+Deno.test('a counter change answered DeviceMissing says which store is missing', () => {
+  const answer = (statusFlags?: number, rejectedTag = 102) =>
+    ackErrorText({ msgType: MSG.ACK, seq: 1, values: { ackSeq: 1, ackStatus: 4, rejectedTag, statusFlags } } as never);
+  const eepromMissing = 1 << 0;
+  const flashStoreMissing = 1 << 19;
+  const both = answer(eepromMissing | flashStoreMissing);
+  assert(both.startsWith('device answered DeviceMissing (tag 102: setRunSeconds). Nowhere to keep it'), both);
+  assert(both.includes('flashStoreMissing') && both.includes('hour-meter firmware flash'), both);
+  assert(answer(eepromMissing, 103).includes('before 2.6.0'), answer(eepromMissing, 103));
+  assertEquals(answer(undefined), 'device answered DeviceMissing (tag 102: setRunSeconds)');
+  assertEquals(answer(eepromMissing, 105), 'device answered DeviceMissing (tag 105: calibrate)'); // the IMU, not a store
 });

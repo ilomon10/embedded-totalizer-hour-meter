@@ -166,6 +166,16 @@ Deno.test('after an update: a wrong version is an error, changed settings are on
   assert(/another device answered.*nothing restored/.test(other[1].text));
 });
 
+Deno.test('after an update: a board without the flash store partition is an error', async () => {
+  const { dev } = fakeRequester();
+  const missing = snap({ fwVersion: 0x00020600, statusFlags: flag('flashStoreMissing') | flag('eepromMissing') });
+  const notes = await restoreAfterUpdate(dev, undefined, missing, '2.6.0');
+  assertEquals(notes.map((n) => n.level), ['ok', 'error']);
+  assert(/flashStoreMissing.*Flash the full merged image/.test(notes[1].text), notes[1].text);
+  const fine = await restoreAfterUpdate(dev, undefined, snap({ fwVersion: 0x00020600 }), '2.6.0');
+  assertEquals(fine.map((n) => n.level), ['ok']);
+});
+
 Deno.test('snapshot reads status, counters and settings', async () => {
   const { dev, sent } = fakeRequester({
     1: { runSeconds: 3600, totalCount: 42 },
