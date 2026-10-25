@@ -122,6 +122,11 @@ export class Connection extends EventEmitter {
     }
   }
 
+  /** A Bluetooth PIN that worked: reconnects unlock with it too. */
+  rememberPin(pin: string): void {
+    this.options.target.pin = pin;
+  }
+
   /** For good: close the client, stop retrying. */
   close(): void {
     this.release();

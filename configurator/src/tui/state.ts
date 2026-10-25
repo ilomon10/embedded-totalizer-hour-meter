@@ -95,27 +95,6 @@ export function activeFlags(state: DeviceState): string[] {
 
 export { formatFirmware };
 
-const SERIOUS = new Set([
-  'eepromMissing',
-  'storageError',
-  'timeInvalid',
-  'rtcBatteryLost',
-  'imuStuck',
-  'i2cErrors',
-  'safeMode',
-]);
-const FLASH_STORE_FIRMWARE = 0x00020600; // 2.6.0 keeps settings + counters in the ESP32's flash too
-
-/** Red for flags that need action now. A missing EEPROM is only a warning when the flash keeps the values. */
-export function flagColor(flag: string, flags: string[], fwVersion: Value | undefined): 'red' | 'yellow' {
-  if (flag === 'eepromMissing') {
-    const flashKeeps =
-      typeof fwVersion === 'number' && fwVersion >= FLASH_STORE_FIRMWARE && !flags.includes('flashStoreMissing');
-    return flashKeeps ? 'yellow' : 'red';
-  }
-  return SERIOUS.has(flag) ? 'red' : 'yellow';
-}
-
 /** The newest release's version if it is newer than the device's firmware (header: "update available"). */
 export function updateAvailable(fwVersion: Value | undefined, releases: FirmwareRelease[] | undefined) {
   const latest = releases && findRelease(releases, 'latest');
@@ -183,15 +162,4 @@ export function applyMessage(state: DeviceState, msg: DecodedMessage, nowMs: num
     next = addLog(next, level, text, nowMs);
   }
   return next;
-}
-
-/** Banner when nothing has arrived for 5 s (since connecting, or since the last frame). */
-export function noDataBanner(
-  lastFrameMs: number | undefined,
-  startMs: number,
-  nowMs: number,
-  hardResetNote?: string,
-): string | undefined {
-  if (nowMs - (lastFrameMs ?? startMs) < 5000) return undefined;
-  return `No data from the device. ${hardResetNote ?? 'Press H to hard-reset.'}`;
 }

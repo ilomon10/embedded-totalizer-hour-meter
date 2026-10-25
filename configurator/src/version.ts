@@ -1,2 +1,2 @@
 // version.ts: version of the hour-meter tool (shipped in the project release v<VERSION>; see scripts/release.ts).
-export const TOOL_VERSION = '1.5.0';
+export const TOOL_VERSION = '2.0.0';

@@ -9,14 +9,14 @@ import {
   applyMessage,
   confirmSettings,
   devicesPresent,
-  flagColor,
   formatFirmware,
   initialState,
   MAX_LOG,
   updateAvailable,
 } from '../src/tui/state.ts';
 import type { FirmwareRelease } from '../src/releases.ts';
-import { linkBanner, parseSetting } from '../src/tui/App.tsx';
+import { banner } from '../src/tui/model/banner.ts';
+import { parseSettingInput } from '../src/tui/model/settings.ts';
 
 test('frames merge into a flat value map and settings are tracked', () => {
   let s = initialState('/dev/ttyUSB0', false);
@@ -87,23 +87,18 @@ test('the header names a newer release, never a prerelease', () => {
   assertEquals(updateAvailable(0x00020500, undefined), undefined); // GitHub not asked yet
 });
 
-test('a missing EEPROM is red only when nothing else keeps the values', () => {
-  assertEquals(flagColor('eepromMissing', ['eepromMissing'], 0x00020500), 'red'); // 2.5.0: nothing saved
-  assertEquals(flagColor('eepromMissing', ['eepromMissing'], 0x00020600), 'yellow'); // 2.6.0: the flash keeps them
-  assertEquals(flagColor('eepromMissing', ['eepromMissing', 'flashStoreMissing'], 0x00020600), 'red');
-  assertEquals(flagColor('eepromMissing', ['eepromMissing'], undefined), 'red'); // version not read yet
-  assertEquals(flagColor('storageError', [], 0x00020600), 'red');
-  assertEquals(flagColor('flashStoreMissing', [], 0x00020600), 'yellow');
-});
-
-test('setting input is validated like the firmware does', () => {
-  assertEquals(parseSetting('telemetryIntervalMs', '500'), { value: 500 });
-  assertMatch(parseSetting('telemetryIntervalMs', '50').error!, /range/);
-  assertMatch(parseSetting('telemetryIntervalMs', '500.5').error!, /whole/);
-  assertEquals(parseSetting('output', 'both'), { value: 3 });
-  assertEquals(parseSetting('altActiveHigh', 'false'), { value: false });
-  assertMatch(parseSetting('uartBaud', '12345').error!, /one of/);
-  assertEquals(parseSetting('kalmanQAccel', '0.001'), { value: 0.001 });
+test('setting input is validated like the firmware does; an empty field is never 0', () => {
+  assertEquals(parseSettingInput('telemetryIntervalMs', '500'), { value: 500 });
+  assertMatch(parseSettingInput('telemetryIntervalMs', '50').error!, /range/);
+  assertMatch(parseSettingInput('telemetryIntervalMs', '500.5').error!, /whole/);
+  assertMatch(parseSettingInput('telemetryIntervalMs', '').error!, /enter a value/);
+  assertEquals(parseSettingInput('output', 'both'), { value: 3 });
+  assertEquals(parseSettingInput('output', 'UART'), { value: 2 });
+  assertEquals(parseSettingInput('altActiveHigh', 'false'), { value: false });
+  assertEquals(parseSettingInput('altActiveHigh', 'low'), { value: false });
+  assertMatch(parseSettingInput('uartBaud', '12345').error!, /one of/);
+  assertEquals(parseSettingInput('kalmanQAccel', '0.001'), { value: 0.001 });
+  assertEquals(parseSettingInput('runVibMinMg', 'off'), { value: 0 });
 });
 
 test('an Ok ACK confirms the settings that were sent', () => {
@@ -125,15 +120,18 @@ test('the link: a disconnect and the reconnect are logged once each, the demo st
     s.log.map((e) => [e.level, e.text]),
     [['error', 'the board was disconnected: waiting for /dev/ttyUSB0']],
   );
-  assertEquals(
-    linkBanner(s, 14_000, true),
-    'The board was disconnected (12 s ago). Plug it back in: it reconnects by itself · p: other port.',
-  );
+  const ctx = { sinceMs: 0, transport: 'serial' as const, canSwitchPort: true, flashing: false, locked: false };
+  assertEquals(banner(s, { ...ctx, nowMs: 14_000 }), {
+    level: 'error',
+    text: '✖ The board was disconnected (12 s ago). Plug it back in: it reconnects by itself.',
+    key: 'p',
+    action: 'other port',
+  });
   s = applyConnState(s, { kind: 'connected' }, '/dev/ttyUSB1', 15_000);
   assertEquals(s.port, '/dev/ttyUSB1');
   assertEquals(s.problem, undefined);
   assertEquals(s.log[s.log.length - 1].text, 'connected to /dev/ttyUSB1');
-  assertEquals(linkBanner(s, 15_000, true), undefined);
+  assertEquals(banner(s, { ...ctx, nowMs: 15_000, sinceMs: 15_000 }), undefined);
 
   const never = applyConnState(
     initialState('/dev/ttyUSB0', false),
@@ -146,7 +144,10 @@ test('the link: a disconnect and the reconnect are logged once each, the demo st
     '/dev/ttyUSB0',
     0,
   );
-  assertEquals(linkBanner(never, 500, false), 'No permission to open /dev/ttyUSB0. Trying again every second.');
+  assertEquals(
+    banner(never, { ...ctx, nowMs: 500, canSwitchPort: false })?.text,
+    '✖ No permission to open /dev/ttyUSB0. Trying again every second.',
+  );
 
   const demo = initialState('simulated', true);
   assertEquals(applyConnState(demo, { kind: 'connected' }, 'demo', 0), demo);

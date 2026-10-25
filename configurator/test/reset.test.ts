@@ -6,7 +6,8 @@ import { parseResetArgs } from '../src/commands.ts';
 import { hardResetSteps, isLocalSerial, panicPayload, runSteps, sendPanic, serialConstants } from '../src/reset.ts';
 import type { Step } from '../src/reset.ts';
 import { bootText, resetResultText } from '../src/restart.ts';
-import { applyMessage, initialState, noDataBanner } from '../src/tui/state.ts';
+import { banner } from '../src/tui/model/banner.ts';
+import { applyMessage, initialState } from '../src/tui/state.ts';
 import { PANIC_ZERO_RUN } from '../src/tags.ts';
 
 test('panic payload is exactly 64 zero bytes and is written as one chunk', async () => {
@@ -95,14 +96,25 @@ test('a boot EVENT with a cause is logged as a warning', () => {
   assertEquals(s.log[0].text, 'device restarted: watchdog while IMU (reset reason 6)');
 });
 
-test('no-data banner after 5 s of silence', () => {
-  assertEquals(noDataBanner(undefined, 1000, 5999), undefined);
-  assertEquals(noDataBanner(undefined, 1000, 6000), 'No data from the device. Press H to hard-reset.');
-  assertEquals(noDataBanner(10000, 1000, 14000), undefined);
-  assertEquals(
-    noDataBanner(10000, 1000, 15000, 'Hard reset needs USB.'),
-    'No data from the device. Hard reset needs USB.',
-  );
+test('no-data banner: 5 s, or 3 telemetry intervals, of silence; UART-only output says so', () => {
+  const connected = { ...initialState('/dev/ttyUSB0', false), connection: 'connected' as const };
+  const ctx = {
+    nowMs: 5999,
+    sinceMs: 1000,
+    transport: 'serial' as const,
+    canSwitchPort: true,
+    flashing: false,
+    locked: false,
+  };
+  assertEquals(banner(connected, ctx), undefined);
+  assertEquals(banner(connected, { ...ctx, nowMs: 6000 })?.text, '▲ No data for 5 s.');
+  const slow = { ...connected, lastFrameMs: 10_000, settings: { telemetryIntervalMs: 10_000 } };
+  assertEquals(banner(slow, { ...ctx, nowMs: 39_999 }), undefined); // 3 × 10 s
+  assertEquals(banner(slow, { ...ctx, nowMs: 40_000 })?.text, '▲ No data for 30 s (telemetry is every 10 s).');
+  const uart = { ...connected, settings: { output: 2 } };
+  assertEquals(banner(uart, { ...ctx, nowMs: 6000 })?.key, '6');
+  assertEquals(banner(connected, { ...ctx, nowMs: 6000, flashing: true }), undefined);
+  assertEquals(banner(connected, { ...ctx, locked: true })?.key, 'u');
 });
 
 test('hard reset is refused on a non-serial link before anything is opened', async () => {

@@ -7,6 +7,7 @@
 // The binary must not pick up a .env or bunfig.toml from the folder it runs in,
 // so both autoloads are off.
 import type { BunPlugin } from 'bun';
+import { existsSync } from 'node:fs';
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 
 import { TOOL_VERSION } from '../src/version.ts';
@@ -17,21 +18,38 @@ const TARGETS: Record<string, Bun.Build.CompileTarget> = {
 };
 const OUT = 'dist';
 
-// ink's dev mode (DEV=true: React DevTools) is not part of the binary. ink checks DEV at run time, and then reads
-// its own package.json, which a binary does not have: isDev() is pinned to false. The bundler still resolves the
-// import of react-devtools-core (an optional peer, not installed), so that gets a stub.
+// OpenTUI loads its native renderer (Zig) from a package per platform. `bun install --os=* --cpu=*` puts all of them
+// in node_modules (a cross-compile needs the target's); each binary embeds only its own, the others are stubs.
+const NATIVE: Record<string, string> = {
+  'bun-linux-x64': '@opentui/core-linux-x64',
+  'bun-windows-x64': '@opentui/core-win32-x64',
+};
+
+function onlyTargetNative(target: Bun.Build.CompileTarget): BunPlugin {
+  return {
+    name: 'opentui-target-native',
+    setup(build) {
+      build.onResolve({ filter: /^@opentui\/core-[a-z0-9-]+$/ }, (args) =>
+        args.path === NATIVE[target] ? undefined : { path: args.path, namespace: 'other-platform' },
+      );
+      build.onLoad({ filter: /.*/, namespace: 'other-platform' }, (args) => ({
+        contents: `throw new Error('${args.path} is not in this build');\nexport default undefined;`,
+        loader: 'js',
+      }));
+    },
+  };
+}
+
+// React DevTools (DEV=true) are not part of the binary: the optional peer react-devtools-core is not installed,
+// but the bundler still resolves its import, so it gets a stub that fails like a missing package.
 const noDevtools: BunPlugin = {
   name: 'no-react-devtools',
   setup(build) {
-    build.onLoad({ filter: /[\\/]ink[\\/]build[\\/]utils\.js$/ }, () => ({
-      contents: 'export const isDev = () => false;',
-      loader: 'js',
-    }));
     build.onResolve({ filter: /^react-devtools-core$/ }, (args) => ({ path: args.path, namespace: 'stub' }));
     build.onLoad({ filter: /.*/, namespace: 'stub' }, () => ({
       contents: [
         `throw Object.assign(new Error('react-devtools-core is not in this build'), { code: 'ERR_MODULE_NOT_FOUND' });`,
-        'export default undefined;', // never reached; ink imports a default
+        'export default undefined;', // never reached; the importer takes a default
       ].join('\n'),
       loader: 'js',
     }));
@@ -44,13 +62,19 @@ async function run(cmd: string, args: string[], cwd?: string): Promise<void> {
 }
 
 async function build(name: string, target: Bun.Build.CompileTarget): Promise<string> {
+  if (!existsSync(`node_modules/${NATIVE[target]}`)) {
+    throw new Error(
+      `${NATIVE[target]} is not installed: run bun install --os='*' --cpu='*' first (the TUI's native part)`,
+    );
+  }
   const exe = target.includes('windows') ? 'hour-meter.exe' : 'hour-meter';
   const dir = `${OUT}/hour-meter-${TOOL_VERSION}-${name}`;
   await mkdir(dir, { recursive: true });
   const result = await Bun.build({
     entrypoints: ['main.ts'],
     compile: { target, outfile: `${dir}/${exe}`, autoloadDotenv: false, autoloadBunfig: false },
-    plugins: [noDevtools],
+    define: { 'process.env.DEV': '"false"' }, // DEV=true in the user's shell must not reach for React DevTools
+    plugins: [onlyTargetNative(target), noDevtools],
   });
   if (!result.success) throw new AggregateError(result.logs, `bun build for ${name} failed`);
   await copyFile('README.md', `${dir}/README.md`);

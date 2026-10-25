@@ -1,4 +1,4 @@
-// main.tsx: start the full-screen configurator + live viewer.
+// main.tsx: start the full-screen configurator (OpenTUI).
 //
 //   hour-meter                               connect screen: pick a port, type one, or the demo
 //   hour-meter [port | tcp://host:port]      straight to that port (waits for it if it is not there yet)
@@ -6,34 +6,36 @@
 //   hour-meter /dev/rfcomm0 --pin 1234       over Bluetooth SPP (session is PIN-locked)
 //   options: --no-time-sync                  do not auto-send the PC clock when the device time is unknown
 //
-// The device is held by a Connection (connection.ts): an unplugged board is waited for and reconnected, and
-// `p` in the TUI goes back to the connect screen.
-import { useMemo, useState } from 'react';
-import { render, useApp } from 'ink';
+// The device is held by a Connection (connection.ts): an unplugged board is waited for and reconnected, and `p`
+// goes back to the connect screen. The log and the release list carry over to the next port.
+import { createCliRenderer } from '@opentui/core';
+import { createRoot } from '@opentui/react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { connect, env, takeFlag, takeOption, type Target } from '../cli.ts';
 import { Connection } from '../connection.ts';
 import type { DeviceClient } from '../device.ts';
-import {
-  fileImage,
-  flashPortProblem,
-  releaseImage,
-  REOPEN_READY_MS,
-  saveBackup,
-  snapshot,
-  updateDevice,
-} from '../firmware.ts';
 import { OS } from '../platform.ts';
 import { listPorts, loadLastPort, openProblem, type PortInfo, saveLastPort } from '../ports.ts';
-import { listFirmware } from '../releases.ts';
+import type { FirmwareRelease } from '../releases.ts';
 import { hardReset, isLocalSerial } from '../reset.ts';
 import { TOOL_VERSION } from '../version.ts';
-import { App } from './App.tsx';
-import { ConnectView } from './ConnectView.tsx';
-import type { FirmwareActions } from './FirmwareView.tsx';
-import { initialState } from './state.ts';
+import { TuiController } from './controller.ts';
+import { firmwareActions } from './firmware-actions.ts';
+import { transportOf } from './model/settings.ts';
+import { ConnectScreen } from './screens/connect.tsx';
+import { Shell } from './shell.tsx';
+import { initialState, type LogEntry } from './state.ts';
 
 const READY_MS = 2500; // the first frame after opening (an ESP32 board restarts when its port opens)
+
+/** What outlives one port: the log and the release list. */
+interface Session {
+  conn?: Connection;
+  ctrl?: TuiController;
+  log: LogEntry[];
+  releases?: FirmwareRelease[];
+}
 
 export async function run(argv: string[]): Promise<number> {
   const pin = takeOption(argv, '--pin');
@@ -53,52 +55,78 @@ export async function run(argv: string[]): Promise<number> {
       : undefined;
   const preselect = (await loadLastPort(env)) ?? env('HOUR_METER_PORT');
 
-  const session: { conn?: Connection } = { conn: start }; // closed at the end
-  const app = render(
+  // The shell decides about Ctrl+C (never in the middle of a flash); signals end the session below.
+  const renderer = await createCliRenderer({ exitOnCtrlC: false, exitSignals: [] });
+  const session: Session = { conn: start, log: [] };
+  let quit = () => {};
+  const done = new Promise<void>((resolve) => (quit = resolve));
+  // A closed terminal (SIGHUP), kill or Ctrl+C from outside: leave like q does, so the port is closed.
+  for (const signal of ['SIGTERM', 'SIGHUP', 'SIGINT'] as const) process.once(signal, () => quit());
+  createRoot(renderer).render(
     <Root
-      start={start}
+      session={session}
       preselect={preselect}
       pin={pinValue}
+      timeSync={timeSync}
       open={open}
       newConnection={newConnection}
-      onConnection={(conn) => (session.conn = conn)}
+      onQuit={() => quit()}
     />,
-    { exitOnCtrlC: false }, // App handles Ctrl+C: it must not cut a firmware update short
   );
-  await app.waitUntilExit();
+  await done;
+  session.ctrl?.stop();
   session.conn?.close();
+  renderer.destroy();
   return 0;
 }
 
-/** The connect screen until a port is open, then the configurator; `p` there comes back here. */
-function Root({
-  start,
-  preselect,
-  pin,
-  open,
-  newConnection,
-  onConnection,
-}: {
-  start?: Connection;
+interface RootProps {
+  session: Session;
   preselect?: string;
   pin?: string;
+  timeSync: boolean;
   open: (target: Target) => Promise<DeviceClient>;
   newConnection: (target: Target, client?: DeviceClient, portId?: string) => Connection;
-  onConnection: (conn: Connection | undefined) => void;
-}) {
-  const { exit } = useApp();
-  const [conn, setConn] = useState(start);
+  onQuit: () => void;
+}
+
+/** The connect screen until a port is open, then the shell; `p` there comes back here. */
+function Root({ session, preselect, pin, timeSync, open, newConnection, onQuit }: RootProps) {
+  const [conn, setConn] = useState(session.conn);
+  const [portLabel, setPortLabel] = useState<string | undefined>();
   const [last, setLast] = useState(preselect);
-  const firmware = useMemo(() => conn && firmwareActions(conn), [conn]);
+
+  const ctrl = useMemo(() => {
+    if (!conn) return undefined;
+    const wired = isLocalSerial(conn.port, conn.demo) && OS !== 'windows';
+    return new TuiController({
+      conn,
+      initial: { ...initialState(conn.demo ? 'simulated' : conn.port, conn.demo), log: session.log },
+      firmware: firmwareActions(conn),
+      hardReset: wired ? () => hardReset(conn.port) : undefined,
+      releases: session.releases,
+    });
+  }, [conn]);
+
+  useEffect(() => {
+    if (!ctrl) return;
+    session.ctrl = ctrl;
+    ctrl.start();
+    return () => {
+      session.log = ctrl.snapshot.device.log;
+      session.releases = ctrl.snapshot.releases;
+      ctrl.stop();
+    };
+  }, [ctrl]);
 
   const use = (next: Connection | undefined) => {
-    onConnection(next);
+    session.conn = next;
     setConn(next);
   };
 
-  if (!conn || !firmware) {
+  if (!conn || !ctrl) {
     return (
-      <ConnectView
+      <ConnectScreen
         version={TOOL_VERSION}
         preselect={last}
         pin={pin}
@@ -110,59 +138,26 @@ function Root({
             void saveLastPort(env, target.port);
             setLast(target.port);
           }
+          setPortLabel(port?.label);
           use(newConnection(target, client, port?.id));
         }}
-        onQuit={exit}
+        onQuit={onQuit}
       />
     );
   }
-  const wired = isLocalSerial(conn.port, conn.demo) && OS !== 'windows';
   return (
-    <App
-      conn={conn}
-      initial={initialState(conn.demo ? 'simulated' : conn.port, conn.demo)}
-      hardReset={wired ? () => hardReset(conn.port) : undefined}
-      hardResetNote={
-        wired ? undefined : 'Hard reset needs a local USB serial port (not the demo, tcp:// or Bluetooth).'
-      }
-      firmware={firmware}
+    <Shell
+      ctrl={ctrl}
+      transport={transportOf(conn.port, conn.demo)}
+      portLabel={portLabel}
+      canSwitchPort
       onSwitchPort={() => {
         conn.close();
         use(undefined);
       }}
+      onQuit={onQuit}
+      autoTimeSync={timeSync}
+      toolVersion={TOOL_VERSION}
     />
   );
-}
-
-/**
- * Tab 6's work. A flash backs up first, pauses the connection (the flasher needs the port), and gives the
- * connection the new client afterwards (or lets it reconnect).
- */
-function firmwareActions(conn: Connection): FirmwareActions {
-  const github = { token: env('GITHUB_TOKEN') };
-  const problem = flashPortProblem({ demo: conn.demo, port: conn.port });
-  // No time sync on this client: the connection turns it on when it takes the client back.
-  const reopen = () => connect({ demo: false, port: conn.port }, REOPEN_READY_MS);
-  return {
-    list: () => listFirmware(github),
-    image: (release) => releaseImage(release, github),
-    file: (path) => fileImage(path.replace(/^~(?=\/)/, env('HOME') ?? '~')),
-    flashNote: problem && `${problem[0].toUpperCase()}${problem.slice(1)}.`,
-    flash: problem
-      ? undefined
-      : async (image, onProgress, note) => {
-          const before = conn.client && (await snapshot(conn.client).catch(() => undefined));
-          if (!before) note({ level: 'warn', text: 'the device does not answer: no backup (flashing still works)' });
-          else {
-            await saveBackup(before).then(
-              (file) => note({ level: 'info', text: `backup: ${file}` }),
-              (err) => note({ level: 'warn', text: `backup not saved (${(err as Error).message}); kept in memory` }),
-            );
-          }
-          await conn.pause(); // also waits for a reconnect that is opening the port right now
-          const { dev, ok } = await updateDevice({ port: conn.port, image, onProgress, note, reopen }, before);
-          conn.resume(dev);
-          return { ok };
-        },
-  };
 }
