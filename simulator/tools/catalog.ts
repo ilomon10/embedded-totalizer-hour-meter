@@ -126,15 +126,30 @@ export function catalogFrames(): CatalogFrame[] {
     device('imu-both', 'IMU stream, streamMode=3 both', 121, buildImuStream(st, imu, StreamMode.both)),
     device('ack-ok', 'ACK Ok (to setTime)', 130, ack(42, Ack.Ok)),
     device('ack-error', 'ACK InvalidValue, rejectedTag 111', 131, ack(44, Ack.InvalidValue, 111)),
-    device('ack-get-hour', 'ACK to get=1', 132, ack(43, Ack.Ok, 0, (r) => appendHourMeter(r, hm, true))),
+    device(
+      'ack-get-hour',
+      'ACK to get=1',
+      132,
+      ack(43, Ack.Ok, 0, (r) => appendHourMeter(r, hm, true)),
+    ),
     device(
       'ack-get-settings',
       'ACK to get=2',
       133,
       ack(45, Ack.Ok, 0, (r) => appendSettings(r, { ...DEFAULT_SETTINGS })),
     ),
-    device('ack-get-status', 'ACK to get=3', 134, ack(46, Ack.Ok, 0, (r) => appendStatus(r, st, true))),
-    device('ack-get-calibration', 'ACK to get=4', 135, ack(47, Ack.Ok, 0, (r) => appendCalibration(r, cal))),
+    device(
+      'ack-get-status',
+      'ACK to get=3',
+      134,
+      ack(46, Ack.Ok, 0, (r) => appendStatus(r, st, true)),
+    ),
+    device(
+      'ack-get-calibration',
+      'ACK to get=4',
+      135,
+      ack(47, Ack.Ok, 0, (r) => appendCalibration(r, cal)),
+    ),
     device('ack-locked', 'ACK Locked (Bluetooth, before unlock)', 136, ack(48, Ack.Locked, 107)),
     host('cmd-set-time', 'COMMAND setTime', 42, cmd(rec('setTime', EPOCH))),
     host('cmd-get-hour', 'COMMAND get=1', 43, cmd(rec('get', 1))),
@@ -178,9 +193,8 @@ const SIZE: Record<string, number> = { u8: 1, bool: 1, u16: 2, i16: 2, u32: 4, f
 export function recordRows(f: CatalogFrame): string[] {
   return f.msg.records.map((r) => {
     const def = TAGS[r.tag];
-    const raw = typeof r.value === 'number' && def.fmt === 'f32'
-      ? Number(Math.fround(r.value).toPrecision(6))
-      : r.value;
+    const raw =
+      typeof r.value === 'number' && def.fmt === 'f32' ? Number(Math.fround(r.value).toPrecision(6)) : r.value;
     return `| ${r.tag} | \`${def.name}\` | ${def.fmt} | ${2 + SIZE[def.fmt]} | ${raw} |`;
   });
 }

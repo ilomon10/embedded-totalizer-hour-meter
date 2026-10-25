@@ -24,31 +24,34 @@ const PRIMARY = 'rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-whit
 
 function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   return (
-    <section className='border-b border-slate-200 px-5 py-5 last:border-0 dark:border-slate-800'>
-      <header className='mb-3 flex items-center justify-between gap-2'>
-        <h2 className='text-sm font-semibold text-slate-800 dark:text-slate-100'>{title}</h2>
+    <section className="border-b border-slate-200 px-5 py-5 last:border-0 dark:border-slate-800">
+      <header className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</h2>
         {aside}
       </header>
-      <div className='space-y-3'>{children}</div>
+      <div className="space-y-3">{children}</div>
     </section>
   );
 }
 
-function Segmented<T extends string>(
-  { value, options, onChange, label }: {
-    value: T;
-    options: { value: T; label: string }[];
-    onChange: (v: T) => void;
-    label: string;
-  },
-) {
+function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+  label,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+  label: string;
+}) {
   return (
-    <div role='tablist' aria-label={label} className='flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800'>
+    <div role="tablist" aria-label={label} className="flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
       {options.map((o) => (
         <button
           key={o.value}
-          type='button'
-          role='tab'
+          type="button"
+          role="tab"
           aria-selected={value === o.value}
           onClick={() => onChange(o.value)}
           className={`flex-1 rounded-md px-2 py-1 text-sm font-medium transition-colors duration-150 ${
@@ -66,9 +69,9 @@ function Segmented<T extends string>(
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className='flex items-baseline justify-between gap-3 text-sm'>
-      <dt className='text-slate-500'>{label}</dt>
-      <dd className='text-right tabular-nums'>{children}</dd>
+    <div className="flex items-baseline justify-between gap-3 text-sm">
+      <dt className="text-slate-500">{label}</dt>
+      <dd className="text-right tabular-nums">{children}</dd>
     </div>
   );
 }
@@ -77,15 +80,17 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 function Gear({ v }: { v: VehicleSnapshot }) {
   const wanted = v.controls.reverse ? 'R' : 'D';
   return (
-    <div className='flex items-center gap-3 text-sm'>
-      <span className='text-slate-500'>Gear</span>
-      <div className='flex rounded-md border border-slate-300 dark:border-slate-700' aria-label='Gear'>
+    <div className="flex items-center gap-3 text-sm">
+      <span className="text-slate-500">Gear</span>
+      <div className="flex rounded-md border border-slate-300 dark:border-slate-700" aria-label="Gear">
         {(['D', 'R'] as const).map((g) => (
           <span
             key={g}
             className={`px-2.5 py-0.5 font-mono font-semibold ${
               v.gear === g
-                ? g === 'R' ? 'bg-amber-500 text-white' : 'bg-sky-600 text-white'
+                ? g === 'R'
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-sky-600 text-white'
                 : 'text-slate-400 dark:text-slate-600'
             }`}
           >
@@ -93,7 +98,7 @@ function Gear({ v }: { v: VehicleSnapshot }) {
           </span>
         ))}
       </div>
-      {wanted !== v.gear && <span className='text-xs text-slate-500'>stop to engage {wanted}</span>}
+      {wanted !== v.gear && <span className="text-xs text-slate-500">stop to engage {wanted}</span>}
     </div>
   );
 }
@@ -116,23 +121,24 @@ function MountingSection({ v, send }: { v: VehicleSnapshot; send: (msg: ClientMe
   const set = (patch: Partial<Mount>) => send({ type: 'mount', mount: { ...m, ...patch } });
   const c = v.mountCal;
   const busy = c.phase === 'level' || c.phase === 'front';
-  const tone = c.phase === 'failed'
-    ? 'bg-rose-50 text-rose-900 dark:bg-rose-950 dark:text-rose-300'
-    : c.phase === 'done'
-    ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
-    : 'bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-300';
+  const tone =
+    c.phase === 'failed'
+      ? 'bg-rose-50 text-rose-900 dark:bg-rose-950 dark:text-rose-300'
+      : c.phase === 'done'
+        ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
+        : 'bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-300';
   return (
-    <Section title='Mounting'>
-      <p className='text-xs text-slate-500'>
+    <Section title="Mounting">
+      <p className="text-xs text-slate-500">
         How the board is fitted in the truck. Board x points to the{' '}
         {MOUNT_PRESETS.find((p) => p.yawDeg === m.yawDeg)?.label.toLowerCase() ?? `${m.yawDeg}° clockwise`}
         {m.yawDeg === 0 ? ' (the nose)' : ''}.
       </p>
-      <div className='flex flex-wrap gap-1.5'>
+      <div className="flex flex-wrap gap-1.5">
         {MOUNT_PRESETS.map((p) => (
           <button
             key={p.label}
-            type='button'
+            type="button"
             aria-pressed={m.yawDeg === p.yawDeg}
             className={`${BTN} ${m.yawDeg === p.yawDeg ? 'border-sky-600 text-sky-700 dark:text-sky-400' : ''}`}
             onClick={() => set({ yawDeg: p.yawDeg })}
@@ -142,44 +148,44 @@ function MountingSection({ v, send }: { v: VehicleSnapshot; send: (msg: ClientMe
         ))}
       </div>
       <SliderField
-        label='Yaw'
+        label="Yaw"
         value={m.yawDeg}
         min={0}
         max={359}
         step={1}
-        unit='°'
+        unit="°"
         digits={0}
         onChange={(yawDeg) => set({ yawDeg })}
       />
       <SliderField
-        label='Pitch'
+        label="Pitch"
         value={m.pitchDeg}
         min={-30}
         max={30}
         step={1}
-        unit='°'
+        unit="°"
         digits={0}
         onChange={(pitchDeg) => set({ pitchDeg })}
       />
       <SliderField
-        label='Roll'
+        label="Roll"
         value={m.rollDeg}
         min={-30}
         max={30}
         step={1}
-        unit='°'
+        unit="°"
         digits={0}
         onChange={(rollDeg) => set({ rollDeg })}
       />
 
-      <h3 className='pt-2 text-sm font-semibold text-slate-800 dark:text-slate-100'>Calibrate from the IMU</h3>
-      <ol className='list-decimal space-y-1 pl-5 text-xs text-slate-600 dark:text-slate-400'>
+      <h3 className="pt-2 text-sm font-semibold text-slate-800 dark:text-slate-100">Calibrate from the IMU</h3>
+      <ol className="list-decimal space-y-1 pl-5 text-xs text-slate-600 dark:text-slate-400">
         <li>Stop the truck and press Level: 2 s of gravity give "up", so the tilt.</li>
         <li>Press Front and pull away straight ahead: the push of the acceleration gives the nose, so the yaw.</li>
       </ol>
-      <div className='flex flex-wrap gap-2'>
+      <div className="flex flex-wrap gap-2">
         <button
-          type='button'
+          type="button"
           className={PRIMARY}
           disabled={busy}
           onClick={() => send({ type: 'mount-cal', step: 'level' })}
@@ -187,34 +193,34 @@ function MountingSection({ v, send }: { v: VehicleSnapshot; send: (msg: ClientMe
           Level
         </button>
         <button
-          type='button'
+          type="button"
           className={PRIMARY}
           disabled={busy || c.level === null}
           onClick={() => send({ type: 'mount-cal', step: 'front' })}
         >
           Front
         </button>
-        <button type='button' className={BTN} onClick={() => send({ type: 'mount-cal', step: 'clear' })}>
+        <button type="button" className={BTN} onClick={() => send({ type: 'mount-cal', step: 'clear' })}>
           Clear
         </button>
       </div>
-      <div className={`rounded-md px-3 py-2 text-xs ${tone}`} role='status'>
+      <div className={`rounded-md px-3 py-2 text-xs ${tone}`} role="status">
         {c.message}
         {busy && (
-          <div className='mt-2 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800'>
-            <div className='h-full rounded-full bg-sky-600' style={{ width: `${Math.round(c.progress * 100)}%` }} />
+          <div className="mt-2 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800">
+            <div className="h-full rounded-full bg-sky-600" style={{ width: `${Math.round(c.progress * 100)}%` }} />
           </div>
         )}
       </div>
       {(c.level || c.cal) && (
-        <dl className='space-y-1'>
+        <dl className="space-y-1">
           {c.level && (
-            <Row label='Tilt, found / fitted'>
+            <Row label="Tilt, found / fitted">
               {deg(c.level.tiltPitchDeg)} pitch, {deg(c.level.tiltRollDeg)} roll / {deg(m.pitchDeg)}, {deg(m.rollDeg)}
             </Row>
           )}
           {c.cal && (
-            <Row label='Yaw, found / fitted'>
+            <Row label="Yaw, found / fitted">
               {deg((c.cal.yawOffsetDeg + 360) % 360)} / {deg(m.yawDeg)}
             </Row>
           )}
@@ -227,17 +233,17 @@ function MountingSection({ v, send }: { v: VehicleSnapshot; send: (msg: ClientMe
 function Bar({ label, value, signed }: { label: string; value: number; signed?: boolean }) {
   const pct = Math.round(Math.min(1, Math.abs(value)) * 50);
   return (
-    <div className='grid grid-cols-[4.5rem_1fr_3rem] items-center gap-2 text-xs'>
-      <span className='text-slate-500'>{label}</span>
-      <div className='relative h-1.5 rounded-full bg-slate-200 dark:bg-slate-800'>
+    <div className="grid grid-cols-[4.5rem_1fr_3rem] items-center gap-2 text-xs">
+      <span className="text-slate-500">{label}</span>
+      <div className="relative h-1.5 rounded-full bg-slate-200 dark:bg-slate-800">
         <div
-          className='absolute h-full rounded-full bg-sky-600'
-          style={signed
-            ? { left: value < 0 ? `${50 - pct}%` : '50%', width: `${pct}%` }
-            : { left: 0, width: `${pct * 2}%` }}
+          className="absolute h-full rounded-full bg-sky-600"
+          style={
+            signed ? { left: value < 0 ? `${50 - pct}%` : '50%', width: `${pct}%` } : { left: 0, width: `${pct * 2}%` }
+          }
         />
       </div>
-      <span className='text-right tabular-nums'>{value.toFixed(2)}</span>
+      <span className="text-right tabular-nums">{value.toFixed(2)}</span>
     </div>
   );
 }
@@ -284,81 +290,88 @@ export function DriveInspector(p: InspectorProps) {
   const driftPct = v && v.distanceM > 20 ? (v.errorM / v.distanceM) * 100 : null;
 
   return (
-    <div className='text-slate-900 dark:text-slate-100'>
+    <div className="text-slate-900 dark:text-slate-100">
       {p.error && (
-        <p className='mx-5 mt-4 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:bg-rose-950 dark:text-rose-300'>
+        <p className="mx-5 mt-4 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:bg-rose-950 dark:text-rose-300">
           {p.error}
         </p>
       )}
 
       <Section
-        title='Vehicle'
-        aside={v
-          ? (
+        title="Vehicle"
+        aside={
+          v ? (
             <button
-              type='button'
+              type="button"
               onClick={p.onStopDriving}
-              className='text-xs text-slate-600 underline dark:text-slate-400'
+              className="text-xs text-slate-600 underline dark:text-slate-400"
             >
               Stop driving
             </button>
-          )
-          : null}
+          ) : null
+        }
       >
         <Segmented
-          label='Vehicle model'
+          label="Vehicle model"
           value={p.choice}
           onChange={p.onChoose}
-          options={[{ value: 'truck', label: 'Truck' }, { value: 'plane', label: 'Plane' }, {
-            value: 'custom',
-            label: 'Your model',
-          }]}
+          options={[
+            { value: 'truck', label: 'Truck' },
+            { value: 'plane', label: 'Plane' },
+            {
+              value: 'custom',
+              label: 'Your model',
+            },
+          ]}
         />
         {p.choice === 'custom' && (
-          <div className='space-y-2 rounded-lg bg-slate-50 p-3 dark:bg-slate-950'>
-            <label className='block text-sm'>
-              <span className='text-slate-700 dark:text-slate-200'>
+          <div className="space-y-2 rounded-lg bg-slate-50 p-3 dark:bg-slate-950">
+            <label className="block text-sm">
+              <span className="text-slate-700 dark:text-slate-200">
                 {p.custom ? `Model: ${p.custom.name}` : 'Upload a .glb or .gltf file'}
               </span>
               <input
-                type='file'
-                accept='.glb,.gltf,model/gltf-binary,model/gltf+json'
+                type="file"
+                accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
                 onChange={(e) => e.target.files?.[0] && p.onUploadModel(e.target.files[0])}
-                className='mt-1 block w-full text-xs file:mr-2 file:rounded-md file:border-0 file:bg-sky-600 file:px-2 file:py-1 file:text-white'
+                className="mt-1 block w-full text-xs file:mr-2 file:rounded-md file:border-0 file:bg-sky-600 file:px-2 file:py-1 file:text-white"
               />
             </label>
             {p.custom && (
               <>
                 <Segmented
-                  label='Moves like'
+                  label="Moves like"
                   value={p.custom.kind}
                   onChange={(k) => p.onUpdateCustom({ kind: k })}
-                  options={[{ value: 'truck', label: 'Moves like a truck' }, { value: 'plane', label: 'like a plane' }]}
+                  options={[
+                    { value: 'truck', label: 'Moves like a truck' },
+                    { value: 'plane', label: 'like a plane' },
+                  ]}
                 />
                 <SliderField
-                  label='Length'
+                  label="Length"
                   value={p.custom.lengthM}
                   min={1}
                   max={40}
                   step={0.5}
-                  unit='m'
+                  unit="m"
                   digits={1}
                   stacked
                   onChange={(lengthM) => p.onUpdateCustom({ lengthM })}
                 />
-                <div className='flex flex-wrap gap-2'>
+                <div className="flex flex-wrap gap-2">
                   <button
-                    type='button'
+                    type="button"
                     className={BTN}
                     onClick={() => p.onUpdateCustom({ yawSteps: (p.custom!.yawSteps + 1) % 4 })}
                   >
                     Turn 90°
                   </button>
-                  <button type='button' className={BTN} onClick={() => p.onUpdateCustom({ zUp: !p.custom!.zUp })}>
+                  <button type="button" className={BTN} onClick={() => p.onUpdateCustom({ zUp: !p.custom!.zUp })}>
                     {p.custom.zUp ? 'File is Z-up' : 'File is Y-up'}
                   </button>
                 </div>
-                <p className='text-xs text-slate-500'>
+                <p className="text-xs text-slate-500">
                   Turn it until the orange arrow under it points at its nose. Stays in this browser only.
                 </p>
               </>
@@ -366,86 +379,92 @@ export function DriveInspector(p: InspectorProps) {
           </div>
         )}
         {!v && !p.placing && (
-          <button type='button' className={PRIMARY} onClick={p.onPlace}>Place the {kind} on the map</button>
+          <button type="button" className={PRIMARY} onClick={p.onPlace}>
+            Place the {kind} on the map
+          </button>
         )}
         {v && (
-          <div className='flex flex-wrap items-center gap-2'>
-            <button type='button' className={BTN} onClick={p.onPlace} disabled={v.playing}>Move it</button>
-            <Toggle label='Follow on the map' checked={p.follow} onChange={p.onFollow} />
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className={BTN} onClick={p.onPlace} disabled={v.playing}>
+              Move it
+            </button>
+            <Toggle label="Follow on the map" checked={p.follow} onChange={p.onFollow} />
           </div>
         )}
       </Section>
 
       {v && (
-        <Section title='Drive'>
+        <Section title="Drive">
           <Segmented
-            label='How it moves'
+            label="How it moves"
             value={p.tab}
             onChange={p.onTab}
-            options={[{ value: 'route', label: 'Route' }, { value: 'live', label: 'Live' }, {
-              value: 'replay',
-              label: 'Replay',
-            }]}
+            options={[
+              { value: 'route', label: 'Route' },
+              { value: 'live', label: 'Live' },
+              {
+                value: 'replay',
+                label: 'Replay',
+              },
+            ]}
           />
           {p.tab !== 'live' && (
             <>
               {p.tab === 'replay' && (
-                <label className='block rounded-lg border border-dashed border-slate-300 p-3 text-sm dark:border-slate-700'>
-                  <span className='text-slate-700 dark:text-slate-200'>
+                <label className="block rounded-lg border border-dashed border-slate-300 p-3 text-sm dark:border-slate-700">
+                  <span className="text-slate-700 dark:text-slate-200">
                     Recorded track: GPX, or CSV with lat, lon (alt, time)
                   </span>
                   <input
-                    type='file'
-                    accept='.gpx,.csv,.txt,application/gpx+xml,text/csv'
+                    type="file"
+                    accept=".gpx,.csv,.txt,application/gpx+xml,text/csv"
                     onChange={(e) => e.target.files?.[0] && p.onReplayFile(e.target.files[0])}
-                    className='mt-1 block w-full text-xs file:mr-2 file:rounded-md file:border-0 file:bg-sky-600 file:px-2 file:py-1 file:text-white'
+                    className="mt-1 block w-full text-xs file:mr-2 file:rounded-md file:border-0 file:bg-sky-600 file:px-2 file:py-1 file:text-white"
                   />
-                  {p.replayInfo && <span className='mt-1 block text-xs text-slate-500'>{p.replayInfo}</span>}
+                  {p.replayInfo && <span className="mt-1 block text-xs text-slate-500">{p.replayInfo}</span>}
                 </label>
               )}
-              <p className='text-xs text-slate-500'>
+              <p className="text-xs text-slate-500">
                 {p.waypoints.length} waypoint{p.waypoints.length === 1 ? '' : 's'}
                 {p.waypoints.some((w) => w.speed !== undefined) ? ', recorded speeds used where present' : ''}
               </p>
               <SliderField
-                label='Speed'
+                label="Speed"
                 value={p.speedKmh}
                 min={kind === 'plane' ? 110 : 5}
                 max={kind === 'plane' ? 270 : 90}
                 step={1}
-                unit='km/h'
+                unit="km/h"
                 digits={0}
                 stacked
                 onChange={p.onSpeed}
               />
               {kind === 'plane' && (
                 <SliderField
-                  label='Height'
+                  label="Height"
                   value={p.altM}
                   min={50}
                   max={3000}
                   step={10}
-                  unit='m'
+                  unit="m"
                   digits={0}
                   stacked
                   onChange={p.onAlt}
                 />
               )}
-              <Toggle label='Loop' note='Drive the route again and again' checked={p.loop} onChange={p.onLoop} />
-              <div className='flex flex-wrap gap-2'>
-                {!v.playing
-                  ? (
-                    <button type='button' className={PRIMARY} disabled={p.waypoints.length < 2} onClick={p.onPlay}>
-                      Play
-                    </button>
-                  )
-                  : (
-                    <button type='button' className={BTN} onClick={() => send({ type: 'play', action: 'pause' })}>
-                      Pause
-                    </button>
-                  )}
+              <Toggle label="Loop" note="Drive the route again and again" checked={p.loop} onChange={p.onLoop} />
+              <div className="flex flex-wrap gap-2">
+                {!v.playing ? (
+                  <button type="button" className={PRIMARY} disabled={p.waypoints.length < 2} onClick={p.onPlay}>
+                    Play
+                  </button>
+                ) : (
+                  <button type="button" className={BTN} onClick={() => send({ type: 'play', action: 'pause' })}>
+                    Pause
+                  </button>
+                )}
                 <button
-                  type='button'
+                  type="button"
                   className={BTN}
                   disabled={!v.route}
                   onClick={() => send({ type: 'play', action: 'stop' })}
@@ -453,7 +472,7 @@ export function DriveInspector(p: InspectorProps) {
                   Stop
                 </button>
                 <button
-                  type='button'
+                  type="button"
                   className={BTN}
                   disabled={v.playing || p.waypoints.length === 0}
                   onClick={p.onClearRoute}
@@ -461,26 +480,25 @@ export function DriveInspector(p: InspectorProps) {
                   Clear route
                 </button>
               </div>
-              {v.routeDone && <p className='text-xs text-emerald-700 dark:text-emerald-400'>Route finished.</p>}
+              {v.routeDone && <p className="text-xs text-emerald-700 dark:text-emerald-400">Route finished.</p>}
             </>
           )}
           {p.tab === 'live' && (
             <>
-              <p className='text-xs text-slate-500'>
-                Keyboard: W throttle, S or Space brake, A / D steer{kind === 'plane'
-                  ? ', Q / E climb / descend'
-                  : ', X drive / reverse'}, R GPS fix.
+              <p className="text-xs text-slate-500">
+                Keyboard: W throttle, S or Space brake, A / D steer
+                {kind === 'plane' ? ', Q / E climb / descend' : ', X drive / reverse'}, R GPS fix.
               </p>
               {kind === 'truck' && <Gear v={v} />}
-              <div className='space-y-1.5'>
-                <Bar label='Throttle' value={v.controls.throttle} />
-                <Bar label='Brake' value={v.controls.brake} />
-                <Bar label='Steer' value={v.controls.steer} signed />
-                {kind === 'plane' && <Bar label='Climb' value={v.controls.pitch} signed />}
+              <div className="space-y-1.5">
+                <Bar label="Throttle" value={v.controls.throttle} />
+                <Bar label="Brake" value={v.controls.brake} />
+                <Bar label="Steer" value={v.controls.steer} signed />
+                {kind === 'plane' && <Bar label="Climb" value={v.controls.pitch} signed />}
               </div>
-              <details className='rounded-lg bg-slate-50 p-3 dark:bg-slate-950'>
-                <summary className='cursor-pointer text-sm font-medium'>Gamepad controls</summary>
-                <div className='mt-3'>
+              <details className="rounded-lg bg-slate-50 p-3 dark:bg-slate-950">
+                <summary className="cursor-pointer text-sm font-medium">Gamepad controls</summary>
+                <div className="mt-3">
                   <GamepadMapper mapping={p.mapping} onChange={p.onMapping} />
                 </div>
               </details>
@@ -493,55 +511,58 @@ export function DriveInspector(p: InspectorProps) {
 
       {v && (
         <Section
-          title='Dead reckoning'
+          title="Dead reckoning"
           aside={
-            <button type='button' className={PRIMARY} onClick={() => send({ type: 'anchor' })}>
+            <button type="button" className={PRIMARY} onClick={() => send({ type: 'anchor' })}>
               GPS fix
             </button>
           }
         >
-          <div className='flex items-baseline gap-3'>
-            <span className='text-3xl font-semibold whitespace-nowrap tabular-nums'>{fmtM(v.errorM)}</span>
-            <span className='text-sm text-slate-500'>
+          <div className="flex items-baseline gap-3">
+            <span className="text-3xl font-semibold whitespace-nowrap tabular-nums">{fmtM(v.errorM)}</span>
+            <span className="text-sm text-slate-500">
               off after {fmtM(v.distanceM)}
               {driftPct !== null && `, ${driftPct.toFixed(1)}% of the distance`}
             </span>
           </div>
-          <p className='flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400'>
-            <span className='flex items-center gap-1.5'>
-              <span className='h-1 w-5 rounded-full bg-[#0f766e]' /> true path
+          <p className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="h-1 w-5 rounded-full bg-[#0f766e]" /> true path
             </span>
-            <span className='flex items-center gap-1.5'>
-              <span className='h-0 w-5 border-t-2 border-dashed border-[#ee6a1f]' /> IMU-only estimate
+            <span className="flex items-center gap-1.5">
+              <span className="h-0 w-5 border-t-2 border-dashed border-[#ee6a1f]" /> IMU-only estimate
             </span>
           </p>
-          <dl className='space-y-1'>
-            <Row label='Since the last fix'>{v.sinceAnchorS.toFixed(0)} s</Row>
-            <Row label='Speed, true / estimated'>
+          <dl className="space-y-1">
+            <Row label="Since the last fix">{v.sinceAnchorS.toFixed(0)} s</Row>
+            <Row label="Speed, true / estimated">
               {(v.truth.speed * 3.6).toFixed(1)} / {(v.estimate.speed * 3.6).toFixed(1)} km/h
-              {v.estimate.speed < -0.3 && <span className='ml-1 text-slate-500'>(reversing)</span>}
+              {v.estimate.speed < -0.3 && <span className="ml-1 text-slate-500">(reversing)</span>}
             </Row>
-            <Row label='Heading, true / estimated'>
+            <Row label="Heading, true / estimated">
               {v.truth.headingDeg.toFixed(1)}° / {v.estimate.headingDeg.toFixed(1)}°
             </Row>
           </dl>
           <Segmented
-            label='Estimate heading from'
+            label="Estimate heading from"
             value={v.headingSource}
             onChange={(h) => send({ type: 'estimator', headingSource: h })}
-            options={[{ value: 'gyro', label: 'Gyro' }, { value: 'compass', label: 'Compass' }]}
+            options={[
+              { value: 'gyro', label: 'Gyro' },
+              { value: 'compass', label: 'Compass' },
+            ]}
           />
           {(!streaming || streamHz < 50) && (
-            <p className='rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-300'>
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-300">
               {streaming
                 ? `The IMU stream runs at ${streamHz} Hz, so the estimate integrates coarse steps.`
-                : 'The IMU stream is off, so there is nothing to estimate from.'} A host sets it with{' '}
-              <code className='font-mono'>hour-meter set imuStreamHz=100 streamMode=2</code>.
+                : 'The IMU stream is off, so there is nothing to estimate from.'}{' '}
+              A host sets it with <code className="font-mono">hour-meter set imuStreamHz=100 streamMode=2</code>.
             </p>
           )}
           <button
-            type='button'
-            className='text-xs text-slate-600 underline dark:text-slate-400'
+            type="button"
+            className="text-xs text-slate-600 underline dark:text-slate-400"
             onClick={() => send({ type: 'clear-tracks' })}
           >
             Clear the tracks
@@ -550,21 +571,21 @@ export function DriveInspector(p: InspectorProps) {
       )}
 
       {v && (
-        <Section title='What the host receives'>
-          <dl className='space-y-1'>
-            <Row label='Roll / pitch (firmware)'>
+        <Section title="What the host receives">
+          <dl className="space-y-1">
+            <Row label="Roll / pitch (firmware)">
               {state.values.motion.rollDeg.toFixed(1)}° / {state.values.motion.pitchDeg.toFixed(1)}°
             </Row>
-            <Row label='Roll / pitch (true)'>
+            <Row label="Roll / pitch (true)">
               {v.truth.rollDeg.toFixed(1)}° / {v.truth.pitchDeg.toFixed(1)}°
             </Row>
-            <Row label='Heading (compass)'>{state.values.motion.headingDeg.toFixed(1)}°</Row>
-            <Row label='Vibration'>{Math.round(state.values.vibration.rmsMg)} mg RMS</Row>
-            <Row label='Engine, fuel'>
+            <Row label="Heading (compass)">{state.values.motion.headingDeg.toFixed(1)}°</Row>
+            <Row label="Vibration">{Math.round(state.values.vibration.rmsMg)} mg RMS</Row>
+            <Row label="Engine, fuel">
               {state.values.engine.running ? 'running' : 'off'}, {state.values.pulses.perSecond.toFixed(1)} pulses/s
             </Row>
           </dl>
-          <p className='text-xs text-slate-500'>
+          <p className="text-xs text-slate-500">
             Roll and pitch come from the firmware's own filter, ported to the simulator: in turns and while braking they
             differ from the truth exactly as on the real device. Pitch is positive nose up.
           </p>

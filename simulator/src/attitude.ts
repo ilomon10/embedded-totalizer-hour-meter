@@ -59,9 +59,10 @@ export function sensorVectors(rollDeg: number, pitchDeg: number, headingDeg: num
   const up = upVector(rollDeg, pitchDeg);
   const x: Vec3 = { x: 1, y: 0, z: 0 };
   // Horizontal direction of the board's x axis (pitch is limited to ±90°, so it never vanishes).
-  const along = Math.abs(dot(x, up)) > 0.9999 ? normalize(cross(up, { x: 0, y: 1, z: 0 })) : normalize(
-    add(x, scale(up, -dot(x, up))),
-  );
+  const along =
+    Math.abs(dot(x, up)) > 0.9999
+      ? normalize(cross(up, { x: 0, y: 1, z: 0 }))
+      : normalize(add(x, scale(up, -dot(x, up))));
   const left = cross(up, along); // 90° counter-clockwise from `along`, seen from above
   const h = headingDeg * DEG;
   const north = add(scale(along, Math.cos(h)), scale(left, Math.sin(h)));

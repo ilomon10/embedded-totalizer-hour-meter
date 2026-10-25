@@ -236,9 +236,9 @@ export async function run(argv: string[]): Promise<number> {
       const u = (v: typeof before) => Number(v.totalUnits).toFixed(2);
       console.log(`hour meter: ${h(before)} h -> ${h(after)} h`);
       console.log(
-        `totalizer:  ${before.totalCount} pulses (${u(before)} units) -> ${after.totalCount} pulses (${
-          u(after)
-        } units)`,
+        `totalizer:  ${before.totalCount} pulses (${u(before)} units) -> ${after.totalCount} pulses (${u(
+          after,
+        )} units)`,
       );
     }
     if (eventPromise) {

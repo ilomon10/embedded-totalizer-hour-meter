@@ -20,10 +20,15 @@ test('panic payload is exactly 64 zero bytes and is written as one chunk', async
 });
 
 test('hard reset steps: DTR off, RTS on 100 ms, RTS off; IO0 (DTR) never asserted', async () => {
-  const expected: Step[] = [{ set: 'dtr', on: false }, { set: 'rts', on: true }, { wait: 100 }, {
-    set: 'rts',
-    on: false,
-  }];
+  const expected: Step[] = [
+    { set: 'dtr', on: false },
+    { set: 'rts', on: true },
+    { wait: 100 },
+    {
+      set: 'rts',
+      on: false,
+    },
+  ];
   assertEquals(hardResetSteps(), expected);
   const seen: string[] = [];
   await runSteps(hardResetSteps(), {
@@ -75,13 +80,17 @@ test('boot text names the cause and stage', () => {
 });
 
 test('a boot EVENT with a cause is logged as a warning', () => {
-  const s = applyMessage(initialState('/dev/ttyUSB0', false), {
-    msgType: 2,
-    seq: 1,
-    deviceId: 1,
-    timestamp: 0,
-    values: { eventKind: 1, resetReason: 6, lastCause: 1, lastStage: 7 },
-  }, 1000);
+  const s = applyMessage(
+    initialState('/dev/ttyUSB0', false),
+    {
+      msgType: 2,
+      seq: 1,
+      deviceId: 1,
+      timestamp: 0,
+      values: { eventKind: 1, resetReason: 6, lastCause: 1, lastStage: 7 },
+    },
+    1000,
+  );
   assertEquals(s.log[0].level, 'warn');
   assertEquals(s.log[0].text, 'device restarted: watchdog while IMU (reset reason 6)');
 });

@@ -22,13 +22,16 @@ export function engineText(v: DecodedMessage['values']): string {
 
 export function formatTelemetry(msg: DecodedMessage): string {
   const v = msg.values;
-  const imu = v.roll !== undefined
-    ? ` roll ${v.roll}° pitch ${v.pitch}°${v.heading !== undefined ? ` heading ${v.heading}°` : ''}`
-    : '';
+  const imu =
+    v.roll !== undefined
+      ? ` roll ${v.roll}° pitch ${v.pitch}°${v.heading !== undefined ? ` heading ${v.heading}°` : ''}`
+      : '';
   const vib = v.vibRms !== undefined ? ` vib ${v.vibRms}/${v.vibPeak} mg` : '';
   const flags = decodeStatusFlags(Number(v.statusFlags ?? 0));
-  return `${when(msg)} #${msg.seq} engine ${engineText(v)} run ${Number(v.runHours).toFixed(2)} h ` +
-    `total ${v.totalCount}${imu}${vib}${flags.length ? ` [${flags.join(', ')}]` : ''}`;
+  return (
+    `${when(msg)} #${msg.seq} engine ${engineText(v)} run ${Number(v.runHours).toFixed(2)} h ` +
+    `total ${v.totalCount}${imu}${vib}${flags.length ? ` [${flags.join(', ')}]` : ''}`
+  );
 }
 
 /** `hour-meter read ...`: runs until Ctrl+C. */
@@ -43,10 +46,10 @@ export async function run(argv: string[]): Promise<number> {
     throw new Error(`${(err as Error).message}\n${connectHelp()}`);
   });
   if (!noSync.value) {
-    dev.enableAutoTimeSync()
-      .on(
-        'timeSynced',
-        (e: number) => console.log(`time sync: device clock set to ${new Date(e * 1000).toISOString()} (UTC)`),
+    dev
+      .enableAutoTimeSync()
+      .on('timeSynced', (e: number) =>
+        console.log(`time sync: device clock set to ${new Date(e * 1000).toISOString()} (UTC)`),
       )
       .on('timeSyncError', (err: Error) => console.warn('time sync failed:', err.message));
   }

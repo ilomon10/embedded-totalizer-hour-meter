@@ -41,13 +41,15 @@ function moduleBit(name: string): number {
 }
 
 /** Module absent from power-on: the matching *Missing flag is set and its tags disappear. */
-const absent = (module: string): Factory => () => ({
-  label: `no ${module}`,
-  configure: (opts) => {
-    opts.fitted &= ~moduleBit(module);
-    if (module === 'imu') opts.fitted &= ~Device.mag; // the magnetometer is inside the MPU9250
-  },
-});
+const absent =
+  (module: string): Factory =>
+  () => ({
+    label: `no ${module}`,
+    configure: (opts) => {
+      opts.fitted &= ~moduleBit(module);
+      if (module === 'imu') opts.fitted &= ~Device.mag; // the magnetometer is inside the MPU9250
+    },
+  });
 
 const SCENARIOS: Record<string, { help: string; make: Factory }> = {
   'engine-cycle': {
@@ -109,9 +111,8 @@ const SCENARIOS: Record<string, { help: string; make: Factory }> = {
       };
     },
   },
-  'reboot': {
-    help:
-      'reboot[=periodS]         watchdog reset every period (default 120) -> boot EVENT, resetReason 6, lastCause 1, lastStage 7',
+  reboot: {
+    help: 'reboot[=periodS]         watchdog reset every period (default 120) -> boot EVENT, resetReason 6, lastCause 1, lastStage 7',
     make: ([period]) => {
       const periodMs = num(period, 120, 'reboot period') * 1000;
       let next = periodMs;
@@ -125,8 +126,9 @@ const SCENARIOS: Record<string, { help: string; make: Factory }> = {
       };
     },
   },
-  'hang': {
-    help: 'hang[=afterS]            frozen MCU after afterS (default 30): sends nothing, ignores commands; ' +
+  hang: {
+    help:
+      'hang[=afterS]            frozen MCU after afterS (default 30): sends nothing, ignores commands; ' +
       'only the panic signal (64 zero bytes) or a restart from the web UI ends it',
     make: ([after]) => {
       const afterMs = num(after, 30, 'hang after') * 1000;
@@ -142,7 +144,8 @@ const SCENARIOS: Record<string, { help: string; make: Factory }> = {
     },
   },
   'safe-mode': {
-    help: 'safe-mode               boots as after 3 unplanned restarts: no I2C (devices 0, all *Missing flags + ' +
+    help:
+      'safe-mode               boots as after 3 unplanned restarts: no I2C (devices 0, all *Missing flags + ' +
       'safeMode), counters from the flash copy, no IMU stream; lastCause 1, lastStage 7; a power cycle, reboot or the ' +
       'panic signal leaves it',
     make: () => ({
@@ -154,7 +157,8 @@ const SCENARIOS: Record<string, { help: string; make: Factory }> = {
     }),
   },
   'old-partitions': {
-    help: 'old-partitions          a partition table from before firmware 2.6.0 (app-only update): flag ' +
+    help:
+      'old-partitions          a partition table from before firmware 2.6.0 (app-only update): flag ' +
       'flashStoreMissing, the EEPROM is the only store',
     make: () => ({
       label: 'no flash store (old partition table)',
@@ -163,14 +167,14 @@ const SCENARIOS: Record<string, { help: string; make: Factory }> = {
       },
     }),
   },
-  'noise': {
+  noise: {
     help: 'noise[=probability]      random junk bytes (zeros included) before some frames (default 0.2)',
     make: ([p]) => {
       const noise = Math.min(1, num(p, 0.2, 'noise probability'));
       return { label: `line noise before ${Math.round(noise * 100)} % of frames`, faults: { noise } };
     },
   },
-  'corrupt': {
+  corrupt: {
     help: 'corrupt[=N]              flip one byte in 1 of every N frames (default 10) -> CRC errors',
     make: ([n]) => {
       const corruptEvery = Math.round(num(n, 10, 'corrupt N'));
@@ -188,5 +192,7 @@ export function parseScenario(spec: string, random: () => number): Scenario {
 }
 
 export function scenarioHelp(): string {
-  return Object.values(SCENARIOS).map((s) => `  ${s.help}`).join('\n');
+  return Object.values(SCENARIOS)
+    .map((s) => `  ${s.help}`)
+    .join('\n');
 }

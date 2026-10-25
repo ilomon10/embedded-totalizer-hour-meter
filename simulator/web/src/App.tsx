@@ -27,9 +27,9 @@ const TABS: { route: Route; label: string }[] = [
 
 function Dot({ on, label, title }: { on: boolean; label: string; title?: string }) {
   return (
-    <span className='flex min-w-0 items-center gap-1.5' title={title}>
+    <span className="flex min-w-0 items-center gap-1.5" title={title}>
       <span className={`h-2 w-2 shrink-0 rounded-full ${on ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-      <span className='max-w-[26rem] truncate'>{label}</span>
+      <span className="max-w-[26rem] truncate">{label}</span>
     </span>
   );
 }
@@ -37,20 +37,21 @@ function Dot({ on, label, title }: { on: boolean; label: string; title?: string 
 function Header({ sim, route, navigate }: { sim: Simulator; route: Route; navigate: (r: Route) => void }) {
   const s = sim.state;
   return (
-    <header className='sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90'>
-      <div className='flex min-h-16 flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 text-sm'>
-        <h1 className='text-base font-semibold'>
+    <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90">
+      <div className="flex min-h-16 flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 text-sm">
+        <h1 className="text-base font-semibold">
           Hour Meter Simulator
-          {s && <span className='ml-2 font-normal text-slate-500'>v{s.version}, firmware 2.5.0 protocol</span>}
+          {s && <span className="ml-2 font-normal text-slate-500">v{s.version}, firmware 2.5.0 protocol</span>}
         </h1>
-        <nav aria-label='Pages' className='flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800'>
+        <nav aria-label="Pages" className="flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
           {TABS.map((t) => (
             <a
               key={t.route}
               href={hrefOf(t.route)}
               aria-current={route === t.route ? 'page' : undefined}
               onClick={(e) => {
-                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) {return; // let new-tab clicks through
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) {
+                  return; // let new-tab clicks through
                 }
                 e.preventDefault();
                 navigate(t.route);
@@ -65,7 +66,7 @@ function Header({ sim, route, navigate }: { sim: Simulator; route: Route; naviga
             </a>
           ))}
         </nav>
-        <div className='ml-auto flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1 text-slate-600 dark:text-slate-400'>
+        <div className="ml-auto flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1 text-slate-600 dark:text-slate-400">
           <Dot on={sim.link === 'open'} label={sim.link === 'open' ? 'Web UI live' : 'Reconnecting…'} />
           {s && (
             <Dot
@@ -75,7 +76,7 @@ function Header({ sim, route, navigate }: { sim: Simulator; route: Route; naviga
             />
           )}
           {s && (
-            <span className='tabular-nums' title='deviceId and the seq of the next frame'>
+            <span className="tabular-nums" title="deviceId and the seq of the next frame">
               0x{s.deviceId.toString(16)}, next #{s.nextSeq}
               {s.bluetoothSession && `, Bluetooth ${BT_STATE[s.status.btState]}`}
             </span>
@@ -90,14 +91,14 @@ function PanelsPage({ sim }: { sim: Simulator }) {
   const { state, send } = sim;
   if (!state) return null;
   return (
-    <main className='mx-auto max-w-7xl p-4'>
+    <main className="mx-auto max-w-7xl p-4">
       {!state.liveData && (
-        <p className='mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300'>
+        <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
           Live data is not reaching a host right now (no client connected, Bluetooth still locked, or output set to
           UART).
         </p>
       )}
-      <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         <EnginePanel state={state} send={send} />
         <MotionPanel state={state} send={send} />
         <ClockPanel state={state} send={send} />
@@ -116,23 +117,25 @@ export function App() {
   const sim = useSimulator();
   const [route, navigate] = useRoute();
   return (
-    <div className='min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100'>
+    <div className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <Header sim={sim} route={route} navigate={navigate} />
-      {!sim.state
-        ? <p className='p-8 text-center text-slate-500'>Connecting to the simulator…</p>
-        : (
-          <div key={route} className='route-enter'>
-            {route === 'panels'
-              ? <PanelsPage sim={sim} />
-              : (
-                <Suspense fallback={<p className='p-8 text-center text-slate-500'>Loading the 3D view…</p>}>
-                  {route === 'drive'
-                    ? <DrivePage state={sim.state} track={sim.track} send={sim.send} />
-                    : <Playground state={sim.state} send={sim.send} />}
-                </Suspense>
+      {!sim.state ? (
+        <p className="p-8 text-center text-slate-500">Connecting to the simulator…</p>
+      ) : (
+        <div key={route} className="route-enter">
+          {route === 'panels' ? (
+            <PanelsPage sim={sim} />
+          ) : (
+            <Suspense fallback={<p className="p-8 text-center text-slate-500">Loading the 3D view…</p>}>
+              {route === 'drive' ? (
+                <DrivePage state={sim.state} track={sim.track} send={sim.send} />
+              ) : (
+                <Playground state={sim.state} send={sim.send} />
               )}
-          </div>
-        )}
+            </Suspense>
+          )}
+        </div>
+      )}
     </div>
   );
 }

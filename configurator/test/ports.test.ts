@@ -7,7 +7,7 @@ import { byIdLabel, findAgain, listPorts, newPorts, openProblem, type PortFs, pr
 function fakeFs(dirs: Record<string, string[]>, links: Record<string, string> = {}): PortFs {
   return {
     names: (dir) => Promise.resolve(dirs[dir] ?? []),
-    realPath: (path) => links[path] ? Promise.resolve(links[path]) : Promise.reject(sysError('ENOENT')),
+    realPath: (path) => (links[path] ? Promise.resolve(links[path]) : Promise.reject(sysError('ENOENT'))),
   };
 }
 
@@ -22,7 +22,10 @@ test('linux: USB serial ports first, named by their adapter, Bluetooth after, tt
     { [`/dev/serial/by-id/${CP2102}`]: '/dev/ttyUSB2' },
   );
   const ports = await listPorts(fs, 'linux');
-  assertEquals(ports.map((p) => p.path), ['/dev/ttyACM0', '/dev/ttyUSB2', '/dev/ttyUSB10', '/dev/rfcomm0']);
+  assertEquals(
+    ports.map((p) => p.path),
+    ['/dev/ttyACM0', '/dev/ttyUSB2', '/dev/ttyUSB10', '/dev/rfcomm0'],
+  );
   assertEquals(ports[1], {
     path: '/dev/ttyUSB2',
     label: 'Silicon Labs CP2102 USB to UART Bridge Controller 0001',
@@ -37,7 +40,10 @@ test('macOS: cu.* ports without the built-in ones; Windows: none', async () => {
   const fs = fakeFs({
     '/dev': ['cu.Bluetooth-Incoming-Port', 'cu.debug-console', 'cu.usbserial-1410', 'tty.usbserial-1410'],
   });
-  assertEquals((await listPorts(fs, 'darwin')).map((p) => [p.path, p.boardLike]), [['/dev/cu.usbserial-1410', true]]);
+  assertEquals(
+    (await listPorts(fs, 'darwin')).map((p) => [p.path, p.boardLike]),
+    [['/dev/cu.usbserial-1410', true]],
+  );
   assertEquals(await listPorts(fs, 'windows'), []);
 });
 

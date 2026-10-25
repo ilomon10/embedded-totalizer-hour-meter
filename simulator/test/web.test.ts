@@ -91,7 +91,10 @@ test('web server: page or build hint, JSON state, and a WebSocket round trip', a
     const s = await rolled;
     assertEquals(s.inputs.modes.motion, 'manual');
     assertEquals(device.snapshot().values.motion.rollDeg, 33);
-    assert(messages.some((m) => m.type === 'log'), 'log history is sent on connect');
+    assert(
+      messages.some((m) => m.type === 'log'),
+      'log history is sent on connect',
+    );
     ws.close();
     await new Promise((r) => setTimeout(r, 50));
   } finally {

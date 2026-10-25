@@ -51,19 +51,27 @@ test('images: merged and app are recognised, a bootloader or junk is refused', (
 });
 
 test('the partition table is read from the image', () => {
-  assertEquals(partitionTable(mergedImage()).map((p) => `${p.label} ${p.type}/${p.subtype} ${p.offset.toString(16)}`), [
-    'nvs 1/2 9000',
-    'otadata 1/0 e000',
-    'app0 0/16 10000',
-  ]);
+  assertEquals(
+    partitionTable(mergedImage()).map((p) => `${p.label} ${p.type}/${p.subtype} ${p.offset.toString(16)}`),
+    ['nvs 1/2 9000', 'otadata 1/0 e000', 'app0 0/16 10000'],
+  );
 });
 
 test('regions: a merged image skips 0x0-0x1000 and NVS; an app goes to 0x10000; both padded to 4 bytes', () => {
   const merged = mergedImage(100_001);
   const regions = flashRegions(merged);
-  assertEquals(regions.map((r) => [r.offset, r.data.length]), [[0x1000, 0x8000], [0xe000, merged.length - 0xe000 + 3]]);
+  assertEquals(
+    regions.map((r) => [r.offset, r.data.length]),
+    [
+      [0x1000, 0x8000],
+      [0xe000, merged.length - 0xe000 + 3],
+    ],
+  );
   assertEquals(regions[1].data.at(-1), 0xff);
-  assertEquals(flashRegions(appImage(1001)).map((r) => [r.offset, r.data.length]), [[APP_OFFSET, 1004]]);
+  assertEquals(
+    flashRegions(appImage(1001)).map((r) => [r.offset, r.data.length]),
+    [[APP_OFFSET, 1004]],
+  );
 });
 
 test('regions: a partition table whose NVS would hide the app, or is not 4 KB aligned, is refused', () => {
@@ -80,16 +88,26 @@ test('regions: a merged image padded to 4 MB still leaves hmdata (settings + cou
   image.set(mergedImage(), 0);
   image.set(partition('hmdata', 1, 0x06, 0x310000, 0x10000), 0x8060);
   image.set(partition('spiffs', 1, 0x82, 0x320000, 0xd0000), 0x8080);
-  assertEquals(flashRegions(image).map((r) => [r.offset, r.offset + r.data.length]), [
-    [0x1000, 0x9000],
-    [0xe000, 0x310000],
-    [0x320000, 0x400000],
-  ]);
+  assertEquals(
+    flashRegions(image).map((r) => [r.offset, r.offset + r.data.length]),
+    [
+      [0x1000, 0x9000],
+      [0xe000, 0x310000],
+      [0x320000, 0x400000],
+    ],
+  );
 });
 
 test('segments end on 64 KB boundaries of the flash', () => {
   const parts = segments({ offset: 0xe000, data: new Uint8Array(0x20000) });
-  assertEquals(parts.map((s) => [s.offset, s.data.length]), [[0xe000, 0x2000], [0x10000, 0x10000], [0x20000, 0xe000]]);
+  assertEquals(
+    parts.map((s) => [s.offset, s.data.length]),
+    [
+      [0xe000, 0x2000],
+      [0x10000, 0x10000],
+      [0x20000, 0xe000],
+    ],
+  );
 });
 
 test('bootloader reset: EN low, then IO0 low while EN rises, then IO0 released', () => {
@@ -123,7 +141,10 @@ test('flashDevice writes every region, keeps NVS, verifies and resets into the n
   assertEquals(rom.bauds, [460800]);
   assertEquals(md5Hex(rom.flash.subarray(0x1000, 0x9000)), md5Hex(image.subarray(0x1000, 0x9000)));
   assertEquals(md5Hex(rom.flash.subarray(0xe000, image.length)), md5Hex(image.subarray(0xe000)));
-  assert(rom.flash.subarray(0x9000, 0xe000).every((b) => b === 0x5a), 'NVS must be kept');
+  assert(
+    rom.flash.subarray(0x9000, 0xe000).every((b) => b === 0x5a),
+    'NVS must be kept',
+  );
   assertEquals(stages[0], 'reset');
   assertEquals(stages.at(-1), 'restart');
   assert(stages.includes('write') && stages.includes('verify'));
@@ -144,7 +165,7 @@ test('flashDevice: a failed restart after a verified write is not a failed flash
   const rom = fakeRom();
   const { io } = fakeIo(rom);
   const modem = io.modem;
-  io.modem = (path, steps) => steps.length === 4 ? Promise.reject(new Error('ioctl failed')) : modem(path, steps);
+  io.modem = (path, steps) => (steps.length === 4 ? Promise.reject(new Error('ioctl failed')) : modem(path, steps));
   const notes: string[] = [];
   const result = await flashDevice('/dev/ttyUSB0', appImage(3000), { note: (t) => notes.push(t) }, io);
   assertEquals(result.restarted, false);
@@ -167,9 +188,12 @@ test('flashDevice: a ROM write error stops the flash; no bootloader tries both r
 
   const silent = fakeRom({ silent: true });
   const { io, modem } = fakeIo(silent);
-  await assertRejects(() => flashDevice('/dev/ttyUSB0', appImage(3000), {}, io), (err: Error) => {
-    assertEquals(err.message, NO_BOOTLOADER);
-    return true;
-  });
+  await assertRejects(
+    () => flashDevice('/dev/ttyUSB0', appImage(3000), {}, io),
+    (err: Error) => {
+      assertEquals(err.message, NO_BOOTLOADER);
+      return true;
+    },
+  );
   assertEquals(modem, [bootloaderSteps(50), bootloaderSteps(550)]);
 });

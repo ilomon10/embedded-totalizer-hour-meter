@@ -49,7 +49,10 @@ export function parseGpx(text: string): Fix[] {
 }
 
 export function parseCsv(text: string): Fix[] {
-  const rows = text.split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+  const rows = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('#'));
   if (rows.length === 0) throw new Error('empty CSV');
   const split = (l: string) => l.split(/[,;\t]/).map((c) => c.trim().replace(/^"|"$/g, ''));
   const head = split(rows[0]).map((h) => h.toLowerCase());

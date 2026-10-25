@@ -102,11 +102,7 @@ export class Truck implements Vehicle {
 
   step(c: Controls): void {
     const s = this.state;
-    this.steerDeg = approach(
-      this.steerDeg,
-      clamp(c.steer, -1, 1) * Truck.MAX_STEER_DEG,
-      Truck.STEER_RATE_DPS * STEP_S,
-    );
+    this.steerDeg = approach(this.steerDeg, clamp(c.steer, -1, 1) * Truck.MAX_STEER_DEG, Truck.STEER_RATE_DPS * STEP_S);
     if (Math.abs(s.speed) < Truck.SHIFT_BELOW) this.gear = c.reverse ? -1 : 1;
     // Throttle pushes in the gear's direction; while the vehicle still rolls the other way
     // the gearbox waits and the throttle brakes instead. Brake and drag oppose the motion
@@ -171,11 +167,7 @@ export class Plane implements Vehicle {
 
   step(c: Controls): void {
     const s = this.state;
-    this.bankDeg = approach(
-      this.bankDeg,
-      clamp(c.steer, -1, 1) * Plane.MAX_BANK_DEG,
-      Plane.BANK_RATE_DPS * STEP_S,
-    );
+    this.bankDeg = approach(this.bankDeg, clamp(c.steer, -1, 1) * Plane.MAX_BANK_DEG, Plane.BANK_RATE_DPS * STEP_S);
     this.gammaDeg = lag(this.gammaDeg, clamp(c.pitch, -1, 1) * Plane.MAX_GAMMA_DEG, 1.2);
     if (s.u <= 0 && this.gammaDeg < 0) this.gammaDeg = 0; // never below the start height
     const thrust = clamp(c.throttle, 0, 1) * 4 - clamp(c.brake, 0, 1) * 3;

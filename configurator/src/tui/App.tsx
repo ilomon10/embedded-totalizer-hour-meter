@@ -131,21 +131,25 @@ function linkText(state: DeviceState): { text: string; color: string; mark: stri
 function Header({ state, tab, update }: { state: DeviceState; tab: Tab; update?: string }) {
   const link = linkText(state);
   return (
-    <Box flexDirection='column' borderStyle='round' borderColor={link.color} paddingX={1}>
-      <Box justifyContent='space-between'>
+    <Box flexDirection="column" borderStyle="round" borderColor={link.color} paddingX={1}>
+      <Box justifyContent="space-between">
         <Box flexShrink={0} marginRight={2}>
           <Text bold>HOUR METER</Text>
         </Box>
-        <Text color={link.color} wrap='truncate-middle'>{link.mark} {link.text} {state.port}</Text>
+        <Text color={link.color} wrap="truncate-middle">
+          {link.mark} {link.text} {state.port}
+        </Text>
         <Box flexShrink={0} marginLeft={2}>
           <Text>
             dev {state.deviceId?.toString(16) ?? '-'} fw {formatFirmware(state.values.fwVersion)}
-            {update ? <Text color='yellow'>{` → ${update} available (6)`}</Text> : null}
+            {update ? <Text color="yellow">{` → ${update} available (6)`}</Text> : null}
           </Text>
         </Box>
       </Box>
       <Box gap={2}>
-        {TABS.map((t, i) => <Text key={t} inverse={t === tab} bold={t === tab}>{` ${i + 1} ${t} `}</Text>)}
+        {TABS.map((t, i) => (
+          <Text key={t} inverse={t === tab} bold={t === tab}>{` ${i + 1} ${t} `}</Text>
+        ))}
       </Box>
     </Box>
   );
@@ -153,8 +157,10 @@ function Header({ state, tab, update }: { state: DeviceState; tab: Tab; update?:
 
 function Panel({ title, children, width }: { title: string; children: React.ReactNode; width?: number | string }) {
   return (
-    <Box flexDirection='column' borderStyle='single' paddingX={1} width={width}>
-      <Text bold color='cyan'>{title}</Text>
+    <Box flexDirection="column" borderStyle="single" paddingX={1} width={width}>
+      <Text bold color="cyan">
+        {title}
+      </Text>
       {children}
     </Box>
   );
@@ -165,74 +171,101 @@ function Dashboard({ state }: { state: DeviceState }) {
   const flags = activeFlags(state);
   const lastRestart = causeText(v);
   return (
-    <Box flexDirection='column'>
+    <Box flexDirection="column">
       <Box>
-        <Panel title='Hour meter' width='50%'>
+        <Panel title="Hour meter" width="50%">
           <Text>
-            Run hours <Text bold color='green'>{num(v.runHours)} h</Text> ({String(v.runSeconds ?? '-')} s)
+            Run hours{' '}
+            <Text bold color="green">
+              {num(v.runHours)} h
+            </Text>{' '}
+            ({String(v.runSeconds ?? '-')} s)
           </Text>
           <Text>
-            Engine {v.alternator === undefined
-              ? '-'
-              : v.alternator
-              ? <Text color='green' bold>RUNNING</Text>
-              : <Text color='gray'>stopped{v.altInput ? ' (input on, no engine vibration)' : ''}</Text>}
+            Engine{' '}
+            {v.alternator === undefined ? (
+              '-'
+            ) : v.alternator ? (
+              <Text color="green" bold>
+                RUNNING
+              </Text>
+            ) : (
+              <Text color="gray">stopped{v.altInput ? ' (input on, no engine vibration)' : ''}</Text>
+            )}
           </Text>
-          <Text>Totalizer {String(v.totalCount ?? '-')} pulses = {num(v.totalUnits)} units</Text>
-          <Text color='gray'>Last save {fmtEpoch(v.lastSavedEpoch, false)} #{String(v.journalSeq ?? '-')}</Text>
+          <Text>
+            Totalizer {String(v.totalCount ?? '-')} pulses = {num(v.totalUnits)} units
+          </Text>
+          <Text color="gray">
+            Last save {fmtEpoch(v.lastSavedEpoch, false)} #{String(v.journalSeq ?? '-')}
+          </Text>
         </Panel>
-        <Panel title='Motion' width='50%'>
-          <Text>Roll / pitch {num(v.roll)}° / {num(v.pitch)}°</Text>
+        <Panel title="Motion" width="50%">
+          <Text>
+            Roll / pitch {num(v.roll)}° / {num(v.pitch)}°
+          </Text>
           <Text>Heading {v.heading === undefined ? 'no compass' : `${num(v.heading, 1)}°`}</Text>
-          <Text>Vibration RMS {String(v.vibRms ?? '-')} mg peak {String(v.vibPeak ?? '-')} mg</Text>
+          <Text>
+            Vibration RMS {String(v.vibRms ?? '-')} mg peak {String(v.vibPeak ?? '-')} mg
+          </Text>
         </Panel>
       </Box>
       <Box>
-        <Panel title='Time (device is UTC)' width='50%'>
+        <Panel title="Time (device is UTC)" width="50%">
           <Text>
-            {v.timeValid === false
-              ? <Text color='red'>unknown: send "Set time" (auto-sync is on)</Text>
-              : fmtEpoch(v.epoch ?? v.timestamp)}
+            {v.timeValid === false ? (
+              <Text color="red">unknown: send "Set time" (auto-sync is on)</Text>
+            ) : (
+              fmtEpoch(v.epoch ?? v.timestamp)
+            )}
           </Text>
-          <Text color='gray'>
+          <Text color="gray">
             Uptime {String(v.uptime ?? '-')} s RTC {v.rtcTemp === undefined ? '-' : `${num(v.rtcTemp, 2)} °C`}
           </Text>
         </Panel>
-        <Panel title='Modules' width='50%'>
+        <Panel title="Modules" width="50%">
           <Box gap={2}>
-            {devicesPresent(v.devices as number | undefined).map(([name, ok]) => (
-              v.devices === undefined
-                ? <Text key={name} color='gray'>? {name}</Text>
-                : <Text key={name} color={ok ? 'green' : 'red'}>{ok ? '✔' : '✘'} {name}</Text>
-            ))}
+            {devicesPresent(v.devices as number | undefined).map(([name, ok]) =>
+              v.devices === undefined ? (
+                <Text key={name} color="gray">
+                  ? {name}
+                </Text>
+              ) : (
+                <Text key={name} color={ok ? 'green' : 'red'}>
+                  {ok ? '✔' : '✘'} {name}
+                </Text>
+              ),
+            )}
           </Box>
-          <Text color='gray'>
+          <Text color="gray">
             I2C errors {String(v.i2cErrors ?? '-')} overruns {String(v.overruns ?? '-')} frames {state.frames}
           </Text>
-          <Text color='gray'>Bluetooth {typeof v.btState === 'number' ? BT_STATE[v.btState] : '-'}</Text>
+          <Text color="gray">Bluetooth {typeof v.btState === 'number' ? BT_STATE[v.btState] : '-'}</Text>
         </Panel>
       </Box>
-      <Panel title='Status'>
-        {v.statusFlags === undefined
-          ? <Text color='gray'>no data yet</Text>
-          : flags.length === 0
-          ? <Text color='green'>all OK</Text>
-          : (
-            <Box flexWrap='wrap' gap={2}>
-              {flags.map((f) => <Text key={f} color={flagColor(f, flags, v.fwVersion)}>▲ {f}</Text>)}
-            </Box>
-          )}
-        {lastRestart ? <Text color='gray'>Last restart: {lastRestart}</Text> : null}
-        {flags.includes('safeMode')
-          ? <Text color='red'>Safe mode: I2C is off after repeated restarts. Power-cycle or reboot to leave it.</Text>
-          : null}
-        {flags.includes('flashStoreMissing')
-          ? (
-            <Text color='yellow'>
-              No flash store (old partition table): flash the full image (tab 6) so values survive without the EEPROM.
-            </Text>
-          )
-          : null}
+      <Panel title="Status">
+        {v.statusFlags === undefined ? (
+          <Text color="gray">no data yet</Text>
+        ) : flags.length === 0 ? (
+          <Text color="green">all OK</Text>
+        ) : (
+          <Box flexWrap="wrap" gap={2}>
+            {flags.map((f) => (
+              <Text key={f} color={flagColor(f, flags, v.fwVersion)}>
+                ▲ {f}
+              </Text>
+            ))}
+          </Box>
+        )}
+        {lastRestart ? <Text color="gray">Last restart: {lastRestart}</Text> : null}
+        {flags.includes('safeMode') ? (
+          <Text color="red">Safe mode: I2C is off after repeated restarts. Power-cycle or reboot to leave it.</Text>
+        ) : null}
+        {flags.includes('flashStoreMissing') ? (
+          <Text color="yellow">
+            No flash store (old partition table): flash the full image (tab 6) so values survive without the EEPROM.
+          </Text>
+        ) : null}
       </Panel>
     </Box>
   );
@@ -248,32 +281,41 @@ function ImuView({ state }: { state: DeviceState }) {
       {(['X', 'Y', 'Z'] as const).map((ax) => (
         <Box key={ax} width={26}>
           <Text>
-            {ax} <Text color='gray'>{num(v[`${rawKey}${ax}`], d).padStart(8)}</Text>{' '}
-            <Text color='green'>{num(v[`${filtKey}${ax}`], d).padStart(8)}</Text>
+            {ax} <Text color="gray">{num(v[`${rawKey}${ax}`], d).padStart(8)}</Text>{' '}
+            <Text color="green">{num(v[`${filtKey}${ax}`], d).padStart(8)}</Text>
           </Text>
         </Box>
       ))}
-      <Text color='gray'>{unit}</Text>
+      <Text color="gray">{unit}</Text>
     </Box>
   );
   return (
     <Panel
-      title={`IMU stream: mode ${fmtSetting('streamMode', state.settings.streamMode)}, ${
-        fmtSetting('imuStreamHz', state.settings.imuStreamHz)
-      } Hz   (gray = raw, green = filtered)`}
+      title={`IMU stream: mode ${fmtSetting('streamMode', state.settings.streamMode)}, ${fmtSetting(
+        'imuStreamHz',
+        state.settings.imuStreamHz,
+      )} Hz   (gray = raw, green = filtered)`}
     >
       {row('Accel', 'rawAccel', 'accel', 'g', 3)}
       {row('Gyro', 'rawGyro', 'gyro', '°/s', 1)}
       {row('Mag', 'rawMag', 'mag', 'µT', 1)}
       <Text></Text>
-      <Text color='gray'>keys: r raw f filtered b both o off + / - stream rate</Text>
+      <Text color="gray">keys: r raw f filtered b both o off + / - stream rate</Text>
     </Panel>
   );
 }
 
 const SETTING_NAMES = Object.keys(SETTINGS);
 
-function SettingsView({ state, cursor, editing, draft, setDraft, onSubmit, error }: {
+function SettingsView({
+  state,
+  cursor,
+  editing,
+  draft,
+  setDraft,
+  onSubmit,
+  error,
+}: {
   state: DeviceState;
   cursor: number;
   editing: boolean;
@@ -283,7 +325,7 @@ function SettingsView({ state, cursor, editing, draft, setDraft, onSubmit, error
   error?: string;
 }) {
   return (
-    <Panel title='Settings   ↑↓ select   Enter edit/apply   Esc cancel   g reload'>
+    <Panel title="Settings   ↑↓ select   Enter edit/apply   Esc cancel   g reload">
       {SETTING_NAMES.map((name, i) => {
         const spec = SETTINGS[name as keyof typeof SETTINGS];
         const selected = i === cursor;
@@ -293,25 +335,27 @@ function SettingsView({ state, cursor, editing, draft, setDraft, onSubmit, error
               <Text inverse={selected}>{name}</Text>
             </Box>
             <Box width={16} flexShrink={0}>
-              {selected && editing
-                ? (
-                  <TextInput
-                    value={draft}
-                    onChange={setDraft}
-                    onSubmit={onSubmit}
-                    placeholder={fmtSetting(name, state.settings[name])}
-                  />
-                )
-                : <Text color='green'>{fmtSetting(name, state.settings[name])} {spec.unit ?? ''}</Text>}
+              {selected && editing ? (
+                <TextInput
+                  value={draft}
+                  onChange={setDraft}
+                  onSubmit={onSubmit}
+                  placeholder={fmtSetting(name, state.settings[name])}
+                />
+              ) : (
+                <Text color="green">
+                  {fmtSetting(name, state.settings[name])} {spec.unit ?? ''}
+                </Text>
+              )}
             </Box>
-            <Text color='gray'>
+            <Text color="gray">
               {spec.help}
               {spec.options ? ` (${Object.keys(spec.options).join('/')})` : ` [${spec.min}..${spec.max}]`}
             </Text>
           </Box>
         );
       })}
-      {error ? <Text color='red'>{error}</Text> : null}
+      {error ? <Text color="red">{error}</Text> : null}
     </Panel>
   );
 }
@@ -344,7 +388,15 @@ function currentValue(id: string, state: DeviceState, hardResetNote?: string): s
   return '';
 }
 
-function ActionsView({ state, cursor, editing, draft, setDraft, onSubmit, hardResetNote }: {
+function ActionsView({
+  state,
+  cursor,
+  editing,
+  draft,
+  setDraft,
+  onSubmit,
+  hardResetNote,
+}: {
   state: DeviceState;
   cursor: number;
   editing: boolean;
@@ -354,18 +406,16 @@ function ActionsView({ state, cursor, editing, draft, setDraft, onSubmit, hardRe
   hardResetNote?: string;
 }) {
   return (
-    <Panel title='Actions   ↑↓ select   Enter run'>
+    <Panel title="Actions   ↑↓ select   Enter run">
       {ACTIONS.map((a, i) => (
         <Box key={a.id} gap={1}>
           <Text inverse={i === cursor}>{` ${a.label} `}</Text>
-          <Text color='gray'>{currentValue(a.id, state, hardResetNote)}</Text>
-          {i === cursor && editing && 'prompt' in a
-            ? (
-              <Text>
-                {a.prompt}: <TextInput value={draft} onChange={setDraft} onSubmit={onSubmit} />
-              </Text>
-            )
-            : null}
+          <Text color="gray">{currentValue(a.id, state, hardResetNote)}</Text>
+          {i === cursor && editing && 'prompt' in a ? (
+            <Text>
+              {a.prompt}: <TextInput value={draft} onChange={setDraft} onSubmit={onSubmit} />
+            </Text>
+          ) : null}
         </Box>
       ))}
     </Panel>
@@ -374,11 +424,13 @@ function ActionsView({ state, cursor, editing, draft, setDraft, onSubmit, hardRe
 
 function LogView({ state }: { state: DeviceState }) {
   return (
-    <Panel title='Log (events, commands, errors)'>
+    <Panel title="Log (events, commands, errors)">
       {state.log.slice(-18).map((e, i) => (
-        <Text key={i} color={LEVEL_COLOR[e.level]}>{new Date(e.atMs).toLocaleTimeString()} {e.text}</Text>
+        <Text key={i} color={LEVEL_COLOR[e.level]}>
+          {new Date(e.atMs).toLocaleTimeString()} {e.text}
+        </Text>
       ))}
-      {state.log.length === 0 ? <Text color='gray'>nothing yet</Text> : null}
+      {state.log.length === 0 ? <Text color="gray">nothing yet</Text> : null}
     </Panel>
   );
 }
@@ -407,7 +459,14 @@ function sameStep(old: FlashProgress | undefined, p: FlashProgress): boolean {
  * adapter; it is only given for a local serial port. `hardResetNote` says why it is missing (shown instead).
  * `firmware` lists, downloads and flashes (tab 6). `onSwitchPort` (key p) goes back to the connect screen.
  */
-export function App({ conn, initial, hardReset, hardResetNote, firmware, onSwitchPort }: {
+export function App({
+  conn,
+  initial,
+  hardReset,
+  hardResetNote,
+  firmware,
+  onSwitchPort,
+}: {
   conn: Link;
   initial: DeviceState;
   hardReset?: () => Promise<void>;
@@ -434,31 +493,34 @@ export function App({ conn, initial, hardReset, hardResetNote, firmware, onSwitc
 
   const log = useCallback((level: Level, text: string) => setState((s) => addLog(s, level, text, Date.now())), []);
 
-  const send = useCallback(async (label: string, values: Record<string, number | boolean>, quiet = false) => {
-    if (!client) {
-      if (!quiet) log('warn', `${label}: not connected (wait for the board, or p to pick another port)`);
-      return false;
-    }
-    try {
-      const ack = await client.request(values); // rejects unless ackStatus is Ok
-      setState((s) => confirmSettings(applyMessage(s, ack, Date.now()), values));
-      if (!quiet) log('ok', `${label}: ${ACK_STATUS[Number(ack.values.ackStatus)] ?? 'Ok'}`);
-      return true;
-    } catch (err) {
-      const msg = (err as Error).message;
-      const hint = /Locked|BadPin/.test(msg) ? '  (Bluetooth: Actions > Unlock, or start with --pin)' : '';
-      log('error', `${label}: ${msg}${hint}`);
-      return false;
-    }
-  }, [client, log]);
+  const send = useCallback(
+    async (label: string, values: Record<string, number | boolean>, quiet = false) => {
+      if (!client) {
+        if (!quiet) log('warn', `${label}: not connected (wait for the board, or p to pick another port)`);
+        return false;
+      }
+      try {
+        const ack = await client.request(values); // rejects unless ackStatus is Ok
+        setState((s) => confirmSettings(applyMessage(s, ack, Date.now()), values));
+        if (!quiet) log('ok', `${label}: ${ACK_STATUS[Number(ack.values.ackStatus)] ?? 'Ok'}`);
+        return true;
+      } catch (err) {
+        const msg = (err as Error).message;
+        const hint = /Locked|BadPin/.test(msg) ? '  (Bluetooth: Actions > Unlock, or start with --pin)' : '';
+        log('error', `${label}: ${msg}${hint}`);
+        return false;
+      }
+    },
+    [client, log],
+  );
 
   const refresh = useCallback(async () => {
-    for (
-      const [what, label] of [[2, 'get settings'], [3, 'get status'], [1, 'get hour meter'], [
-        4,
-        'get calibration',
-      ]] as const
-    ) {
+    for (const [what, label] of [
+      [2, 'get settings'],
+      [3, 'get status'],
+      [1, 'get hour meter'],
+      [4, 'get calibration'],
+    ] as const) {
       await send(label, { get: what }, true);
     }
     log('info', 'refreshed settings, status, hour meter, calibration');
@@ -525,10 +587,9 @@ export function App({ conn, initial, hardReset, hardResetNote, firmware, onSwitc
       case 'hours':
         return setCounter(`hour meter = ${input} h`, () => ({ setRunSeconds: hoursToSeconds(input) }));
       case 'units':
-        return setCounter(
-          `totalizer = ${input} units`,
-          () => ({ setTotalCount: unitsToPulses(input, Number(state.settings.pulsesPerUnit ?? 1)) }),
-        );
+        return setCounter(`totalizer = ${input} units`, () => ({
+          setTotalCount: unitsToPulses(input, Number(state.settings.pulsesPerUnit ?? 1)),
+        }));
       case 'count': {
         const c = Number(input);
         return Number.isInteger(c) && c >= 0
@@ -620,7 +681,7 @@ export function App({ conn, initial, hardReset, hardResetNote, firmware, onSwitc
     job.current = 'flash';
     setFlashing(true);
     try {
-      const image = target.image ?? await getImage(target.release!);
+      const image = target.image ?? (await getImage(target.release!));
       log('info', `flashing ${image.label}: keep the board plugged in`);
       const result = await firmware.flash(
         image,
@@ -695,13 +756,14 @@ export function App({ conn, initial, hardReset, hardResetNote, firmware, onSwitc
       setCursor(0);
       return;
     }
-    const count = tab === 'Settings'
-      ? SETTING_NAMES.length
-      : tab === 'Actions'
-      ? ACTIONS.length
-      : tab === 'Firmware'
-      ? releases?.length ?? 0
-      : 0;
+    const count =
+      tab === 'Settings'
+        ? SETTING_NAMES.length
+        : tab === 'Actions'
+          ? ACTIONS.length
+          : tab === 'Firmware'
+            ? (releases?.length ?? 0)
+            : 0;
     if (key.upArrow && count) setCursor((c) => (c + count - 1) % count);
     if (key.downArrow && count) setCursor((c) => (c + 1) % count);
     if (flashing) return; // look around, but the port belongs to the flasher
@@ -755,16 +817,22 @@ export function App({ conn, initial, hardReset, hardResetNote, firmware, onSwitc
   };
 
   const lastLog = state.log[state.log.length - 1];
-  const banner = linkBanner(state, Date.now(), onSwitchPort !== undefined) ??
+  const banner =
+    linkBanner(state, Date.now(), onSwitchPort !== undefined) ??
     (state.connection !== 'connected' || flashing
       ? undefined
       : noDataBanner(state.lastFrameMs, startMs.current, Date.now(), hardReset ? undefined : hardResetNote));
   const keys = ['1-6/Tab screens', 'g refresh', hardReset ? 'H hard reset' : '', onSwitchPort ? 'p port' : '', 'q quit']
-    .filter(Boolean).join(' · ');
+    .filter(Boolean)
+    .join(' · ');
   return (
-    <Box flexDirection='column'>
+    <Box flexDirection="column">
       <Header state={state} tab={tab} update={updateAvailable(state.values.fwVersion, releases)} />
-      {banner ? <Text color={state.connection === 'waiting' ? 'red' : 'yellow'} bold>▲ {banner}</Text> : null}
+      {banner ? (
+        <Text color={state.connection === 'waiting' ? 'red' : 'yellow'} bold>
+          ▲ {banner}
+        </Text>
+      ) : null}
       {tab === 'Dashboard' && <Dashboard state={state} />}
       {tab === 'IMU' && <ImuView state={state} />}
       {tab === 'Settings' && (
@@ -804,13 +872,17 @@ export function App({ conn, initial, hardReset, hardResetNote, firmware, onSwitc
           flashNote={firmware.flash ? undefined : firmware.flashNote}
         />
       )}
-      <Box paddingX={1} flexDirection='column'>
-        {progress && tab !== 'Firmware'
-          ? <Text color='yellow'>{progressLine(progress)}</Text>
-          : lastLog
-          ? <Text color={LEVEL_COLOR[lastLog.level]} wrap='truncate-end'>{lastLog.text}</Text>
-          : <Text></Text>}
-        <Text color='gray'>{keys}</Text>
+      <Box paddingX={1} flexDirection="column">
+        {progress && tab !== 'Firmware' ? (
+          <Text color="yellow">{progressLine(progress)}</Text>
+        ) : lastLog ? (
+          <Text color={LEVEL_COLOR[lastLog.level]} wrap="truncate-end">
+            {lastLog.text}
+          </Text>
+        ) : (
+          <Text></Text>
+        )}
+        <Text color="gray">{keys}</Text>
       </Box>
     </Box>
   );

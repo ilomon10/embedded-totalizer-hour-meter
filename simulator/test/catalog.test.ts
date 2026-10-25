@@ -22,5 +22,10 @@ test('FRAME-CATALOG.md hex dumps match the generated frames', async () => {
   for (const frame of catalogFrames()) {
     assertEquals(blocks.get(frame.id), wireHex(frame), `frame:${frame.id} (run: bun run gen-catalog ${frame.id})`);
   }
-  assertEquals([...blocks.keys()].sort(), catalogFrames().map((f) => f.id).sort());
+  assertEquals(
+    [...blocks.keys()].sort(),
+    catalogFrames()
+      .map((f) => f.id)
+      .sort(),
+  );
 });

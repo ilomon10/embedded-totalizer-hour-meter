@@ -11,13 +11,17 @@ export class TcpTransport implements Transport {
   private socket: Socket | null = null;
   private writer: DroppingWriter | null = null;
 
-  constructor(private readonly port: number, private readonly hostname = '127.0.0.1') {
+  constructor(
+    private readonly port: number,
+    private readonly hostname = '127.0.0.1',
+  ) {
     this.label = `tcp://${hostname}:${port}`;
   }
 
   start(events: LinkEvents): Promise<void> {
     const server = createServer((socket) => {
-      if (this.socket) socket.destroy(); // busy: one client at a time
+      if (this.socket)
+        socket.destroy(); // busy: one client at a time
       else this.serve(socket, events);
     });
     this.server = server;
@@ -60,7 +64,8 @@ export class TcpTransport implements Transport {
 
 function socketWriter(socket: Socket): ByteWriter {
   return {
-    write: (bytes) => new Promise<void>((resolve, reject) => socket.write(bytes, (err) => (err ? reject(err) : resolve()))),
+    write: (bytes) =>
+      new Promise<void>((resolve, reject) => socket.write(bytes, (err) => (err ? reject(err) : resolve()))),
     close: () => new Promise<void>((resolve) => socket.end(resolve)),
   };
 }

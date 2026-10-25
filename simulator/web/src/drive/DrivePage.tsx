@@ -37,9 +37,15 @@ const bearing = (a: LatLon, b: LatLon) => {
   return ((Math.atan2(y, b.lat - a.lat) * 180) / Math.PI + 360) % 360;
 };
 
-export function DrivePage(
-  { state, track, send }: { state: SimState; track: TrackPoint[]; send: (msg: ClientMessage) => void },
-) {
+export function DrivePage({
+  state,
+  track,
+  send,
+}: {
+  state: SimState;
+  track: TrackPoint[];
+  send: (msg: ClientMessage) => void;
+}) {
   const vehicle = state.vehicle;
   const dark = useMedia('(prefers-color-scheme: dark)');
   const reducedMotion = useMedia('(prefers-reduced-motion: reduce)');
@@ -68,11 +74,12 @@ export function DrivePage(
 
   // The model drawn on the map.
   const model = useMemo(() => {
-    const m = choice === 'custom' && customObject && custom
-      ? fitModel(customObject.clone(), custom.lengthM, custom.yawSteps, custom.zUp)
-      : choice === 'plane' || (choice === 'custom' && custom?.kind === 'plane')
-      ? buildPlane()
-      : buildTruck();
+    const m =
+      choice === 'custom' && customObject && custom
+        ? fitModel(customObject.clone(), custom.lengthM, custom.yawSteps, custom.zUp)
+        : choice === 'plane' || (choice === 'custom' && custom?.kind === 'plane')
+          ? buildPlane()
+          : buildTruck();
     m.add(buildHeadingMarker(kind === 'plane' ? 9 : 8));
     return m;
   }, [choice, customObject, custom, kind]);
@@ -86,10 +93,13 @@ export function DrivePage(
     });
   }, []);
 
-  const placeAt = useCallback((origin: LatLon, headingDeg = 0) => {
-    send({ type: 'vehicle', kind, origin, headingDeg });
-    setPlacing(false);
-  }, [kind, send]);
+  const placeAt = useCallback(
+    (origin: LatLon, headingDeg = 0) => {
+      send({ type: 'vehicle', kind, origin, headingDeg });
+      setPlacing(false);
+    },
+    [kind, send],
+  );
 
   // A different vehicle type at the same spot keeps the route (the server does that).
   const choose = (c: ModelChoice) => {
@@ -229,8 +239,8 @@ export function DrivePage(
   };
 
   return (
-    <div className='grid min-h-[calc(100dvh-4rem)] grid-cols-1 lg:h-[calc(100dvh-4rem)] lg:grid-cols-[minmax(0,1fr)_24rem]'>
-      <div className='relative h-[60dvh] lg:h-full'>
+    <div className="grid min-h-[calc(100dvh-4rem)] grid-cols-1 lg:h-[calc(100dvh-4rem)] lg:grid-cols-[minmax(0,1fr)_24rem]">
+      <div className="relative h-[60dvh] lg:h-full">
         <MapView
           vehicle={vehicle}
           track={track}
@@ -247,20 +257,20 @@ export function DrivePage(
           onPlace={(p) => placeAt(p, waypoints.length >= 2 ? bearing(waypoints[0], waypoints[1]) : 0)}
           onUserPan={() => setFollow(false)}
         />
-        <div className='pointer-events-none absolute bottom-8 left-3 flex flex-col gap-1 text-xs'>
+        <div className="pointer-events-none absolute bottom-8 left-3 flex flex-col gap-1 text-xs">
           {placing && (
-            <span className='rounded-md bg-white/90 px-2 py-1 text-slate-800 shadow-sm dark:bg-slate-900/90 dark:text-slate-100'>
+            <span className="rounded-md bg-white/90 px-2 py-1 text-slate-800 shadow-sm dark:bg-slate-900/90 dark:text-slate-100">
               Click the map where the {kind} starts.
             </span>
           )}
           {!placing && (tab === 'route' || tab === 'replay') && !playing && (
-            <span className='rounded-md bg-white/90 px-2 py-1 text-slate-700 shadow-sm dark:bg-slate-900/90 dark:text-slate-200'>
+            <span className="rounded-md bg-white/90 px-2 py-1 text-slate-700 shadow-sm dark:bg-slate-900/90 dark:text-slate-200">
               Click to add a waypoint. Drag to move one, double-click to delete it.
             </span>
           )}
         </div>
       </div>
-      <aside className='border-slate-200 bg-white lg:overflow-y-auto lg:border-l dark:border-slate-800 dark:bg-slate-900'>
+      <aside className="border-slate-200 bg-white lg:overflow-y-auto lg:border-l dark:border-slate-800 dark:bg-slate-900">
         <DriveInspector
           state={state}
           send={send}

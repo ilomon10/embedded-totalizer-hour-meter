@@ -32,30 +32,40 @@ export interface FirmwareActions {
 
 /** What the text line of the tab asks for. */
 export type FirmwarePrompt =
-  | { kind: 'path' }
-  | { kind: 'confirm'; label: string; release?: FirmwareRelease; image?: FirmwareImage };
+  { kind: 'path' } | { kind: 'confirm'; label: string; release?: FirmwareRelease; image?: FirmwareImage };
 
-export function FirmwareView(
-  { fwVersion, releases, releasesNote, cursor, prompt, draft, setDraft, onSubmit, progress, flashNote }: {
-    fwVersion: Value | undefined;
-    releases?: FirmwareRelease[];
-    releasesNote?: string;
-    cursor: number;
-    prompt?: FirmwarePrompt;
-    draft: string;
-    setDraft: (s: string) => void;
-    onSubmit: (s: string) => void;
-    progress?: FlashProgress;
-    flashNote?: string;
-  },
-) {
+export function FirmwareView({
+  fwVersion,
+  releases,
+  releasesNote,
+  cursor,
+  prompt,
+  draft,
+  setDraft,
+  onSubmit,
+  progress,
+  flashNote,
+}: {
+  fwVersion: Value | undefined;
+  releases?: FirmwareRelease[];
+  releasesNote?: string;
+  cursor: number;
+  prompt?: FirmwarePrompt;
+  draft: string;
+  setDraft: (s: string) => void;
+  onSubmit: (s: string) => void;
+  progress?: FlashProgress;
+  flashNote?: string;
+}) {
   const device = formatFirmware(fwVersion);
   const latest = releases && findRelease(releases, 'latest');
   const c = latest && device !== '?' ? compareVersions(latest.version, device) : undefined;
   const verdict = c === undefined ? '' : c > 0 ? 'update available' : c === 0 ? 'up to date' : 'the device is newer';
   return (
-    <Box flexDirection='column' borderStyle='single' paddingX={1}>
-      <Text bold color='cyan'>Firmware ↑↓ select Enter flash d download c check again f flash a file</Text>
+    <Box flexDirection="column" borderStyle="single" paddingX={1}>
+      <Text bold color="cyan">
+        Firmware ↑↓ select Enter flash d download c check again f flash a file
+      </Text>
       <Text>
         Device <Text bold>{device}</Text>
       </Text>
@@ -63,36 +73,34 @@ export function FirmwareView(
         Latest {latest ? `${latest.version} (${latest.tag}, ${latest.date.slice(0, 10)})` : '-'}{' '}
         <Text color={c !== undefined && c > 0 ? 'yellow' : 'green'}>{verdict}</Text>
       </Text>
-      {releasesNote ? <Text color='gray'>{releasesNote}</Text> : null}
+      {releasesNote ? <Text color="gray">{releasesNote}</Text> : null}
       <Text></Text>
       {(releases ?? []).map((r, i) => {
         const marks = [
           r === latest ? 'latest' : '',
           r.prerelease ? 'prerelease' : '',
           r.version === device ? 'on the device' : '',
-        ].filter(Boolean).join(', ');
+        ]
+          .filter(Boolean)
+          .join(', ');
         return (
           <Box key={r.version} gap={2}>
             <Text inverse={i === cursor}>{` ${r.version.padEnd(8)}`}</Text>
             <Text>{r.tag.padEnd(16)}</Text>
-            <Text color='gray'>{r.date.slice(0, 10)}</Text>
-            <Text color='green'>{marks}</Text>
+            <Text color="gray">{r.date.slice(0, 10)}</Text>
+            <Text color="green">{marks}</Text>
           </Box>
         );
       })}
       <Text></Text>
-      {progress ? <Text color='yellow'>{progressLine(progress)}</Text> : null}
-      {prompt
-        ? (
-          <Text>
-            {prompt.kind === 'path'
-              ? 'image file (merged .bin or firmware.bin)'
-              : `type FLASH to write ${prompt.label}`}:{' '}
-            <TextInput value={draft} onChange={setDraft} onSubmit={onSubmit} />
-          </Text>
-        )
-        : null}
-      <Text color='gray'>
+      {progress ? <Text color="yellow">{progressLine(progress)}</Text> : null}
+      {prompt ? (
+        <Text>
+          {prompt.kind === 'path' ? 'image file (merged .bin or firmware.bin)' : `type FLASH to write ${prompt.label}`}:{' '}
+          <TextInput value={draft} onChange={setDraft} onSubmit={onSubmit} />
+        </Text>
+      ) : null}
+      <Text color="gray">
         {flashNote ??
           'Over USB. The counters and settings are backed up first and put back if the new firmware loses them.'}
       </Text>

@@ -34,9 +34,10 @@ export interface ConnectProps {
 
 /** The ports found, the last port used when it was not found (a tcp:// address, a typed path), other, demo. */
 function items(ports: PortInfo[], last?: string): Item[] {
-  const extra: PortInfo[] = last && !ports.some((p) => p.path === last)
-    ? [{ path: last, label: last.startsWith('tcp://') ? 'TCP' : 'serial port', kind: 'serial', boardLike: false }]
-    : [];
+  const extra: PortInfo[] =
+    last && !ports.some((p) => p.path === last)
+      ? [{ path: last, label: last.startsWith('tcp://') ? 'TCP' : 'serial port', kind: 'serial', boardLike: false }]
+      : [];
   return [
     ...[...ports, ...extra].map((port): Item => ({ key: port.path, port, kind: 'port' })),
     { key: 'other', kind: 'other' },
@@ -84,7 +85,10 @@ export function ConnectView(props: ConnectProps) {
   }, []);
 
   const list = items(ports ?? [], props.preselect);
-  const index = Math.max(0, list.findIndex((i) => i.key === selected));
+  const index = Math.max(
+    0,
+    list.findIndex((i) => i.key === selected),
+  );
 
   const connect = async (target: Target, port?: PortInfo) => {
     const id = ++attempt.current;
@@ -151,7 +155,10 @@ export function ConnectView(props: ConnectProps) {
   const submitPath = (text: string) => {
     const spec = text.trim().replace(/^~(?=\/)/, process.env.HOME ?? '~');
     if (!spec) return setMode('list');
-    choose(spec, ports?.find((p) => p.path === spec));
+    choose(
+      spec,
+      ports?.find((p) => p.path === spec),
+    );
   };
 
   const submitPin = (text: string) => {
@@ -159,104 +166,101 @@ export function ConnectView(props: ConnectProps) {
     void connect({ demo: false, port: pendingPort.spec, pin: text.trim() || undefined }, pendingPort.port);
   };
 
-  const hints = mode === 'list'
-    ? '↑↓ select · Enter connect · q quit'
-    : mode === 'connecting'
-    ? 'Esc cancel'
-    : 'Enter connect · Esc back';
+  const hints =
+    mode === 'list'
+      ? '↑↓ select · Enter connect · q quit'
+      : mode === 'connecting'
+        ? 'Esc cancel'
+        : 'Enter connect · Esc back';
   return (
-    <Box flexDirection='column'>
-      <Box flexDirection='column' borderStyle='round' borderColor='cyan' paddingX={1}>
-        <Box justifyContent='space-between'>
+    <Box flexDirection="column">
+      <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={1}>
+        <Box justifyContent="space-between">
           <Text bold>HOUR METER</Text>
-          <Text color='gray'>configurator {props.version}</Text>
+          <Text color="gray">configurator {props.version}</Text>
         </Box>
         <Text>Connect to a device</Text>
       </Box>
-      <Box flexDirection='column' borderStyle='single' paddingX={1}>
-        <Text bold color='cyan'>Ports</Text>
-        {ports === undefined ? <Text color='gray'>looking for serial ports...</Text> : null}
-        {ports?.length === 0
-          ? <Text color='gray'>No serial port yet. Plug in the board: it shows up here by itself.</Text>
-          : null}
+      <Box flexDirection="column" borderStyle="single" paddingX={1}>
+        <Text bold color="cyan">
+          Ports
+        </Text>
+        {ports === undefined ? <Text color="gray">looking for serial ports...</Text> : null}
+        {ports?.length === 0 ? (
+          <Text color="gray">No serial port yet. Plug in the board: it shows up here by itself.</Text>
+        ) : null}
         {list.map((item, i) => {
           const on = i === index;
           const last = item.port && item.port.path === props.preselect;
           return (
             <Box key={item.key}>
               <Box width={2} flexShrink={0}>
-                <Text color='cyan'>{on ? '▸' : ' '}</Text>
+                <Text color="cyan">{on ? '▸' : ' '}</Text>
               </Box>
-              {item.kind === 'port' && item.port
-                ? (
-                  <>
-                    <Box width={18} flexShrink={0} marginRight={1}>
-                      <Text inverse={on} bold={on} wrap='truncate-middle'>{item.port.path}</Text>
-                    </Box>
-                    <Text color='gray' wrap='truncate-end'>
-                      {item.port.label}
-                      {item.port.kind === 'bluetooth' && props.pin === undefined ? ' (asks for the PIN)' : ''}
+              {item.kind === 'port' && item.port ? (
+                <>
+                  <Box width={18} flexShrink={0} marginRight={1}>
+                    <Text inverse={on} bold={on} wrap="truncate-middle">
+                      {item.port.path}
                     </Text>
-                    {item.key === fresh
-                      ? (
-                        <Box marginLeft={2}>
-                          <Text color='green'>just plugged in</Text>
-                        </Box>
-                      )
-                      : null}
-                    {last && item.key !== fresh
-                      ? (
-                        <Box marginLeft={2}>
-                          <Text color='green'>last used</Text>
-                        </Box>
-                      )
-                      : null}
-                  </>
-                )
-                : item.kind === 'other'
-                ? <Text inverse={on} bold={on}>Other port or tcp://host:port...</Text>
-                : (
-                  <>
-                    <Box width={18} flexShrink={0}>
-                      <Text inverse={on} bold={on}>Demo</Text>
+                  </Box>
+                  <Text color="gray" wrap="truncate-end">
+                    {item.port.label}
+                    {item.port.kind === 'bluetooth' && props.pin === undefined ? ' (asks for the PIN)' : ''}
+                  </Text>
+                  {item.key === fresh ? (
+                    <Box marginLeft={2}>
+                      <Text color="green">just plugged in</Text>
                     </Box>
-                    <Text color='gray'>a simulated device, no hardware needed</Text>
-                  </>
-                )}
+                  ) : null}
+                  {last && item.key !== fresh ? (
+                    <Box marginLeft={2}>
+                      <Text color="green">last used</Text>
+                    </Box>
+                  ) : null}
+                </>
+              ) : item.kind === 'other' ? (
+                <Text inverse={on} bold={on}>
+                  Other port or tcp://host:port...
+                </Text>
+              ) : (
+                <>
+                  <Box width={18} flexShrink={0}>
+                    <Text inverse={on} bold={on}>
+                      Demo
+                    </Text>
+                  </Box>
+                  <Text color="gray">a simulated device, no hardware needed</Text>
+                </>
+              )}
             </Box>
           );
         })}
       </Box>
-      {mode === 'path'
-        ? (
-          <Box paddingX={1} gap={1}>
-            <Text>Port:</Text>
-            <TextInput
-              value={draft}
-              onChange={setDraft}
-              onSubmit={submitPath}
-              placeholder='/dev/ttyUSB0 or tcp://127.0.0.1:5555'
-            />
-          </Box>
-        )
-        : null}
-      {mode === 'pin'
-        ? (
-          <Box paddingX={1} gap={1}>
-            <Text>Bluetooth PIN for {pendingPort?.spec} (Enter: none):</Text>
-            <TextInput value={draft} onChange={setDraft} onSubmit={submitPin} mask='*' />
-          </Box>
-        )
-        : null}
-      {mode === 'connecting'
-        ? (
-          <Text color='yellow'>
-            {` ◌ Connecting to ${pendingPort?.spec}... (an ESP32 board restarts when its port opens)`}
-          </Text>
-        )
-        : null}
-      {problem && mode !== 'connecting' ? <Text color='red'>{` ✘ ${problem}`}</Text> : null}
-      <Text color='gray'>{` ${hints}`}</Text>
+      {mode === 'path' ? (
+        <Box paddingX={1} gap={1}>
+          <Text>Port:</Text>
+          <TextInput
+            value={draft}
+            onChange={setDraft}
+            onSubmit={submitPath}
+            placeholder="/dev/ttyUSB0 or tcp://127.0.0.1:5555"
+          />
+        </Box>
+      ) : null}
+      {mode === 'pin' ? (
+        <Box paddingX={1} gap={1}>
+          <Text>Bluetooth PIN for {pendingPort?.spec} (Enter: none):</Text>
+          <TextInput value={draft} onChange={setDraft} onSubmit={submitPin} mask="*" />
+        </Box>
+      ) : null}
+      {mode === 'connecting' ? (
+        <Text color="yellow">
+          {` ◌ Connecting to ${pendingPort?.spec}... (an ESP32 board restarts when its port opens)`}
+        </Text>
+      ) : null}
+      {problem && mode !== 'connecting' ? <Text color="red">{` ✘ ${problem}`}</Text> : null}
+      <Text color="gray">{` ${hints}`}</Text>
     </Box>
   );
 }

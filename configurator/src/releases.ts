@@ -148,14 +148,19 @@ export async function listFromWeb(options: GitHubOptions = {}): Promise<Firmware
   const feed = parseFeed(await (await get(`${WEB_URL}.atom`, 'GitHub release feed', options)).text());
   const latest = await latestTag(options).catch(() => undefined);
   const latestDate = feed.find((r) => r.tag === latest)?.date;
-  const releases = await Promise.all(feed.map(async ({ tag, date }) => {
-    const base = `${WEB_URL}/download/${encodeURIComponent(tag)}`;
-    const sums = await get(`${base}/${SUMS_ASSET}`, `${tag} ${SUMS_ASSET}`, options).then((r) => r.text(), () => '');
-    const image = [...parseSums(sums).keys()].find((name) => FIRMWARE_ASSET.test(name));
-    if (!image) return undefined; // no firmware in this release
-    const assets = [image, SUMS_ASSET].map((name) => ({ name, browser_download_url: `${base}/${name}` }));
-    return { tag_name: tag, draft: false, prerelease: !!latestDate && date > latestDate, published_at: date, assets };
-  }));
+  const releases = await Promise.all(
+    feed.map(async ({ tag, date }) => {
+      const base = `${WEB_URL}/download/${encodeURIComponent(tag)}`;
+      const sums = await get(`${base}/${SUMS_ASSET}`, `${tag} ${SUMS_ASSET}`, options).then(
+        (r) => r.text(),
+        () => '',
+      );
+      const image = [...parseSums(sums).keys()].find((name) => FIRMWARE_ASSET.test(name));
+      if (!image) return undefined; // no firmware in this release
+      const assets = [image, SUMS_ASSET].map((name) => ({ name, browser_download_url: `${base}/${name}` }));
+      return { tag_name: tag, draft: false, prerelease: !!latestDate && date > latestDate, published_at: date, assets };
+    }),
+  );
   return parseReleases(releases.filter((r) => r !== undefined));
 }
 
@@ -225,7 +230,9 @@ export async function downloadFirmware(
 ): Promise<Download> {
   const sha256 = await expectedSha256(release, options);
   const path = join(dir, release.asset);
-  const existing = await Bun.file(path).bytes().catch(() => undefined);
+  const existing = await Bun.file(path)
+    .bytes()
+    .catch(() => undefined);
   if (existing && sha256Hex(existing) === sha256) return { path, bytes: existing, sha256, cached: true };
   const bytes = await fetchVerified(release, sha256, options);
   // Written under a temporary name, then renamed: a cut download never looks finished, and two downloads of the

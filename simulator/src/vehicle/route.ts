@@ -38,7 +38,11 @@ export class RouteFollower {
   private segment = 0;
   done = false;
 
-  constructor(frame: LocalFrame, private readonly plan: RoutePlan, private readonly kind: VehicleKind) {
+  constructor(
+    frame: LocalFrame,
+    private readonly plan: RoutePlan,
+    private readonly kind: VehicleKind,
+  ) {
     const pts = plan.waypoints.map((w) => ({ ...frame.toEnu(w), u: w.alt, speed: w.speed }));
     if (plan.loop && pts.length > 2) pts.push(pts[0]);
     this.points = pts;
@@ -65,8 +69,8 @@ export class RouteFollower {
     while (this.segment < pts.length - 2) {
       const a = pts[this.segment];
       const b = pts[this.segment + 1];
-      const along = ((s.e - a.e) * (b.e - a.e) + (s.n - a.n) * (b.n - a.n)) /
-        Math.max(1e-6, (b.e - a.e) ** 2 + (b.n - a.n) ** 2);
+      const along =
+        ((s.e - a.e) * (b.e - a.e) + (s.n - a.n) * (b.n - a.n)) / Math.max(1e-6, (b.e - a.e) ** 2 + (b.n - a.n) ** 2);
       if (along < 1 && Math.hypot(b.e - s.e, b.n - s.n) > distance * 0.9) break;
       this.segment++;
     }

@@ -60,34 +60,34 @@ export function GamepadMapper({ mapping, onChange }: { mapping: Mapping; onChang
   }, [listening, mapping]);
 
   return (
-    <div className='space-y-3'>
-      <p className='text-xs text-slate-500'>
+    <div className="space-y-3">
+      <p className="text-xs text-slate-500">
         {padName
           ? `Gamepad: ${padName}`
           : 'No gamepad yet: connect one and press any button (browsers only show a pad after a press).'}
       </p>
-      <table className='w-full text-sm'>
+      <table className="w-full text-sm">
         <tbody>
           {ACTIONS.map(({ action, label, hint }) => {
             const b = mapping[action];
             return (
-              <tr key={action} className='border-b border-slate-100 last:border-0 dark:border-slate-800'>
-                <td className='py-1.5 pr-2'>
-                  <span className='text-slate-800 dark:text-slate-100'>{label}</span>
-                  <span className='block text-xs text-slate-500'>{hint}</span>
+              <tr key={action} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
+                <td className="py-1.5 pr-2">
+                  <span className="text-slate-800 dark:text-slate-100">{label}</span>
+                  <span className="block text-xs text-slate-500">{hint}</span>
                 </td>
-                <td className='w-24 py-1.5'>
-                  <div className='h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800'>
+                <td className="w-24 py-1.5">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                     <div
-                      className='h-full bg-sky-600'
+                      className="h-full bg-sky-600"
                       style={{ width: `${Math.round(Math.min(1, Math.abs(values[action])) * 100)}%` }}
                     />
                   </div>
-                  <span className='text-xs text-slate-500'>{describeBinding(b)}</span>
+                  <span className="text-xs text-slate-500">{describeBinding(b)}</span>
                 </td>
-                <td className='py-1.5 pl-2 text-right whitespace-nowrap'>
+                <td className="py-1.5 pl-2 text-right whitespace-nowrap">
                   <button
-                    type='button'
+                    type="button"
                     onClick={() => setListening(listening === action ? null : action)}
                     className={`rounded-md border px-2 py-1 text-xs ${
                       listening === action
@@ -99,10 +99,10 @@ export function GamepadMapper({ mapping, onChange }: { mapping: Mapping; onChang
                   </button>
                   {b && (
                     <button
-                      type='button'
+                      type="button"
                       onClick={() => update({ ...mapping, [action]: { ...b, invert: !b.invert } })}
-                      className='ml-1 rounded-md border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800'
-                      title='Reverse the direction'
+                      className="ml-1 rounded-md border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+                      title="Reverse the direction"
                     >
                       Flip
                     </button>
@@ -114,9 +114,9 @@ export function GamepadMapper({ mapping, onChange }: { mapping: Mapping; onChang
         </tbody>
       </table>
       <button
-        type='button'
+        type="button"
         onClick={() => update(DEFAULT_MAPPING)}
-        className='text-xs text-slate-600 underline dark:text-slate-400'
+        className="text-xs text-slate-600 underline dark:text-slate-400"
       >
         Reset to the standard layout (triggers drive, left stick steers, A = GPS fix)
       </button>

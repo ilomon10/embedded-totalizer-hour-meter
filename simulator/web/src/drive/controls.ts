@@ -64,10 +64,10 @@ export function describeBinding(b: Binding | null): string {
 /** Read one binding from a pad: -1..1 for axes, 0..1 for buttons, dead zone applied. */
 export function readBinding(pad: Gamepad, b: Binding | null): number {
   if (!b) return 0;
-  const raw = b.kind === 'axis' ? pad.axes[b.index] ?? 0 : pad.buttons[b.index]?.value ?? 0;
+  const raw = b.kind === 'axis' ? (pad.axes[b.index] ?? 0) : (pad.buttons[b.index]?.value ?? 0);
   const v = b.invert ? -raw : raw;
   if (Math.abs(v) < b.deadzone) return 0;
-  return Math.sign(v) * (Math.abs(v) - b.deadzone) / (1 - b.deadzone);
+  return (Math.sign(v) * (Math.abs(v) - b.deadzone)) / (1 - b.deadzone);
 }
 
 /** The first input that moves well away from its resting value: used by "Assign". */

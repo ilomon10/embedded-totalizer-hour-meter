@@ -90,9 +90,7 @@ export class VehicleLayer implements CustomLayerInterface {
     );
     this.body.scale.setScalar(exaggerate);
     // Mercator: x east, y SOUTH, z up, in mercator units: flip y and scale metres.
-    const model = new Matrix4()
-      .makeTranslation(at.x, at.y, at.z)
-      .scale(new Vector3(metre, -metre, metre));
+    const model = new Matrix4().makeTranslation(at.x, at.y, at.z).scale(new Vector3(metre, -metre, metre));
     this.camera.projectionMatrix = new Matrix4().fromArray(Array.from(matrix as ArrayLike<number>)).multiply(model);
     this.renderer.resetState();
     this.renderer.render(this.scene, this.camera);

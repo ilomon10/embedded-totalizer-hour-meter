@@ -14,7 +14,10 @@ export const realClock: Clock = {
 };
 
 export class FakeClock implements Clock {
-  constructor(private ms = 0, private epochS = 1791376496) {} // 2026-10-07T12:34:56Z
+  constructor(
+    private ms = 0,
+    private epochS = 1791376496,
+  ) {} // 2026-10-07T12:34:56Z
 
   nowMs(): number {
     return this.ms;

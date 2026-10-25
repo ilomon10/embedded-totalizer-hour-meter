@@ -56,13 +56,19 @@ function graticule(center: LatLon) {
   const lat0 = Math.round(center.lat / step) * step;
   const lon0 = Math.round(center.lon / step) * step;
   for (let i = -40; i <= 40; i++) {
-    lines.push([[lon0 - 40 * step, lat0 + i * step], [lon0 + 40 * step, lat0 + i * step]]);
-    lines.push([[lon0 + i * step, lat0 - 40 * step], [lon0 + i * step, lat0 + 40 * step]]);
+    lines.push([
+      [lon0 - 40 * step, lat0 + i * step],
+      [lon0 + 40 * step, lat0 + i * step],
+    ]);
+    lines.push([
+      [lon0 + i * step, lat0 - 40 * step],
+      [lon0 + i * step, lat0 + 40 * step],
+    ]);
   }
   return { type: 'FeatureCollection' as const, features: lines.map(line) };
 }
 
-const lerpAngle = (a: number, b: number, k: number) => a + ((((b - a + 540) % 360) - 180) * k);
+const lerpAngle = (a: number, b: number, k: number) => a + (((b - a + 540) % 360) - 180) * k;
 
 export function MapView(props: Props) {
   const host = useRef<HTMLDivElement>(null);
@@ -231,14 +237,16 @@ export function MapView(props: Props) {
         const p = latest.current;
         const s = shown.current && !p.reducedMotion ? shown.current : t;
         const k = 1 - Math.exp(-POSE_LAMBDA * dt);
-        const next: Pose = p.reducedMotion ? t : {
-          lat: s.lat + (t.lat - s.lat) * k,
-          lon: s.lon + (t.lon - s.lon) * k,
-          alt: s.alt + (t.alt - s.alt) * k,
-          headingDeg: lerpAngle(s.headingDeg, t.headingDeg, k),
-          pitchDeg: s.pitchDeg + (t.pitchDeg - s.pitchDeg) * k,
-          rollDeg: s.rollDeg + (t.rollDeg - s.rollDeg) * k,
-        };
+        const next: Pose = p.reducedMotion
+          ? t
+          : {
+              lat: s.lat + (t.lat - s.lat) * k,
+              lon: s.lon + (t.lon - s.lon) * k,
+              alt: s.alt + (t.alt - s.alt) * k,
+              headingDeg: lerpAngle(s.headingDeg, t.headingDeg, k),
+              pitchDeg: s.pitchDeg + (t.pitchDeg - s.pitchDeg) * k,
+              rollDeg: s.rollDeg + (t.rollDeg - s.rollDeg) * k,
+            };
         shown.current = next;
         layerRef.current.setPose(next);
         if (p.follow && dragging.current === null) {
@@ -258,13 +266,13 @@ export function MapView(props: Props) {
     const v = props.vehicle;
     target.current = v
       ? {
-        lat: v.truth.lat,
-        lon: v.truth.lon,
-        alt: v.truth.alt,
-        headingDeg: v.truth.headingDeg,
-        pitchDeg: v.truth.pitchDeg,
-        rollDeg: v.truth.rollDeg,
-      }
+          lat: v.truth.lat,
+          lon: v.truth.lon,
+          alt: v.truth.alt,
+          headingDeg: v.truth.headingDeg,
+          pitchDeg: v.truth.pitchDeg,
+          rollDeg: v.truth.rollDeg,
+        }
       : null;
     if (!v) {
       shown.current = null;
@@ -275,7 +283,12 @@ export function MapView(props: Props) {
     const est = v ? points([{ lat: v.estimate.lat, lon: v.estimate.lon }]) : points([]);
     (map.getSource('estimate-now') as GeoJSONSource).setData(est);
     (map.getSource('error') as GeoJSONSource).setData(
-      v ? line([[v.truth.lon, v.truth.lat], [v.estimate.lon, v.estimate.lat]]) : line([]),
+      v
+        ? line([
+            [v.truth.lon, v.truth.lat],
+            [v.estimate.lon, v.estimate.lat],
+          ])
+        : line([]),
     );
   }, [props.vehicle, ready]);
 
@@ -326,11 +339,11 @@ export function MapView(props: Props) {
   }, [props.placing, props.editing]);
 
   return (
-    <div className='relative h-full w-full'>
+    <div className="relative h-full w-full">
       {/* h-full, not absolute: maplibre-gl.css sets position: relative on its container */}
-      <div ref={host} className='h-full w-full' />
+      <div ref={host} className="h-full w-full" />
       {offline && (
-        <p className='pointer-events-none absolute top-3 left-3 rounded-md bg-white/90 px-2 py-1 text-xs text-slate-700 shadow-sm dark:bg-slate-900/90 dark:text-slate-200'>
+        <p className="pointer-events-none absolute top-3 left-3 rounded-md bg-white/90 px-2 py-1 text-xs text-slate-700 shadow-sm dark:bg-slate-900/90 dark:text-slate-200">
           Map tiles can't load (offline?): showing a grid with lines about 220 m apart.
         </p>
       )}

@@ -151,10 +151,13 @@ function parseCli(argv: string[]): Cli {
   const faults = new Faults(random);
   for (const s of scenarios) if (s.faults) faults.set(s.faults);
   const transport = pickTransport(values.pty, values.tcp, values.stdio);
-  const web = values.web === undefined && values['web-host'] === undefined ? undefined : {
-    port: int(values.web, DEFAULT_WEB_PORT, 0, 65535, '--web'),
-    hostname: values['web-host'] ?? '127.0.0.1',
-  };
+  const web =
+    values.web === undefined && values['web-host'] === undefined
+      ? undefined
+      : {
+          port: int(values.web, DEFAULT_WEB_PORT, 0, 65535, '--web'),
+          hostname: values['web-host'] ?? '127.0.0.1',
+        };
   return {
     transport,
     resetOnOpen: transport instanceof PtyTransport && !values['no-reset'] && !values.bt, // DTR reset is USB-only

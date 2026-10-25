@@ -124,19 +124,15 @@ test('mount calibration: each step says why it failed', () => {
   const m = new MountCalibrator();
   moving.drive(PULL_AWAY, 2, () => {});
   m.start('level');
-  moving.drive(
-    { throttle: 0.3, brake: 0, steer: 0.6, pitch: 0 },
-    12,
-    (s, t) => m.feed({ accel: s.accelG, gyro: s.gyroDps }, t),
+  moving.drive({ throttle: 0.3, brake: 0, steer: 0.6, pitch: 0 }, 12, (s, t) =>
+    m.feed({ accel: s.accelG, gyro: s.gyroDps }, t),
   );
   assert(m.status().phase === 'failed' && /kept moving/.test(m.status().message), m.status().message);
 
-  for (
-    const [c, why] of [[{ throttle: 0, brake: 1, steer: 0, pitch: 0 }, /not enough acceleration/], [
-      { throttle: 1, brake: 0, steer: 1, pitch: 0 },
-      /turned/,
-    ]] as const
-  ) {
+  for (const [c, why] of [
+    [{ throttle: 0, brake: 1, steer: 0, pitch: 0 }, /not enough acceleration/],
+    [{ throttle: 1, brake: 0, steer: 1, pitch: 0 }, /turned/],
+  ] as const) {
     const r = rig({ yawDeg: 0, pitchDeg: 0, rollDeg: 0 });
     const cal = new MountCalibrator();
     const feed = (s: RawSample, t: number) => cal.feed({ accel: s.accelG, gyro: s.gyroDps }, t);

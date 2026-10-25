@@ -48,7 +48,8 @@ const SECTOR = 0x1000; // partitions start and end on 4 KB flash sectors
 const SEGMENT = 0x10000; // each 64 KB-aligned piece is its own zlib stream, so one data packet never expands far
 const RESET_HOLD_MS = [50, 550]; // esptool's two bootloader timings (the second for a slow EN capacitor)
 
-export const NO_BOOTLOADER = "no answer from the ESP32 bootloader. Use the board's USB port: the UART pins and " +
+export const NO_BOOTLOADER =
+  "no answer from the ESP32 bootloader. Use the board's USB port: the UART pins and " +
   'Bluetooth cannot reach the bootloader. Without auto-reset: hold BOOT, tap EN, release BOOT, then use --no-reset.';
 
 function isApp(image: Uint8Array, at: number): boolean {
@@ -60,7 +61,8 @@ function isApp(image: Uint8Array, at: number): boolean {
 export function inspectImage(image: Uint8Array): ImageKind {
   if (image.length > FLASH_SIZE) throw new Error(`the image is ${image.length} bytes, more than the 4 MB flash`);
   if (isApp(image, 0)) return 'app';
-  const table = image.length >= PARTITION_TABLE_OFFSET + 2 &&
+  const table =
+    image.length >= PARTITION_TABLE_OFFSET + 2 &&
     image[PARTITION_TABLE_OFFSET] === (PARTITION_MAGIC & 0xff) &&
     image[PARTITION_TABLE_OFFSET + 1] === PARTITION_MAGIC >> 8;
   if (image[BOOTLOADER_OFFSET] === IMAGE_MAGIC && table && isApp(image, APP_OFFSET)) return 'merged';
@@ -110,7 +112,9 @@ export function flashRegions(image: Uint8Array): Region[] {
   const table = partitionTable(image);
   const app = table.find((p) => p.type === PARTITION_APP && p.offset === APP_OFFSET);
   const appEnd = app ? app.offset + app.size : image.length;
-  const kept = keptPartitions(table).filter((p) => p.offset < image.length).sort((a, b) => a.offset - b.offset);
+  const kept = keptPartitions(table)
+    .filter((p) => p.offset < image.length)
+    .sort((a, b) => a.offset - b.offset);
   for (const p of kept) {
     // Skipping a corrupt entry could leave the app unwritten while the flash still verifies: refuse instead.
     const overlapsApp = p.offset < appEnd && p.offset + p.size > APP_OFFSET;
@@ -225,7 +229,7 @@ export async function flashDevice(
         done += segment.data.length;
       }
       progress('verify', done);
-      if (await rom.flashMd5(region.offset, region.data.length) !== md5Hex(region.data)) {
+      if ((await rom.flashMd5(region.offset, region.data.length)) !== md5Hex(region.data)) {
         throw new Error(
           `verify failed at 0x${region.offset.toString(16)}: the flash reads back different. Flash again.`,
         );

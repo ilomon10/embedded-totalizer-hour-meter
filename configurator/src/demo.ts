@@ -34,7 +34,11 @@ export function createDemoLink(): Link {
       send = send.then(() => deviceSide.write(frame)).catch(() => {});
     },
   );
-  const splitter = new FrameSplitter((cmd) => device.onCommand(cmd), undefined, () => device.panicSignal());
+  const splitter = new FrameSplitter(
+    (cmd) => device.onCommand(cmd),
+    undefined,
+    () => device.panicSignal(),
+  );
   void (async () => {
     for await (const bytes of deviceSide.readable) splitter.push(bytes);
   })().catch(() => {});

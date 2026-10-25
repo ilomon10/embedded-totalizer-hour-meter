@@ -109,8 +109,8 @@ const FLASH_STORE_FIRMWARE = 0x00020600; // 2.6.0 keeps settings + counters in t
 /** Red for flags that need action now. A missing EEPROM is only a warning when the flash keeps the values. */
 export function flagColor(flag: string, flags: string[], fwVersion: Value | undefined): 'red' | 'yellow' {
   if (flag === 'eepromMissing') {
-    const flashKeeps = typeof fwVersion === 'number' && fwVersion >= FLASH_STORE_FIRMWARE &&
-      !flags.includes('flashStoreMissing');
+    const flashKeeps =
+      typeof fwVersion === 'number' && fwVersion >= FLASH_STORE_FIRMWARE && !flags.includes('flashStoreMissing');
     return flashKeeps ? 'yellow' : 'red';
   }
   return SERIOUS.has(flag) ? 'red' : 'yellow';
@@ -130,7 +130,9 @@ function describeEvent(values: Record<string, Value>): { level: Level; text: str
     return { level: result === 'Ok' ? 'ok' : 'error', text: `calibration finished: ${result}` };
   }
   if (kind === 'devicesChanged') {
-    const list = devicesPresent(values.devices as number).map(([n, p]) => `${n} ${p ? 'yes' : 'no'}`).join(', ');
+    const list = devicesPresent(values.devices as number)
+      .map(([n, p]) => `${n} ${p ? 'yes' : 'no'}`)
+      .join(', ');
     return { level: 'warn', text: `modules changed: ${list}` };
   }
   if (kind === 'boot') {

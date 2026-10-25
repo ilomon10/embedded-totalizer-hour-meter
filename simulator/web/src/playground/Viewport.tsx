@@ -40,15 +40,19 @@ interface Props {
   reducedMotion: boolean;
 }
 
-function FollowingBoard(
-  { attitude, dragging, snap, vibrationRmsMg, reducedMotion }: {
-    attitude: Attitude;
-    dragging: React.RefObject<boolean>;
-    snap: React.RefObject<boolean>;
-    vibrationRmsMg: number;
-    reducedMotion: boolean;
-  },
-) {
+function FollowingBoard({
+  attitude,
+  dragging,
+  snap,
+  vibrationRmsMg,
+  reducedMotion,
+}: {
+  attitude: Attitude;
+  dragging: React.RefObject<boolean>;
+  snap: React.RefObject<boolean>;
+  vibrationRmsMg: number;
+  reducedMotion: boolean;
+}) {
   const turn = useRef<Group>(null);
   const shake = useRef<Group>(null);
   const target = useRef(new Quaternion());
@@ -118,8 +122,8 @@ export function Viewport({ attitude, vibrationRmsMg, onChange, dark, reducedMoti
     <div
       ref={host}
       tabIndex={0}
-      aria-label='3D board. Drag to tilt, drag the ring to turn, double-click to level. Arrow keys and [ ] nudge.'
-      className='relative h-full w-full cursor-grab touch-none outline-none select-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-inset'
+      aria-label="3D board. Drag to tilt, drag the ring to turn, double-click to level. Arrow keys and [ ] nudge."
+      className="relative h-full w-full cursor-grab touch-none outline-none select-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-inset"
       onPointerDown={(e) => {
         if (ringActive.current || e.button !== 0) return; // the ring handles its own drag
         e.currentTarget.setPointerCapture(e.pointerId);
@@ -130,11 +134,14 @@ export function Viewport({ attitude, vibrationRmsMg, onChange, dark, reducedMoti
       onPointerMove={(e) => {
         const s = start.current;
         if (!s) return;
-        onChange({
-          ...s.attitude,
-          rollDeg: wrapRoll(s.attitude.rollDeg + (e.clientX - s.x) * DEG_PER_PX),
-          pitchDeg: clampPitch(s.attitude.pitchDeg - (e.clientY - s.y) * DEG_PER_PX), // drag up = nose up = positive pitch
-        }, 'drag');
+        onChange(
+          {
+            ...s.attitude,
+            rollDeg: wrapRoll(s.attitude.rollDeg + (e.clientX - s.x) * DEG_PER_PX),
+            pitchDeg: clampPitch(s.attitude.pitchDeg - (e.clientY - s.y) * DEG_PER_PX), // drag up = nose up = positive pitch
+          },
+          'drag',
+        );
       }}
       onPointerUp={(e) => {
         if (!start.current) return;
@@ -145,11 +152,7 @@ export function Viewport({ attitude, vibrationRmsMg, onChange, dark, reducedMoti
       }}
       onDoubleClick={() => onChange({ ...latest.current, rollDeg: 0, pitchDeg: 0 }, 'end')}
     >
-      <Canvas
-        shadows
-        dpr={[1, 2]}
-        camera={{ position: [5.6, 6.2, 8.2], fov: 30 }}
-      >
+      <Canvas shadows dpr={[1, 2]} camera={{ position: [5.6, 6.2, 8.2], fov: 30 }}>
         <FitCamera />
         <hemisphereLight args={[dark ? '#9fb3c4' : '#ffffff', dark ? '#1a2128' : '#b9c2c8', dark ? 1.1 : 1.4]} />
         <directionalLight position={[3, 6, 2]} intensity={dark ? 1.6 : 2.2} castShadow shadow-mapSize={[1024, 1024]} />

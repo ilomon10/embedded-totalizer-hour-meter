@@ -75,10 +75,13 @@ test('firmware words', () => {
     noReset: false,
     yes: false,
   });
-  assertEquals(
-    parseFirmwareArgs(['flash', 'build/firmware.bin', '--baud', '921600', '--no-reset', '--yes']),
-    { sub: 'flash', spec: 'build/firmware.bin', baud: 921600, noReset: true, yes: true },
-  );
+  assertEquals(parseFirmwareArgs(['flash', 'build/firmware.bin', '--baud', '921600', '--no-reset', '--yes']), {
+    sub: 'flash',
+    spec: 'build/firmware.bin',
+    baud: 921600,
+    noReset: true,
+    yes: true,
+  });
   assertThrows(() => parseFirmwareArgs(['flash', '--baud', '1234']), /--baud: one of/);
   assertThrows(() => parseFirmwareArgs(['flash', 'a.bin', 'b.bin']), /one release or file/);
   assertThrows(() => parseFirmwareArgs(['flash', '--force']), /unknown option '--force'/);
@@ -132,8 +135,14 @@ test('after a reformat: counters and settings are put back, the version is check
   });
   const notes = await restoreAfterUpdate(dev, snap(), after, '2.6.0');
   // The settings go in one COMMAND: the firmware checks rules between settings on the state after all of them.
-  assertEquals(sent, [{ setRunSeconds: 4_500_000, setTotalCount: 15_000 }, { output: 3, pulsesPerUnit: 10 }]);
-  assertEquals(notes.map((n) => n.level), ['ok', 'warn', 'ok', 'ok']);
+  assertEquals(sent, [
+    { setRunSeconds: 4_500_000, setTotalCount: 15_000 },
+    { output: 3, pulsesPerUnit: 10 },
+  ]);
+  assertEquals(
+    notes.map((n) => n.level),
+    ['ok', 'warn', 'ok', 'ok'],
+  );
   assert(/runs firmware 2\.6\.0/.test(notes[0].text));
   assert(/counters restored.*0\.00 h -> 1250\.00 h/.test(notes[2].text));
   assert(/2 restored/.test(notes[3].text));
@@ -148,9 +157,14 @@ test('a setting the new firmware refuses: the others are put back one by one', a
     settings: { telemetryIntervalMs: 1000, output: 1, pulsesPerUnit: 1, bluetooth: true },
   });
   const notes = await restoreAfterUpdate(dev, snap(), after);
-  assertEquals(sent, [{ setTotalCount: 15_000 }, { output: 3, pulsesPerUnit: 10 }, { output: 3 }, {
-    pulsesPerUnit: 10,
-  }]);
+  assertEquals(sent, [
+    { setTotalCount: 15_000 },
+    { output: 3, pulsesPerUnit: 10 },
+    { output: 3 },
+    {
+      pulsesPerUnit: 10,
+    },
+  ]);
   assertEquals(notes[1].text, 'counters restored from the backup: totalizer 0 -> 15000 pulses'); // no hour meter
   assertEquals(notes[2], { level: 'warn', text: '1 settings restored; the new firmware refused output' });
 });
@@ -159,7 +173,10 @@ test('after an update: a wrong version is an error, changed settings are only li
   const { dev, sent } = fakeRequester();
   const notes = await restoreAfterUpdate(dev, snap(), snap({ settings: { ...snap().settings, output: 1 } }), '2.6.0');
   assertEquals(sent, []);
-  assertEquals(notes.map((n) => n.level), ['error', 'warn']);
+  assertEquals(
+    notes.map((n) => n.level),
+    ['error', 'warn'],
+  );
   assert(/reports firmware 2\.5\.0, not 2\.6\.0/.test(notes[0].text));
   assert(/output 1 \(was 3\).*hour-meter set output=3/.test(notes[1].text));
 
@@ -172,10 +189,16 @@ test('after an update: a board without the flash store partition is an error', a
   const { dev } = fakeRequester();
   const missing = snap({ fwVersion: 0x00020600, statusFlags: flag('flashStoreMissing') | flag('eepromMissing') });
   const notes = await restoreAfterUpdate(dev, undefined, missing, '2.6.0');
-  assertEquals(notes.map((n) => n.level), ['ok', 'error']);
+  assertEquals(
+    notes.map((n) => n.level),
+    ['ok', 'error'],
+  );
   assert(/flashStoreMissing.*Flash the full merged image/.test(notes[1].text), notes[1].text);
   const fine = await restoreAfterUpdate(dev, undefined, snap({ fwVersion: 0x00020600 }), '2.6.0');
-  assertEquals(fine.map((n) => n.level), ['ok']);
+  assertEquals(
+    fine.map((n) => n.level),
+    ['ok'],
+  );
 });
 
 test('snapshot reads status, counters and settings', async () => {
@@ -186,13 +209,10 @@ test('snapshot reads status, counters and settings', async () => {
   });
   const s = await snapshot(dev);
   assertEquals(sent, [{ get: 3 }, { get: 1 }, { get: 2 }]);
-  assertEquals([s.deviceId, s.fwVersion, s.statusFlags, s.runSeconds, s.totalCount], [
-    0x1a2b3c4d,
-    0x20500,
-    4,
-    3600,
-    42,
-  ]);
+  assertEquals(
+    [s.deviceId, s.fwVersion, s.statusFlags, s.runSeconds, s.totalCount],
+    [0x1a2b3c4d, 0x20500, 4, 3600, 42],
+  );
   assertEquals(s.settings, { telemetryIntervalMs: 500, kalmanQAccel: 0.001, altActiveHigh: false });
 });
 
@@ -204,13 +224,16 @@ test('updateDevice: flash, reconnect, check the version and restore counters tha
 
   const rom = fakeRom();
   const notes: Note[] = [];
-  const { dev, ok } = await updateDevice({
-    port: '/dev/ttyUSB0',
-    image: { bytes: appImage(40_000), label: `${DEMO_FIRMWARE} (v1.0.0)`, version: DEMO_FIRMWARE },
-    note: (n) => notes.push(n),
-    reopen: () => DeviceClient.connect(createDemoLink(), { readyTimeoutMs: 500 }),
-    io: fakeIo(rom).io,
-  }, before);
+  const { dev, ok } = await updateDevice(
+    {
+      port: '/dev/ttyUSB0',
+      image: { bytes: appImage(40_000), label: `${DEMO_FIRMWARE} (v1.0.0)`, version: DEMO_FIRMWARE },
+      note: (n) => notes.push(n),
+      reopen: () => DeviceClient.connect(createDemoLink(), { readyTimeoutMs: 500 }),
+      io: fakeIo(rom).io,
+    },
+    before,
+  );
   if (!dev) throw new Error(`no client after the update: ${notes.map((n) => n.text).join('; ')}`);
   try {
     assert(ok, notes.map((n) => n.text).join('\n'));
@@ -227,44 +250,56 @@ test('updateDevice: flash, reconnect, check the version and restore counters tha
 test('updateDevice: the port is reopened after a short absence; if it stays away, nothing throws', async () => {
   const rom = fakeRom();
   let opens = 0;
-  const flaky = await updateDevice({
-    port: '/dev/ttyUSB0',
-    image: { bytes: appImage(4000), label: 'firmware.bin' },
-    note: () => {},
-    reopen: () =>
-      ++opens < 3
-        ? Promise.reject(new Error('No such file or directory'))
-        : DeviceClient.connect(createDemoLink(), { readyTimeoutMs: 100 }),
-    io: fakeIo(rom).io,
-    retryMs: 10,
-  }, undefined);
+  const flaky = await updateDevice(
+    {
+      port: '/dev/ttyUSB0',
+      image: { bytes: appImage(4000), label: 'firmware.bin' },
+      note: () => {},
+      reopen: () =>
+        ++opens < 3
+          ? Promise.reject(new Error('No such file or directory'))
+          : DeviceClient.connect(createDemoLink(), { readyTimeoutMs: 100 }),
+      io: fakeIo(rom).io,
+      retryMs: 10,
+    },
+    undefined,
+  );
   flaky.dev?.close();
   assertEquals([opens, flaky.ok, flaky.dev !== undefined], [3, true, true]);
 
   const notes: Note[] = [];
-  const gone = await updateDevice({
-    port: '/dev/ttyUSB0',
-    image: { bytes: appImage(4000), label: 'firmware.bin' },
-    note: (n) => notes.push(n),
-    reopen: () => Promise.reject(new Error('No such file or directory')),
-    io: fakeIo(fakeRom()).io,
-    retryMs: 1,
-  }, undefined);
+  const gone = await updateDevice(
+    {
+      port: '/dev/ttyUSB0',
+      image: { bytes: appImage(4000), label: 'firmware.bin' },
+      note: (n) => notes.push(n),
+      reopen: () => Promise.reject(new Error('No such file or directory')),
+      io: fakeIo(fakeRom()).io,
+      retryMs: 1,
+    },
+    undefined,
+  );
   assertEquals([gone.ok, gone.dev], [false, undefined]);
-  assert(notes.some((n) => /written and verified/.test(n.text)), 'the flash itself is reported');
+  assert(
+    notes.some((n) => /written and verified/.test(n.text)),
+    'the flash itself is reported',
+  );
   assertEquals(notes.at(-1), { level: 'error', text: 'the port did not come back (No such file or directory)' });
 });
 
 test('updateDevice: a failed flash still hands back an open client', async () => {
   const rom = fakeRom({ silent: true });
   const notes: Note[] = [];
-  const { dev, ok } = await updateDevice({
-    port: '/dev/ttyUSB0',
-    image: { bytes: appImage(4000), label: 'firmware.bin' },
-    note: (n) => notes.push(n),
-    reopen: () => DeviceClient.connect(createDemoLink(), { readyTimeoutMs: 100 }),
-    io: fakeIo(rom).io,
-  }, undefined);
+  const { dev, ok } = await updateDevice(
+    {
+      port: '/dev/ttyUSB0',
+      image: { bytes: appImage(4000), label: 'firmware.bin' },
+      note: (n) => notes.push(n),
+      reopen: () => DeviceClient.connect(createDemoLink(), { readyTimeoutMs: 100 }),
+      io: fakeIo(rom).io,
+    },
+    undefined,
+  );
   dev?.close();
   assertEquals(ok, false);
   assert(/flash failed: no answer from the ESP32 bootloader/.test(notes[0].text));

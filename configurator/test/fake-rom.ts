@@ -97,7 +97,9 @@ export function fakeRom(options: FakeRomOptions = {}): FakeRom {
         return answer(op);
       }
       case OP.SPI_FLASH_MD5: {
-        const md5 = createHash('md5').update(flash.subarray(arg(0), arg(0) + arg(1))).digest('hex');
+        const md5 = createHash('md5')
+          .update(flash.subarray(arg(0), arg(0) + arg(1)))
+          .digest('hex');
         return answer(op, 0, new TextEncoder().encode(md5));
       }
       default:

@@ -58,7 +58,13 @@ test('get=1..4 answers with the requested data in one ACK', () => {
 test('get=1..4 in one command: the last group is cut at 250 bytes, like the firmware', () => {
   const { device, last } = makeDevice();
   device.powerOn();
-  device.onCommand(command(11, { get: 1 }, [2, 3, 4].map((v) => ({ tag: 101, fmt: 'u8', value: v }))));
+  device.onCommand(
+    command(
+      11,
+      { get: 1 },
+      [2, 3, 4].map((v) => ({ tag: 101, fmt: 'u8', value: v })),
+    ),
+  );
   assertEquals(last().values.ackStatus, Ack.Ok);
   const tags = tagsOf(last());
   assert(tags.includes(54) && tags.includes(129), 'get=1..3 complete');
@@ -251,7 +257,10 @@ test('safe mode: no modules, safeMode flag, no IMU stream; a power cycle or the 
   const boot = sent[0].msg.values;
   assertEquals([boot.devices, boot.lastCause, boot.lastStage], [0, 1, 7]);
   assertEquals((Number(boot.statusFlags) >>> 18) & 1, 1);
-  assertEquals(sent.some((s) => s.msg.msgType === MSG.IMU), false);
+  assertEquals(
+    sent.some((s) => s.msg.msgType === MSG.IMU),
+    false,
+  );
   assertEquals(device.hourMeter().runSeconds > 0, true);
   device.powerOn();
   assertEquals(sent.filter((s) => s.msg.msgType === MSG.EVENT).pop()?.msg.values.devices, 15);

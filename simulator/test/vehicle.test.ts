@@ -18,7 +18,12 @@ import { createRng } from '../src/clock.ts';
 const near = (a: number, b: number, eps: number) => Math.abs(a - b) <= eps;
 
 test('body axes agree with the firmware: world up in the board frame is upVector(roll, pitch)', () => {
-  for (const [roll, pitch, heading] of [[0, 0, 0], [20, -10, 75], [-35, 15, 300], [5, 40, 180]]) {
+  for (const [roll, pitch, heading] of [
+    [0, 0, 0],
+    [20, -10, 75],
+    [-35, 15, 300],
+    [5, 40, 180],
+  ]) {
     const up = toBody(axesOf({ rollDeg: roll, pitchDeg: pitch, headingDeg: heading }), { x: 0, y: 0, z: 1 });
     const want = upVector(roll, pitch);
     assert(near(up.x, want.x, 1e-9) && near(up.y, want.y, 1e-9) && near(up.z, want.z, 1e-9), `${roll}/${pitch}`);
@@ -58,10 +63,10 @@ test('truck: constant steer drives a circle of radius L / tan(steer), and the IM
     horizontalG += Math.hypot(world.x, world.y) / 100;
     yawDps += -s.gyroDps.z / 100; // clockwise turn = negative rate about +z (board level enough)
   }
-  const radius = Truck.WHEELBASE_M / Math.tan(steer * Truck.MAX_STEER_DEG * Math.PI / 180);
+  const radius = Truck.WHEELBASE_M / Math.tan((steer * Truck.MAX_STEER_DEG * Math.PI) / 180);
   const expectedG = (v * v) / radius / 9.80665;
   assert(near(horizontalG, expectedG, expectedG * 0.03), `horizontal ${horizontalG} g, expected ${expectedG}`);
-  assert(near(yawDps, (v / radius) * 180 / Math.PI, 0.6), `yaw ${yawDps} °/s`);
+  assert(near(yawDps, ((v / radius) * 180) / Math.PI, 0.6), `yaw ${yawDps} °/s`);
 });
 
 test('truck: full lock at speed is limited by tyre grip (about 0.45 g), not by geometry', () => {
@@ -92,8 +97,8 @@ test('plane: a coordinated turn has no sideways force; turn rate = g·tan(bank)/
     side += Math.abs(synth.ideal(plane.state).accelG.y) / 100;
   }
   const turned = ((plane.state.headingDeg - start + 360) % 360) / (100 * STEP_S);
-  const bank = 0.6 * Plane.MAX_BANK_DEG * Math.PI / 180;
-  const expected = (9.80665 * Math.tan(bank)) / plane.state.speed * 180 / Math.PI;
+  const bank = (0.6 * Plane.MAX_BANK_DEG * Math.PI) / 180;
+  const expected = (((9.80665 * Math.tan(bank)) / plane.state.speed) * 180) / Math.PI;
   assert(side < 0.01, `side force ${side} g`);
   assert(near(turned, expected, 0.3), `turn ${turned} °/s, expected ${expected}`);
   start = 0;
@@ -109,7 +114,12 @@ test('KalmanAngle port: first sample resets, then it tracks a step change', () =
 
 test('route follower: a truck reaches every corner of a square and stops at the end', () => {
   const frame = new LocalFrame({ lat: 0, lon: 0 });
-  const corners = [[0, 0], [150, 0], [150, 150], [0, 150]].map(([e, n]) => frame.toLatLon({ e, n, u: 0 }));
+  const corners = [
+    [0, 0],
+    [150, 0],
+    [150, 150],
+    [0, 150],
+  ].map(([e, n]) => frame.toLatLon({ e, n, u: 0 }));
   const follower = new RouteFollower(frame, { waypoints: corners, speed: 10, loop: false }, 'truck');
   const truck = new Truck(initialState(90));
   let closest = [Infinity, Infinity, Infinity, Infinity];
@@ -121,15 +131,23 @@ test('route follower: a truck reaches every corner of a square and stops at the 
     });
   }
   assert(follower.done, 'route finished');
-  assert(closest.every((d) => d < 12), `closest approach per corner: ${closest.map((d) => d.toFixed(1))}`);
+  assert(
+    closest.every((d) => d < 12),
+    `closest approach per corner: ${closest.map((d) => d.toFixed(1))}`,
+  );
   assert(truck.state.speed < 2, `stopped at the end (${truck.state.speed} m/s)`);
 });
 
 test('route follower: a plane flies every leg, even when it cuts the corners', () => {
   const frame = new LocalFrame({ lat: 0, lon: 0 });
-  const legs = [[0, 0], [600, 300], [700, -300], [0, -350]].map(([e, n]) => frame.toLatLon({ e, n, u: 0 }));
+  const legs = [
+    [0, 0],
+    [600, 300],
+    [700, -300],
+    [0, -350],
+  ].map(([e, n]) => frame.toLatLon({ e, n, u: 0 }));
   const follower = new RouteFollower(frame, { waypoints: legs, speed: 55, alt: 300, loop: false }, 'plane');
-  const plane = new Plane(initialState(Math.atan2(600, 300) * 180 / Math.PI, 300, 55));
+  const plane = new Plane(initialState((Math.atan2(600, 300) * 180) / Math.PI, 300, 55));
   let closest = [Infinity, Infinity, Infinity];
   for (let i = 0; i < 12000 && !follower.done; i++) {
     plane.step(follower.controls(plane.state));
@@ -139,7 +157,10 @@ test('route follower: a plane flies every leg, even when it cuts the corners', (
     });
   }
   assert(follower.done, 'route finished (no orbiting)');
-  assert(closest.every((d) => d < 200), `closest approach per turn point: ${closest.map((d) => d.toFixed(0))}`);
+  assert(
+    closest.every((d) => d < 200),
+    `closest approach per turn point: ${closest.map((d) => d.toFixed(0))}`,
+  );
 });
 
 test('tracks: GPX and CSV with times become waypoints with speeds', () => {
@@ -171,33 +192,37 @@ function trip(hz: number): number {
   const seconds = 42;
   for (let i = 1; i <= seconds * 100; i++) {
     const t = i * STEP_S;
-    const c = t < 2
-      ? { throttle: 0, brake: 1, steer: 0, pitch: 0 } // parked: the anchor learns gravity here
-      : t < 12
-      ? { throttle: 0.5, brake: 0, steer: 0, pitch: 0 }
-      : t < 32
-      ? { throttle: 0.15, brake: 0, steer: Math.sin(t / 3) * 0.12, pitch: 0 }
-      : { throttle: 0, brake: 0.4, steer: 0, pitch: 0 };
+    const c =
+      t < 2
+        ? { throttle: 0, brake: 1, steer: 0, pitch: 0 } // parked: the anchor learns gravity here
+        : t < 12
+          ? { throttle: 0.5, brake: 0, steer: 0, pitch: 0 }
+          : t < 32
+            ? { throttle: 0.15, brake: 0, steer: Math.sin(t / 3) * 0.12, pitch: 0 }
+            : { throttle: 0, brake: 0.4, steer: 0, pitch: 0 };
     truck.step(c);
     const ideal = synth.ideal(truck.state);
     if (i % every !== 0) continue;
     const s = synth.noisy(ideal, truck.vibrationMg());
     const a = s.accelG;
     const g = s.gyroDps;
-    dr.onFrame({
-      msgType: MSG.IMU,
-      timestamp: 0,
-      records: [
-        rec('accelX', Math.round(a.x * 1000)),
-        rec('accelY', Math.round(a.y * 1000)),
-        rec('accelZ', Math.round(a.z * 1000)),
-        rec('gyroX', Math.round(g.x * 10)),
-        rec('gyroY', Math.round(g.y * 10)),
-        rec('gyroZ', Math.round(g.z * 10)),
-        rec('roll', Math.round(rollFromAccel(a) * 100)),
-        rec('pitch', Math.round(pitchFromAccel(a) * 100)),
-      ],
-    }, t);
+    dr.onFrame(
+      {
+        msgType: MSG.IMU,
+        timestamp: 0,
+        records: [
+          rec('accelX', Math.round(a.x * 1000)),
+          rec('accelY', Math.round(a.y * 1000)),
+          rec('accelZ', Math.round(a.z * 1000)),
+          rec('gyroX', Math.round(g.x * 10)),
+          rec('gyroY', Math.round(g.y * 10)),
+          rec('gyroZ', Math.round(g.z * 10)),
+          rec('roll', Math.round(rollFromAccel(a) * 100)),
+          rec('pitch', Math.round(pitchFromAccel(a) * 100)),
+        ],
+      },
+      t,
+    );
   }
   const est = dr.estimate();
   return Math.hypot(est.e - truck.state.e, est.n - truck.state.n);
@@ -235,27 +260,35 @@ test('right after a vehicle is attached, the first IMU frame already carries its
 async function flight(hz: number): Promise<{ errorM: number; distanceM: number }> {
   const { StrapdownIns } = await import('../src/vehicle/strapdown.ts');
   const frame = new LocalFrame({ lat: 0, lon: 0 });
-  const legs = [[0, 0], [600, 300], [700, -300], [0, -350]].map(([e, n]) => frame.toLatLon({ e, n, u: 0 }));
+  const legs = [
+    [0, 0],
+    [600, 300],
+    [700, -300],
+    [0, -350],
+  ].map(([e, n]) => frame.toLatLon({ e, n, u: 0 }));
   const follower = new RouteFollower(frame, { waypoints: legs, speed: 55, alt: 300, loop: false }, 'plane');
-  const plane = new Plane(initialState(Math.atan2(600, 300) * 180 / Math.PI, 300, 55));
+  const plane = new Plane(initialState((Math.atan2(600, 300) * 180) / Math.PI, 300, 55));
   const synth = new ImuSynth(createRng(3));
   const ins = new StrapdownIns();
   const feed = (
     sample: { accelG: { x: number; y: number; z: number }; gyroDps: { x: number; y: number; z: number } },
     t: number,
   ) =>
-    ins.onFrame({
-      msgType: MSG.IMU,
-      timestamp: 0,
-      records: [
-        rec('accelX', Math.round(sample.accelG.x * 1000)),
-        rec('accelY', Math.round(sample.accelG.y * 1000)),
-        rec('accelZ', Math.round(sample.accelG.z * 1000)),
-        rec('gyroX', Math.round(sample.gyroDps.x * 10)),
-        rec('gyroY', Math.round(sample.gyroDps.y * 10)),
-        rec('gyroZ', Math.round(sample.gyroDps.z * 10)),
-      ],
-    }, t);
+    ins.onFrame(
+      {
+        msgType: MSG.IMU,
+        timestamp: 0,
+        records: [
+          rec('accelX', Math.round(sample.accelG.x * 1000)),
+          rec('accelY', Math.round(sample.accelG.y * 1000)),
+          rec('accelZ', Math.round(sample.accelG.z * 1000)),
+          rec('gyroX', Math.round(sample.gyroDps.x * 10)),
+          rec('gyroY', Math.round(sample.gyroDps.y * 10)),
+          rec('gyroZ', Math.round(sample.gyroDps.z * 10)),
+        ],
+      },
+      t,
+    );
   feed(synth.noisy(synth.ideal(plane.state), plane.vibrationMg()), 0); // the stream was already running
   ins.anchor(plane.state);
   const every = Math.round(100 / hz);

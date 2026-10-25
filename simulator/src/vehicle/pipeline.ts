@@ -23,7 +23,10 @@ export class KalmanAngle {
   rMeasure = 0.03;
   private angle = 0;
   private bias = 0;
-  private p = [[0, 0], [0, 0]];
+  private p = [
+    [0, 0],
+    [0, 0],
+  ];
   private initialized = false;
 
   update(accelAngleDeg: number, gyroRateDps: number, dt: number): number {
@@ -56,7 +59,10 @@ export class KalmanAngle {
   reset(angleDeg: number): void {
     this.angle = angleDeg;
     this.bias = 0;
-    this.p = [[0, 0], [0, 0]];
+    this.p = [
+      [0, 0],
+      [0, 0],
+    ];
     this.initialized = true;
   }
 
@@ -71,7 +77,10 @@ export class Kalman1D {
   private p = 1;
   private initialized = false;
 
-  constructor(private q = 0.001, private r = 0.01) {}
+  constructor(
+    private q = 0.001,
+    private r = 0.01,
+  ) {}
 
   setNoise(q: number, r: number): void {
     this.q = q > 0 ? q : 1e-9;

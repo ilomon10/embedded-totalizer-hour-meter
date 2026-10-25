@@ -47,10 +47,11 @@ export async function run(argv: string[]): Promise<number> {
   const newConnection = (target: Target, client?: DeviceClient, portId?: string) =>
     new Connection({ target, open, client, portId, timeSync, ports: () => listPorts() });
   // A port on the command line (or --demo) skips the connect screen, and waits for the port if it is not there.
-  const start = demo.value || port
-    ? newConnection({ demo: demo.value, port: demo.value ? 'demo' : port!, pin: pinValue }).start()
-    : undefined;
-  const preselect = await loadLastPort(env) ?? env('HOUR_METER_PORT');
+  const start =
+    demo.value || port
+      ? newConnection({ demo: demo.value, port: demo.value ? 'demo' : port!, pin: pinValue }).start()
+      : undefined;
+  const preselect = (await loadLastPort(env)) ?? env('HOUR_METER_PORT');
 
   const session: { conn?: Connection } = { conn: start }; // closed at the end
   const app = render(
@@ -70,7 +71,14 @@ export async function run(argv: string[]): Promise<number> {
 }
 
 /** The connect screen until a port is open, then the configurator; `p` there comes back here. */
-function Root({ start, preselect, pin, open, newConnection, onConnection }: {
+function Root({
+  start,
+  preselect,
+  pin,
+  open,
+  newConnection,
+  onConnection,
+}: {
   start?: Connection;
   preselect?: string;
   pin?: string;
@@ -114,9 +122,9 @@ function Root({ start, preselect, pin, open, newConnection, onConnection }: {
       conn={conn}
       initial={initialState(conn.demo ? 'simulated' : conn.port, conn.demo)}
       hardReset={wired ? () => hardReset(conn.port) : undefined}
-      hardResetNote={wired
-        ? undefined
-        : 'Hard reset needs a local USB serial port (not the demo, tcp:// or Bluetooth).'}
+      hardResetNote={
+        wired ? undefined : 'Hard reset needs a local USB serial port (not the demo, tcp:// or Bluetooth).'
+      }
       firmware={firmware}
       onSwitchPort={() => {
         conn.close();
@@ -140,19 +148,21 @@ function firmwareActions(conn: Connection): FirmwareActions {
     image: (release) => releaseImage(release, github),
     file: (path) => fileImage(path.replace(/^~(?=\/)/, env('HOME') ?? '~')),
     flashNote: problem && `${problem[0].toUpperCase()}${problem.slice(1)}.`,
-    flash: problem ? undefined : async (image, onProgress, note) => {
-      const before = conn.client && await snapshot(conn.client).catch(() => undefined);
-      if (!before) note({ level: 'warn', text: 'the device does not answer: no backup (flashing still works)' });
-      else {
-        await saveBackup(before).then(
-          (file) => note({ level: 'info', text: `backup: ${file}` }),
-          (err) => note({ level: 'warn', text: `backup not saved (${(err as Error).message}); kept in memory` }),
-        );
-      }
-      await conn.pause(); // also waits for a reconnect that is opening the port right now
-      const { dev, ok } = await updateDevice({ port: conn.port, image, onProgress, note, reopen }, before);
-      conn.resume(dev);
-      return { ok };
-    },
+    flash: problem
+      ? undefined
+      : async (image, onProgress, note) => {
+          const before = conn.client && (await snapshot(conn.client).catch(() => undefined));
+          if (!before) note({ level: 'warn', text: 'the device does not answer: no backup (flashing still works)' });
+          else {
+            await saveBackup(before).then(
+              (file) => note({ level: 'info', text: `backup: ${file}` }),
+              (err) => note({ level: 'warn', text: `backup not saved (${(err as Error).message}); kept in memory` }),
+            );
+          }
+          await conn.pause(); // also waits for a reconnect that is opening the port right now
+          const { dev, ok } = await updateDevice({ port: conn.port, image, onProgress, note, reopen }, before);
+          conn.resume(dev);
+          return { ok };
+        },
   };
 }

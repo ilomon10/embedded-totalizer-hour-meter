@@ -158,8 +158,8 @@ export function effectiveInputs(inputs: Inputs, ctx: AutoContext, vehicle: Parti
     inputs.modes[g] === 'manual'
       ? inputs.manual[g]
       : inputs.modes[g] === 'vehicle'
-      ? (vehicle[g] as Omit<InputValues, 'imu'>[G] | undefined) ?? auto[g]
-      : auto[g];
+        ? ((vehicle[g] as Omit<InputValues, 'imu'>[G] | undefined) ?? auto[g])
+        : auto[g];
   const motion = pick('motion');
   const vibration = pick('vibration');
   return {
@@ -167,11 +167,12 @@ export function effectiveInputs(inputs: Inputs, ctx: AutoContext, vehicle: Parti
     pulses: pick('pulses'),
     motion,
     vibration,
-    imu: inputs.modes.imu === 'manual'
-      ? inputs.manual.imu
-      : inputs.modes.imu === 'vehicle' && vehicle.imu
-      ? vehicle.imu
-      : autoImu(motion, vibration, ctx.random),
+    imu:
+      inputs.modes.imu === 'manual'
+        ? inputs.manual.imu
+        : inputs.modes.imu === 'vehicle' && vehicle.imu
+          ? vehicle.imu
+          : autoImu(motion, vibration, ctx.random),
     rtc: pick('rtc'),
     errors: pick('errors'),
     flags: pick('flags'),

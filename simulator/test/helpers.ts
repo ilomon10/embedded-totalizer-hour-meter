@@ -18,9 +18,14 @@ export function command(
   values: Record<string, number | boolean>,
   extra: { tag: number; fmt: string; value: number }[] = [],
 ): DecodedMessage {
-  const packet = codec.encode(
-    { msgType: MSG.COMMAND, seq, deviceId: 0, timestamp: 0, values, records: extra } as never,
-  );
+  const packet = codec.encode({
+    msgType: MSG.COMMAND,
+    seq,
+    deviceId: 0,
+    timestamp: 0,
+    values,
+    records: extra,
+  } as never);
   return codec.decode(packet);
 }
 

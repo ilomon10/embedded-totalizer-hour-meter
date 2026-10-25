@@ -251,7 +251,8 @@ export async function restoreAfterUpdate(
   if (decodeStatusFlags(after.statusFlags).includes('flashStoreMissing')) {
     notes.push({
       level: 'error',
-      text: 'no flash store (flashStoreMissing): the partition table on the board has no hmdata partition, ' +
+      text:
+        'no flash store (flashStoreMissing): the partition table on the board has no hmdata partition, ' +
         'so the counters can only be kept in an EEPROM. Flash the full merged image again',
     });
   }
@@ -272,7 +273,9 @@ export async function restoreAfterUpdate(
       plan.counters.setTotalCount === undefined
         ? ''
         : `totalizer ${after.totalCount ?? '?'} -> ${before.totalCount} pulses`,
-    ].filter(Boolean).join(', ');
+    ]
+      .filter(Boolean)
+      .join(', ');
     try {
       await dev.request(plan.counters);
       notes.push({ level: 'ok', text: `counters restored from the backup: ${text}` });
@@ -362,12 +365,17 @@ export async function updateDevice(
   const { note } = options;
   let restarted: boolean | undefined; // undefined: the flash failed
   try {
-    const result = await flashDevice(options.port, options.image.bytes, {
-      baud: options.baud,
-      noReset: options.noReset,
-      onProgress: options.onProgress,
-      note: (text) => note({ level: 'info', text }),
-    }, options.io ?? systemIo);
+    const result = await flashDevice(
+      options.port,
+      options.image.bytes,
+      {
+        baud: options.baud,
+        noReset: options.noReset,
+        onProgress: options.onProgress,
+        note: (text) => note({ level: 'info', text }),
+      },
+      options.io ?? systemIo,
+    );
     restarted = result.restarted;
     note({
       level: 'ok',
@@ -451,18 +459,21 @@ async function runVersion(target: Target, github: GitHubOptions): Promise<number
   }
   const device = formatFirmware(fw);
   console.log(`device firmware: ${device}`);
-  const latest = await listFirmware(github).then((list) => findRelease(list, 'latest')).catch((err: Error) => err);
+  const latest = await listFirmware(github)
+    .then((list) => findRelease(list, 'latest'))
+    .catch((err: Error) => err);
   if (latest instanceof Error) console.log(`latest release:  unknown (${latest.message})`);
   else if (!latest) console.log('latest release:  none found');
   else {
     const c = device === '?' ? undefined : compareVersions(latest.version, device);
-    const verdict = c === undefined
-      ? ''
-      : c > 0
-      ? ': update available (hour-meter firmware flash)'
-      : c === 0
-      ? ': up to date'
-      : ': the device runs a newer firmware';
+    const verdict =
+      c === undefined
+        ? ''
+        : c > 0
+          ? ': update available (hour-meter firmware flash)'
+          : c === 0
+            ? ': up to date'
+            : ': the device runs a newer firmware';
     console.log(`latest release:  ${latest.version} (${latest.tag}, ${day(latest.date)})${verdict}`);
   }
   return 0;
@@ -534,18 +545,21 @@ async function runFlash(args: Extract<FirmwareArgs, { sub: 'flash' }>, target: T
     return 1;
   }
   const printer = progressPrinter();
-  const { dev, ok } = await updateDevice({
-    port: target.port,
-    image,
-    baud: args.baud,
-    noReset: args.noReset,
-    onProgress: printer.progress,
-    note: (n) => {
-      printer.end();
-      printNote(n);
+  const { dev, ok } = await updateDevice(
+    {
+      port: target.port,
+      image,
+      baud: args.baud,
+      noReset: args.noReset,
+      onProgress: printer.progress,
+      note: (n) => {
+        printer.end();
+        printNote(n);
+      },
+      reopen: () => connect({ ...target, pin: undefined }, REOPEN_READY_MS),
     },
-    reopen: () => connect({ ...target, pin: undefined }, REOPEN_READY_MS),
-  }, before);
+    before,
+  );
   dev?.close();
   return ok ? 0 : 1;
 }

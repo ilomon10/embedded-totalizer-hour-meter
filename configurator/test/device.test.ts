@@ -80,7 +80,10 @@ test('auto time sync answers an unknown device time with setTime, rate-limited',
 
   await push(telemetry(false));
   assertEquals(await synced, 1791376496);
-  assertEquals(commands.map((c) => c.values), [{ setTime: 1791376496 }]);
+  assertEquals(
+    commands.map((c) => c.values),
+    [{ setTime: 1791376496 }],
+  );
 
   await push(telemetry(false)); // within 30 s: rate-limited
   await push(telemetry(true)); // valid time: nothing to do

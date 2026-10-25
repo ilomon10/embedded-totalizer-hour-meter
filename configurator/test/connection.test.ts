@@ -56,7 +56,8 @@ function connection(options: Partial<ConnectionOptions> & Pick<ConnectionOptions
 }
 
 test('an unplugged board is waited for and connected again', async () => {
-  const first = board(), second = board();
+  const first = board(),
+    second = board();
   const { open } = fakeOpen([sysError('ENOENT', 'gone'), second]);
   const { conn, states, clients } = connection({ open, client: first.dev });
   assertEquals(conn.state.kind, 'connected');
@@ -66,21 +67,17 @@ test('an unplugged board is waited for and connected again', async () => {
   const waiting = states.find((s) => s.kind === 'waiting');
   assert(waiting?.kind === 'waiting' && waiting.lost);
   // the unplug stays the reason while the port is missing
-  assertEquals(states.filter((s) => s.kind === 'waiting').map((s) => s.kind === 'waiting' && s.problem), [
-    'the board was disconnected',
-    'the board was disconnected',
-  ]);
+  assertEquals(
+    states.filter((s) => s.kind === 'waiting').map((s) => s.kind === 'waiting' && s.problem),
+    ['the board was disconnected', 'the board was disconnected'],
+  );
   assertEquals(conn.state.kind, 'connected');
   conn.close();
 });
 
 test('a port that does not open yet is tried again, with the reason', async () => {
   const b = board();
-  const { open, opened } = fakeOpen([
-    sysError('EACCES', 'no'),
-    sysError('EACCES', 'no'),
-    b,
-  ]);
+  const { open, opened } = fakeOpen([sysError('EACCES', 'no'), sysError('EACCES', 'no'), b]);
   const { conn, states } = connection({ open });
   conn.start();
   await until(() => conn.state.kind === 'connected');
@@ -91,7 +88,8 @@ test('a port that does not open yet is tried again, with the reason', async () =
 });
 
 test('a board back under another name is found by its adapter id', async () => {
-  const first = board(), second = board();
+  const first = board(),
+    second = board();
   const { open, opened } = fakeOpen([second]);
   const ports: PortInfo[] = [{ path: '/dev/ttyUSB1', label: '', kind: 'usb', id: 'usb-CP2102-0001', boardLike: true }];
   const { conn } = connection({
@@ -108,7 +106,8 @@ test('a board back under another name is found by its adapter id', async () => {
 });
 
 test('a port file that disappears counts as unplugged, even while the read still waits', async () => {
-  const first = board(), second = board();
+  const first = board(),
+    second = board();
   let there = true;
   const { open } = fakeOpen([second]);
   const { conn, states } = connection({ open, client: first.dev, present: () => Promise.resolve(there) });
@@ -123,7 +122,8 @@ test('a port file that disappears counts as unplugged, even while the read still
 });
 
 test('a flash: pause closes the client without reconnecting, resume takes the flasher client', async () => {
-  const first = board(), flashed = board();
+  const first = board(),
+    flashed = board();
   const { open, opened } = fakeOpen([]);
   const { conn, clients } = connection({ open, client: first.dev });
   conn.pause();
@@ -163,7 +163,9 @@ test('closed: no more attempts, and a connect that finishes late is closed', asy
 
 test('a reconnect still opening when a flash starts: pause waits for it, and it is never adopted', async () => {
   let release: (dev: DeviceClient) => void = () => {};
-  const first = board(), late = board(), flashed = board();
+  const first = board(),
+    late = board(),
+    flashed = board();
   let lateClosed = false;
   late.dev.close = () => (lateClosed = true);
   const { conn, clients } = connection({ open: () => new Promise((r) => (release = r)), client: first.dev });

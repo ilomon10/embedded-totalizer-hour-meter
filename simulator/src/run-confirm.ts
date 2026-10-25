@@ -17,7 +17,7 @@ export class RunConfirm {
       this.confirmedNow = false;
     } else if (rmsMg >= minMg) {
       this.confirmedNow = true;
-    } else if (rmsMg < Math.fround(minMg * RELEASE_PERCENT / 100)) {
+    } else if (rmsMg < Math.fround((minMg * RELEASE_PERCENT) / 100)) {
       this.confirmedNow = false;
     }
     return this.confirmedNow;

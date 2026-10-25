@@ -23,7 +23,10 @@ async function golden(name: string): Promise<string> {
   const start = source.indexOf(`${name} =`);
   if (start < 0) throw new Error(`${name} not found in ${FIRMWARE_TEST.pathname}`);
   const literal = source.slice(start, source.indexOf(';', start));
-  return [...literal.matchAll(/"([^"]*)"/g)].map((m) => m[1]).join('').trim();
+  return [...literal.matchAll(/"([^"]*)"/g)]
+    .map((m) => m[1])
+    .join('')
+    .trim();
 }
 
 // Same inputs as test_golden_doc_examples() in esp32/test/test_app/test_main.cpp.

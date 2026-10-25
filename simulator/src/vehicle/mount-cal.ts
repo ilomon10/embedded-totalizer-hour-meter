@@ -128,13 +128,14 @@ export class MountCalibrator {
   }
 
   status(): MountCalStatus {
-    const progress = this.phase === 'level'
-      ? this.goodS / LEVEL_FOR_S
-      : this.phase === 'front'
-      ? this.goodS / FRONT_FOR_S
-      : this.phase === 'done' || this.phase === 'leveled'
-      ? 1
-      : 0;
+    const progress =
+      this.phase === 'level'
+        ? this.goodS / LEVEL_FOR_S
+        : this.phase === 'front'
+          ? this.goodS / FRONT_FOR_S
+          : this.phase === 'done' || this.phase === 'leveled'
+            ? 1
+            : 0;
     const up = this.up ? mountFrom(this.up, { x: 1, y: 0, z: 0 }) : null;
     return {
       phase: this.phase,
@@ -156,7 +157,7 @@ export class MountCalibrator {
 
   private levelSample({ accel, gyro }: MountSample, dt: number): void {
     this.elapsedS += dt;
-    const m = this.mean ??= { ...accel };
+    const m = (this.mean ??= { ...accel });
     const k = 1 - Math.exp(-dt / 0.3);
     m.x += (accel.x - m.x) * k;
     m.y += (accel.y - m.y) * k;

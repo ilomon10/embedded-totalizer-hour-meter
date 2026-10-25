@@ -11,16 +11,16 @@ function formatSetting(v: number | boolean | undefined): string {
 
 export function SettingsPanel({ state }: PanelProps) {
   return (
-    <Panel title='Settings (written by the host)'>
-      <table className='w-full text-sm'>
+    <Panel title="Settings (written by the host)">
+      <table className="w-full text-sm">
         <tbody>
           {Object.entries(SETTINGS).map(([name, spec]) => (
-            <tr key={name} className='border-b border-slate-100 last:border-0 dark:border-slate-800'>
-              <td className='py-1 font-mono text-xs text-slate-500'>{spec.tag}</td>
-              <td className='py-1 text-slate-700 dark:text-slate-300'>{name}</td>
-              <td className='py-1 text-right font-mono tabular-nums'>
+            <tr key={name} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
+              <td className="py-1 font-mono text-xs text-slate-500">{spec.tag}</td>
+              <td className="py-1 text-slate-700 dark:text-slate-300">{name}</td>
+              <td className="py-1 text-right font-mono tabular-nums">
                 {formatSetting(state.settings[name])}
-                {spec.unit && <span className='ml-1 text-xs text-slate-500'>{spec.unit}</span>}
+                {spec.unit && <span className="ml-1 text-xs text-slate-500">{spec.unit}</span>}
               </td>
             </tr>
           ))}

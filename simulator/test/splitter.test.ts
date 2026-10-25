@@ -6,7 +6,11 @@ import { FrameSplitter } from '../src/splitter.ts';
 
 test('64 zeros in a row fire onPanic once; 63 do not; non-zero bytes reset the run', () => {
   let panics = 0;
-  const s = new FrameSplitter(() => {}, () => {}, () => panics++);
+  const s = new FrameSplitter(
+    () => {},
+    () => {},
+    () => panics++,
+  );
   s.push(new Uint8Array(63));
   assertEquals(panics, 0);
   s.push(Uint8Array.of(1));

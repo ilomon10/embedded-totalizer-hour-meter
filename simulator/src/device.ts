@@ -203,7 +203,11 @@ export class SimDevice {
   /** This moment's sensor values (auto or manual per group), refreshed on every poll. */
   private current: InputValues;
 
-  constructor(private readonly opts: DeviceOptions, private readonly clock: Clock, private readonly send: SendFn) {
+  constructor(
+    private readonly opts: DeviceOptions,
+    private readonly clock: Clock,
+    private readonly send: SendFn,
+  ) {
     this.fitted = opts.fitted;
     this.rtcHasTime = (opts.fitted & Device.rtc) !== 0 && opts.rtcBattery;
     this.stored = {
@@ -342,7 +346,10 @@ export class SimDevice {
     this.lastSavedEpoch = r.savedEpoch;
     this.journalSeq = r.journalSeq;
     const same = (s: Stored | null) =>
-      s !== null && s.lineage === this.lineage && s.journalSeq === r.journalSeq && s.runSeconds === r.runSeconds &&
+      s !== null &&
+      s.lineage === this.lineage &&
+      s.journalSeq === r.journalSeq &&
+      s.runSeconds === r.runSeconds &&
       s.totalCount === r.totalCount;
     if ((this.flashAvailable && !same(this.flashStored)) || (eeprom && !same(eeprom))) this.persist(nowMs);
   }
@@ -436,14 +443,18 @@ export class SimDevice {
   }
 
   private computeInputs(nowMs: number): InputValues {
-    return effectiveInputs(this.inputState, {
-      t: (nowMs - this.bootMs) / 1000,
-      engineOn: this.engineOn,
-      vibrationMg: this.vibrationMg,
-      pulsesPerSecond: this.opts.pulsesPerSecond,
-      rtcBattery: this.opts.rtcBattery,
-      random: this.opts.random,
-    }, this.vehicleSim?.inputValues() ?? {});
+    return effectiveInputs(
+      this.inputState,
+      {
+        t: (nowMs - this.bootMs) / 1000,
+        engineOn: this.engineOn,
+        vibrationMg: this.vibrationMg,
+        pulsesPerSecond: this.opts.pulsesPerSecond,
+        rtcBattery: this.opts.rtcBattery,
+        random: this.opts.random,
+      },
+      this.vehicleSim?.inputValues() ?? {},
+    );
   }
 
   // ------------------------------------------------------------- vehicle ----
@@ -585,12 +596,15 @@ export class SimDevice {
     if (!this.calib || nowMs < this.calib.doneAtMs) return;
     const kind = this.calib.kind;
     this.calib = null;
-    this.cal = kind === 1 ? { ...this.cal, ...measuredImuCalibration(), flags: this.cal.flags | 1 } : {
-      ...this.cal,
-      magOffsetUt: { x: 12.5, y: -8.25, z: 31 },
-      magScale: { x: 1.02, y: 0.97, z: 1.01 },
-      flags: this.cal.flags | 2,
-    };
+    this.cal =
+      kind === 1
+        ? { ...this.cal, ...measuredImuCalibration(), flags: this.cal.flags | 1 }
+        : {
+            ...this.cal,
+            magOffsetUt: { x: 12.5, y: -8.25, z: 31 },
+            magScale: { x: 1.02, y: 0.97, z: 1.01 },
+            flags: this.cal.flags | 2,
+          };
     this.emit(buildCalibrationEvent(this.status(), kind, Ack.Ok, this.cal), true);
   }
 

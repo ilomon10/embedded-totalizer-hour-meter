@@ -46,14 +46,17 @@ function Tick({ deg, long, color }: { deg: number; long: boolean; color: string 
   );
 }
 
-export function HeadingRing(
-  { headingDeg, onDrag, onDragEnd, dark }: {
-    headingDeg: number;
-    onDrag: (headingDeg: number) => void;
-    onDragEnd: () => void;
-    dark: boolean;
-  },
-) {
+export function HeadingRing({
+  headingDeg,
+  onDrag,
+  onDragEnd,
+  dark,
+}: {
+  headingDeg: number;
+  onDrag: (headingDeg: number) => void;
+  onDragEnd: () => void;
+  dark: boolean;
+}) {
   const [hover, setHover] = useState(false);
   const [dragging, setDragging] = useState(false);
   const ink = dark ? '#8a97a3' : '#5f6c76';
@@ -122,7 +125,7 @@ export function HeadingRing(
         rotation={[-Math.PI / 2, 0, -headingDeg * DEG]}
       >
         <circleGeometry args={[0.1, 3]} />
-        <meshBasicMaterial color='#ee6a1f' />
+        <meshBasicMaterial color="#ee6a1f" />
       </mesh>
     </group>
   );

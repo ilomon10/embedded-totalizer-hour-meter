@@ -93,11 +93,14 @@ const API = 'https://api.github.com/repos/ilomon10/embedded-totalizer-hour-meter
 
 test('releases: one entry per firmware, newest first; drafts and releases without firmware are skipped', () => {
   const list = parseReleases(RELEASES);
-  assertEquals(list.map((r) => `${r.version} ${r.tag}${r.prerelease ? ' pre' : ''}`), [
-    '2.6.0 v1.1.0 pre',
-    '2.5.0 v1.0.0', // also in firmware-v2.5.0: the newer release wins
-    '2.4.0 firmware-v2.4.0',
-  ]);
+  assertEquals(
+    list.map((r) => `${r.version} ${r.tag}${r.prerelease ? ' pre' : ''}`),
+    [
+      '2.6.0 v1.1.0 pre',
+      '2.5.0 v1.0.0', // also in firmware-v2.5.0: the newer release wins
+      '2.4.0 firmware-v2.4.0',
+    ],
+  );
   assertEquals(findRelease(list, 'latest')?.version, '2.5.0'); // not the prerelease
   assertEquals(findRelease(list, 'v1.0.0')?.version, '2.5.0');
   assertEquals(findRelease(list, '2.4.0')?.tag, 'firmware-v2.4.0');
@@ -139,7 +142,8 @@ test('over the API limit the list comes from the web: feed, SHA256SUMS, releases
   const entry = (tag: string, date: string) =>
     `<entry><id>tag:github.com,2008:Repository/1/${tag}</id><updated>${date}</updated>` +
     `<link rel="alternate" type="text/html" href="${web}/tag/${tag}"/><title>${tag}</title></entry>`;
-  const feed = `<?xml version="1.0"?><feed>${entry('v1.1.0', '2026-11-01T00:00:00Z')}` +
+  const feed =
+    `<?xml version="1.0"?><feed>${entry('v1.1.0', '2026-11-01T00:00:00Z')}` +
     `${entry('simulator-v1.3.0', '2026-10-20T00:00:00Z')}${entry('v1.0.0', '2026-10-15T02:24:11Z')}</feed>`;
   const sums = (...names: string[]) => names.map((n) => `${'a'.repeat(64)}  ${n}`).join('\n');
   const list = await listFirmware({
@@ -156,10 +160,10 @@ test('over the API limit the list comes from the web: feed, SHA256SUMS, releases
     }),
   });
   // v1.1.0 is newer than what releases/latest points at, so it is a prerelease.
-  assertEquals(list.map((r) => `${r.version} ${r.tag}${r.prerelease ? ' pre' : ''}`), [
-    '2.6.0 v1.1.0 pre',
-    '2.5.0 v1.0.0',
-  ]);
+  assertEquals(
+    list.map((r) => `${r.version} ${r.tag}${r.prerelease ? ' pre' : ''}`),
+    ['2.6.0 v1.1.0 pre', '2.5.0 v1.0.0'],
+  );
   assertEquals(findRelease(list, 'latest')?.version, '2.5.0');
   assertEquals(list[1].url, `${web}/download/v1.0.0/hour-meter-2.5.0-esp32dev-merged.bin`);
   assertEquals(list[1].sumsUrl, `${web}/download/v1.0.0/SHA256SUMS`);
@@ -176,7 +180,10 @@ test('downloads are checked against SHA256SUMS; a tampered image is refused', as
   const good = { fetch: fakeFetch({ [release.sumsUrl]: sums, [release.url]: image }, seen), token: 'abc' };
   const expected = await expectedSha256(release, good);
   assertEquals(await fetchVerified(release, expected, good), image);
-  assertEquals(seen.map((r) => r.headers.get('authorization')), [null, null]); // not sent to the downloads
+  assertEquals(
+    seen.map((r) => r.headers.get('authorization')),
+    [null, null],
+  ); // not sent to the downloads
 
   const bad = { fetch: fakeFetch({ [release.url]: new TextEncoder().encode('evil bytes') }) };
   await assertRejects(() => fetchVerified(release, expected, bad), /does not match SHA256SUMS/);

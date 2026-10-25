@@ -30,7 +30,9 @@ function line(text: string): void {
 }
 
 function recordsText(records: { tag: number; value: unknown }[]): string {
-  return recordPairs(records).map(([name, value]) => `${name}=${value}`).join(' ');
+  return recordPairs(records)
+    .map(([name, value]) => `${name}=${value}`)
+    .join(' ');
 }
 
 function flagsText(flags: number): string {
@@ -64,15 +66,20 @@ export class FrameLog {
     if (msg.msgType === MSG.ACK) {
       const rejected = value('rejectedTag');
       const data = msg.records.filter((r) => ![242, 243, 59].includes(r.tag)).length;
-      return `ackSeq=${value('ackSeq')} ${ACK_STATUS[Number(value('ackStatus'))]}` +
-        (rejected !== undefined ? ` rejectedTag=${rejected}` : '') + (data ? ` +${data} records` : '');
+      return (
+        `ackSeq=${value('ackSeq')} ${ACK_STATUS[Number(value('ackStatus'))]}` +
+        (rejected !== undefined ? ` rejectedTag=${rejected}` : '') +
+        (data ? ` +${data} records` : '')
+      );
     }
     if (msg.msgType === MSG.EVENT) {
       const flags = value('statusFlags');
-      return `${EVENT_NAME[Number(value('eventKind'))]}` +
+      return (
+        `${EVENT_NAME[Number(value('eventKind'))]}` +
         (flags !== undefined
           ? ` devices=0x${Number(value('devices')).toString(16)} flags=${flagsText(Number(flags))}`
-          : '');
+          : '')
+      );
     }
     return recordsText(msg.records);
   }

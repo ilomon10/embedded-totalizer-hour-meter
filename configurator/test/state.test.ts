@@ -20,20 +20,28 @@ import { linkBanner, parseSetting } from '../src/tui/App.tsx';
 
 test('frames merge into a flat value map and settings are tracked', () => {
   let s = initialState('/dev/ttyUSB0', false);
-  s = applyMessage(s, {
-    msgType: 1,
-    seq: 1,
-    deviceId: 0xabc,
-    timestamp: 0,
-    values: { runHours: 1250, timeValid: false, statusFlags: 4 },
-  }, 1000);
-  s = applyMessage(s, {
-    msgType: 4,
-    seq: 2,
-    deviceId: 0xabc,
-    timestamp: 0,
-    values: { ackSeq: 9, ackStatus: 0, telemetryIntervalMs: 500, streamMode: 2 },
-  }, 2000);
+  s = applyMessage(
+    s,
+    {
+      msgType: 1,
+      seq: 1,
+      deviceId: 0xabc,
+      timestamp: 0,
+      values: { runHours: 1250, timeValid: false, statusFlags: 4 },
+    },
+    1000,
+  );
+  s = applyMessage(
+    s,
+    {
+      msgType: 4,
+      seq: 2,
+      deviceId: 0xabc,
+      timestamp: 0,
+      values: { ackSeq: 9, ackStatus: 0, telemetryIntervalMs: 500, streamMode: 2 },
+    },
+    2000,
+  );
   assertEquals(s.connection, 'connected');
   assertEquals(s.values.runHours, 1250);
   assertEquals(s.settings, { telemetryIntervalMs: 500, streamMode: 2 });
@@ -52,7 +60,10 @@ test('events are logged in plain language', () => {
 
 test('helpers', () => {
   assertEquals(formatFirmware(0x00020200), '2.2.0');
-  assertEquals(devicesPresent(0b1011).map(([, p]) => p), [true, true, false, true]);
+  assertEquals(
+    devicesPresent(0b1011).map(([, p]) => p),
+    [true, true, false, true],
+  );
   let s = initialState('x', true);
   for (let i = 0; i < MAX_LOG + 10; i++) s = addLog(s, 'info', `#${i}`, i);
   assertEquals(s.log.length, MAX_LOG);
@@ -110,10 +121,10 @@ test('the link: a disconnect and the reconnect are logged once each, the demo st
   s = applyConnState(s, lost, '/dev/ttyUSB0', 2000);
   s = applyConnState(s, lost, '/dev/ttyUSB0', 3000); // tried again: no new line
   assertEquals(s.connection, 'waiting');
-  assertEquals(s.log.map((e) => [e.level, e.text]), [[
-    'error',
-    'the board was disconnected: waiting for /dev/ttyUSB0',
-  ]]);
+  assertEquals(
+    s.log.map((e) => [e.level, e.text]),
+    [['error', 'the board was disconnected: waiting for /dev/ttyUSB0']],
+  );
   assertEquals(
     linkBanner(s, 14_000, true),
     'The board was disconnected (12 s ago). Plug it back in: it reconnects by itself · p: other port.',

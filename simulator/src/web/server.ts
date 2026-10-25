@@ -117,13 +117,16 @@ function applyDriveMessage(msg: ClientMessage, ctx: WebContext): string | null {
     case 'controls': {
       const c = msg.controls;
       const num = (v: unknown, lo: number, hi: number) => Math.max(lo, Math.min(hi, Number(v) || 0));
-      sim.setLive({
-        throttle: num(c.throttle, 0, 1),
-        brake: num(c.brake, 0, 1),
-        steer: num(c.steer, -1, 1),
-        pitch: num(c.pitch, -1, 1),
-        reverse: c.reverse === true,
-      }, ctx.nowMs());
+      sim.setLive(
+        {
+          throttle: num(c.throttle, 0, 1),
+          brake: num(c.brake, 0, 1),
+          steer: num(c.steer, -1, 1),
+          pitch: num(c.pitch, -1, 1),
+          reverse: c.reverse === true,
+        },
+        ctx.nowMs(),
+      );
       return null;
     }
     case 'anchor':
@@ -298,7 +301,8 @@ function isFile(path: string): boolean {
 function staticFile(pathname: string): Response {
   const dist = DISTS.find((dir) => isFile(join(dir, 'index.html')));
   const clean = pathname.replace(/^\/+/, '').replace(/\.\.+/g, '');
-  for (const candidate of dist ? [clean || 'index.html', 'index.html'] : []) { // unknown paths: the SPA
+  for (const candidate of dist ? [clean || 'index.html', 'index.html'] : []) {
+    // unknown paths: the SPA
     const path = join(dist!, candidate);
     if (isFile(path)) return new Response(Bun.file(path)); // the content type comes from the extension
   }

@@ -76,7 +76,7 @@ export class StrapdownIns implements Estimator {
     return {
       e: this.pos.x,
       n: this.pos.y,
-      headingDeg: ((Math.atan2(x.x, x.y) / DEG) + 360) % 360,
+      headingDeg: (Math.atan2(x.x, x.y) / DEG + 360) % 360,
       speed: Math.hypot(this.vel.x, this.vel.y, this.vel.z),
       samples: this.samples,
     };

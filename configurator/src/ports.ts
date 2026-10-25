@@ -48,7 +48,10 @@ const MAC_SKIP = /^cu\.(Bluetooth-Incoming-Port|debug-console)$/;
 
 /** "usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0" -> "Silicon Labs CP2102 ... 0001". */
 export function byIdLabel(name: string): string {
-  return name.replace(/^usb-/, '').replace(/-if\d+(-port\d+)?$/, '').replace(/_/g, ' ');
+  return name
+    .replace(/^usb-/, '')
+    .replace(/-if\d+(-port\d+)?$/, '')
+    .replace(/_/g, ' ');
 }
 
 /** Serial ports, USB ones first, then by path (ttyUSB2 before ttyUSB10). */
@@ -138,9 +141,11 @@ export async function openProblem(err: unknown, spec: string, os: string = OS): 
   if (code === 'ENOENT') return `${spec} is not there: plug in the board, or pick another port`;
   if (code === 'EACCES' || code === 'EPERM') {
     if (os !== 'linux') return `no permission to open ${spec}`;
-    const group = await portGroup(spec) ?? 'dialout';
-    return `no permission to open ${spec}: add yourself to the ${group} group ` +
-      `(sudo usermod -aG ${group} $USER), then log out and back in`;
+    const group = (await portGroup(spec)) ?? 'dialout';
+    return (
+      `no permission to open ${spec}: add yourself to the ${group} group ` +
+      `(sudo usermod -aG ${group} $USER), then log out and back in`
+    );
   }
   if (code === 'EBUSY' || /busy/i.test(e.message)) {
     return `${spec} is in use by another program (another hour-meter, a serial monitor, ModemManager)`;

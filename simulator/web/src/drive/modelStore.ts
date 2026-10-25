@@ -62,6 +62,11 @@ export async function loadSavedModel(): Promise<CustomModel | null> {
 
 export function parseModel(data: ArrayBuffer): Promise<Object3D> {
   return new Promise((resolve, reject) => {
-    new GLTFLoader().parse(data, '', (gltf) => resolve(gltf.scene), (err) => reject(err));
+    new GLTFLoader().parse(
+      data,
+      '',
+      (gltf) => resolve(gltf.scene),
+      (err) => reject(err),
+    );
   });
 }

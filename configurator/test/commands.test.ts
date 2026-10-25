@@ -8,10 +8,11 @@ import { hoursToSeconds, MSG, RESET_MAGIC, unitsToPulses } from '../src/tags.ts'
 
 test('CLI words become command values', () => {
   assertEquals(buildRequest(['get', 'status']).values, { get: 3 });
-  assertEquals(
-    buildRequest(['set', 'telemetryIntervalMs=500', 'output=both', 'altActiveHigh=false']).values,
-    { telemetryIntervalMs: 500, output: 3, altActiveHigh: false },
-  );
+  assertEquals(buildRequest(['set', 'telemetryIntervalMs=500', 'output=both', 'altActiveHigh=false']).values, {
+    telemetryIntervalMs: 500,
+    output: 3,
+    altActiveHigh: false,
+  });
   assertEquals(buildRequest(['set-hours', '1234.5']).values, { setRunSeconds: 4444200 });
   assertEquals(buildRequest(['reset-counters', '--yes']).values, { resetCounters: RESET_MAGIC });
   const t = Number(buildRequest(['set-time']).values.setTime);

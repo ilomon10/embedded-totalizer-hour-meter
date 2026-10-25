@@ -37,7 +37,9 @@ button:active:not(:disabled) {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transition: grid-template-rows 220ms var(--ease-out-strong), opacity 160ms var(--ease-out-strong);
+  transition:
+    grid-template-rows 220ms var(--ease-out-strong),
+    opacity 160ms var(--ease-out-strong);
 }
 .reveal[data-open='true'] {
   grid-template-rows: 1fr;

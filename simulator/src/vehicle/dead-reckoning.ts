@@ -184,15 +184,15 @@ export class DeadReckoner implements Estimator {
     // Parked = little vibration around the short-term mean (a variance test: it doesn't
     // depend on the gravity estimate being right yet), and nothing rotates.
     const kv = 1 - Math.exp(-dt / RMS_TAU_S);
-    const m = this.shortMean ??= { ...accel };
+    const m = (this.shortMean ??= { ...accel });
     m.x += (accel.x - m.x) * kv;
     m.y += (accel.y - m.y) * kv;
     m.z += (accel.z - m.z) * kv;
     const dev2 = (accel.x - m.x) ** 2 + (accel.y - m.y) ** 2 + (accel.z - m.z) ** 2;
     this.vibMs2 += (dev2 - this.vibMs2) * kv;
     const nearGravity = Math.hypot(accel.x - g.x, accel.y - g.y, accel.z - g.z) < STILL_NEAR_G;
-    const quiet = Math.sqrt(this.vibMs2) < STILL_RMS_G && nearGravity &&
-      Math.hypot(gyro.x, gyro.y, gyro.z) < STILL_GYRO_DPS;
+    const quiet =
+      Math.sqrt(this.vibMs2) < STILL_RMS_G && nearGravity && Math.hypot(gyro.x, gyro.y, gyro.z) < STILL_GYRO_DPS;
     this.stillS = quiet ? this.stillS + dt : 0;
     if (this.stillS >= STILL_FOR_S) {
       const k = 1 - Math.exp(-dt / GRAVITY_TAU_S);

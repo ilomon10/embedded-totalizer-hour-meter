@@ -19,7 +19,10 @@ export type CommandValues = Record<string, number | boolean>;
 
 /** An error ACK: `ack` carries ackStatus and rejectedTag. */
 export class AckError extends Error {
-  constructor(message: string, readonly ack: DecodedMessage) {
+  constructor(
+    message: string,
+    readonly ack: DecodedMessage,
+  ) {
     super(message);
   }
 }
@@ -31,12 +34,16 @@ function counterHint(status: number, tag: number, statusFlags: unknown): string 
   if (ACK_STATUS[status] !== 'DeviceMissing' || !COUNTER_TAGS.has(tag) || statusFlags === undefined) return '';
   const flags = decodeStatusFlags(Number(statusFlags));
   if (flags.includes('flashStoreMissing')) {
-    return '. Nowhere to keep it: no EEPROM, and no flash store (flashStoreMissing). Flash the full image ' +
-      '(hour-meter firmware flash) so the partition table gets the hmdata partition';
+    return (
+      '. Nowhere to keep it: no EEPROM, and no flash store (flashStoreMissing). Flash the full image ' +
+      '(hour-meter firmware flash) so the partition table gets the hmdata partition'
+    );
   }
   if (flags.includes('eepromMissing')) {
-    return '. Nowhere to keep it: no EEPROM, and firmware before 2.6.0 keeps the counters only there. ' +
-      'Update with hour-meter firmware flash';
+    return (
+      '. Nowhere to keep it: no EEPROM, and firmware before 2.6.0 keeps the counters only there. ' +
+      'Update with hour-meter firmware flash'
+    );
   }
   return '';
 }
@@ -46,9 +53,11 @@ export function ackErrorText(ack: DecodedMessage): string {
   const status = Number(ack.values.ackStatus);
   const tag = Number(ack.values.rejectedTag);
   const rejected = tag ? ` (tag ${tag}: ${tags[tag]?.name ?? '?'})` : '';
-  return `device answered ${ACK_STATUS[status] ?? status}${rejected}${
-    counterHint(status, tag, ack.values.statusFlags)
-  }`;
+  return `device answered ${ACK_STATUS[status] ?? status}${rejected}${counterHint(
+    status,
+    tag,
+    ack.values.statusFlags,
+  )}`;
 }
 
 export interface OpenOptions {
@@ -64,7 +73,10 @@ export class DeviceClient extends EventEmitter {
   /** @param link any byte link: serial port, TCP socket, in-memory pair (tests, --demo) */
   constructor(private readonly link: Link) {
     super();
-    const splitter = new FrameSplitter((msg) => this.onFrame(msg), (err) => this.emit('frameError', err));
+    const splitter = new FrameSplitter(
+      (msg) => this.onFrame(msg),
+      (err) => this.emit('frameError', err),
+    );
     void this.pump(splitter);
   }
 
@@ -97,7 +109,7 @@ export class DeviceClient extends EventEmitter {
    * answers with a non-Ok ackStatus, or with an Error if it never answers.
    */
   async request(values: CommandValues, { timeoutMs = 1500, retries = 2 } = {}): Promise<DecodedMessage> {
-    const seq = this.seq = (this.seq + 1) & 0xffff;
+    const seq = (this.seq = (this.seq + 1) & 0xffff);
     const bytes = codec.frame({ msgType: MSG.COMMAND, seq, values });
     for (let attempt = 0; attempt <= retries; attempt++) {
       const ack = await this.sendAndWait(seq, bytes, timeoutMs);
@@ -146,8 +158,8 @@ export class DeviceClient extends EventEmitter {
     let busy = false;
     this.on('frame', async (msg: DecodedMessage) => {
       const flags = msg.values.statusFlags;
-      const timeUnknown = msg.values.timeValid === false ||
-        (flags !== undefined && (Number(flags) & TIME_INVALID_BIT) !== 0);
+      const timeUnknown =
+        msg.values.timeValid === false || (flags !== undefined && (Number(flags) & TIME_INVALID_BIT) !== 0);
       if (!timeUnknown || busy || now() - lastAttempt < minIntervalMs) return;
       busy = true;
       lastAttempt = now();
