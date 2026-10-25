@@ -1,36 +1,38 @@
-// compile.ts: build the standalone release binaries (no Deno needed to run them).
+// compile.ts: build the standalone release binaries (no Bun needed to run them).
 //
-//   deno task compile              # every target into dist/
-//   deno task compile linux-x64    # one target
+//   bun run compile              # every target into dist/
+//   bun run compile linux-x64    # one target
 //
-// The codec is loaded at runtime through createRequire, and the web UI is read
-// from web/dist, so both must be listed with --include or the binary cannot find
-// them. The web UI is built first (deno task web:build).
+// The codec (../sensorframe/js) is a static import, so the bundle carries it.
+// The web UI is built first (bun run web:build) and web/dist is embedded as an
+// asset: it lands as dist/ under import.meta.dir, where src/web/server.ts looks.
+// The binary must not pick up a .env or bunfig.toml from the folder it runs in,
+// so both autoloads are off.
+import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+
 import { SIM_VERSION } from '../main.ts';
 
-const TARGETS: Record<string, string> = {
-  'linux-x64': 'x86_64-unknown-linux-gnu',
-  'linux-arm64': 'aarch64-unknown-linux-gnu',
-  'macos-x64': 'x86_64-apple-darwin',
-  'macos-arm64': 'aarch64-apple-darwin',
-  'windows-x64': 'x86_64-pc-windows-msvc',
+const TARGETS: Record<string, Bun.Build.CompileTarget> = {
+  'linux-x64': 'bun-linux-x64',
+  'windows-x64': 'bun-windows-x64',
 };
-const INCLUDES = ['../sensorframe/js/index.js', '../sensorframe/js/src', 'web/dist'];
-const PERMISSIONS = ['--allow-read', '--allow-run=socat', '--allow-net'];
 const OUT = 'dist';
 
 async function run(cmd: string, args: string[], cwd?: string): Promise<void> {
-  const { code } = await new Deno.Command(cmd, { args, cwd, stdout: 'inherit', stderr: 'inherit' }).output();
+  const code = await Bun.spawn([cmd, ...args], { cwd, stdout: 'inherit', stderr: 'inherit' }).exited;
   if (code !== 0) throw new Error(`${cmd} ${args.join(' ')} failed (exit ${code})`);
 }
 
-async function build(name: string, target: string): Promise<string> {
+async function build(name: string, target: Bun.Build.CompileTarget): Promise<string> {
   const exe = target.includes('windows') ? 'hour-meter-sim.exe' : 'hour-meter-sim';
   const dir = `${OUT}/hour-meter-sim-${SIM_VERSION}-${name}`;
-  await Deno.mkdir(dir, { recursive: true });
-  const includes = INCLUDES.flatMap((path) => ['--include', path]);
-  await run('deno', ['compile', ...PERMISSIONS, ...includes, '--target', target, '-o', `${dir}/${exe}`, 'main.ts']);
-  await Deno.copyFile('README.md', `${dir}/README.md`);
+  await mkdir(dir, { recursive: true });
+  const result = await Bun.build({
+    entrypoints: ['main.ts'],
+    compile: { target, outfile: `${dir}/${exe}`, assets: ['web/dist'], autoloadDotenv: false, autoloadBunfig: false },
+  });
+  if (!result.success) throw new AggregateError(result.logs, `bun build for ${name} failed`);
+  await copyFile('README.md', `${dir}/README.md`);
   const base = dir.slice(OUT.length + 1);
   if (target.includes('windows')) {
     await run('zip', ['-qr', `${base}.zip`, base], OUT);
@@ -41,17 +43,16 @@ async function build(name: string, target: string): Promise<string> {
 }
 
 async function sha256(path: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', await Deno.readFile(path));
-  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+  return new Bun.CryptoHasher('sha256').update(await readFile(path)).digest('hex');
 }
 
-const only = Deno.args[0];
+const only = process.argv[2];
 const chosen = Object.entries(TARGETS).filter(([name]) => !only || name === only);
 if (chosen.length === 0) throw new Error(`unknown target '${only}' (use: ${Object.keys(TARGETS).join(', ')})`);
-await run('deno', ['task', 'web:build']);
-await Deno.remove(OUT, { recursive: true }).catch(() => {});
+await run('bun', ['run', 'web:build']);
+await rm(OUT, { recursive: true, force: true });
 const archives: string[] = [];
 for (const [name, target] of chosen) archives.push(await build(name, target));
 const sums = await Promise.all(archives.map(async (a) => `${await sha256(`${OUT}/${a}`)}  ${a}`));
-await Deno.writeTextFile(`${OUT}/SHA256SUMS`, sums.join('\n') + '\n');
+await writeFile(`${OUT}/SHA256SUMS`, sums.join('\n') + '\n');
 console.log(`\n${archives.length} archive(s) in ${OUT}/:\n${sums.join('\n')}`);

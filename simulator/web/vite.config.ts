@@ -1,6 +1,6 @@
 // vite.config.ts: the simulator's web UI (React + Tailwind), built into web/dist and
-// served by `hour-meter-sim --web`. In development, `deno task web:dev` proxies the
-// WebSocket to a simulator started with `deno task start --web 8080`.
+// served by `hour-meter-sim --web`. In development, `bun run web:dev` proxies the
+// WebSocket to a simulator started with `bun run start --web 8080`.
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';

@@ -1,0 +1,8 @@
+# `bun fmt` settings (the compiled binary never reads this file: tools/compile.ts disables bunfig autoload).
+[fmt]
+printWidth = 120
+tabWidth = 2
+useTabs = false
+semi = true
+singleQuote = true
+ignorePatterns = ["*.md", "dist/", "web/dist/", "docs/"]

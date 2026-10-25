@@ -3,14 +3,15 @@
 // The codec (../sensorframe/js) and the tag table (../configurator/src/tags.ts) are
 // the same files the host tools use, and the tag table is checked against the
 // firmware's Protocol.h by esp32/scripts/check-docs.ts. Reusing them means the
-// simulator cannot drift from the real device. The codec is CommonJS, so it loads
-// through createRequire (and `deno compile` needs --include for it).
-import { createRequire } from 'node:module';
+// simulator cannot drift from the real device. The codec is CommonJS; a static
+// import lets `bun build --compile` bundle it into the binary.
+import * as sensorframeModule from '../../sensorframe/js/index.js';
 
 import * as tagTable from '../../configurator/src/tags.ts';
 
-const require = createRequire(import.meta.url);
-const sensorframe = require('../../sensorframe/js/index.js');
+// The codec's own .d.ts is written for Node (Buffer values, a wider TagDef); this file declares the shapes it uses.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sensorframe: any = sensorframeModule;
 
 export type Fmt = 'u8' | 'u16' | 'u32' | 'i16' | 'f32' | 'bool';
 export type RawValue = number | boolean | bigint | Uint8Array;

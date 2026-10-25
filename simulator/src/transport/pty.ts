@@ -8,22 +8,25 @@
 // linger, blocked on a full pty buffer) and start a fresh socat, so every open
 // is one session, like plugging in the USB cable. Drivers open the link at any
 // baud rate with any serial library (it is a real tty).
-import { DroppingWriter, type LinkEvents, pump, type Transport } from './link.ts';
+import { DroppingWriter, type LinkEvents, pump, sinkWriter, type Transport } from './link.ts';
 
 const CONNECTED_LOG = 'starting data transfer loop';
 const DISCONNECTED_LOGS = ['PTY closed', 'is at EOF'];
 
+type Socat = Bun.Subprocess<'pipe', 'pipe', 'pipe'>;
+
 export class PtyTransport implements Transport {
-  private child: Deno.ChildProcess | null = null;
+  private child: Socat | null = null;
   private writer: DroppingWriter | null = null;
   private isConnected = false;
   private closing = false;
 
   constructor(readonly label: string) {}
 
-  async start(events: LinkEvents): Promise<void> {
-    await assertSocatInstalled();
+  start(events: LinkEvents): Promise<void> {
+    assertSocatInstalled();
     void this.loop(events);
+    return Promise.resolve();
   }
 
   private async loop(events: LinkEvents): Promise<void> {
@@ -33,17 +36,16 @@ export class PtyTransport implements Transport {
   }
 
   private async runSession(events: LinkEvents): Promise<void> {
-    const child = new Deno.Command('socat', {
-      args: ['-d', '-d', `PTY,link=${this.label},rawer,wait-slave`, 'STDIO'],
-      stdin: 'piped',
-      stdout: 'piped',
-      stderr: 'piped',
-    }).spawn();
+    const child = Bun.spawn(['socat', '-d', '-d', `PTY,link=${this.label},rawer,wait-slave`, 'STDIO'], {
+      stdin: 'pipe',
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
     this.child = child;
-    this.writer = new DroppingWriter(child.stdin.getWriter());
+    this.writer = new DroppingWriter(sinkWriter(child.stdin));
     const watchLog = this.watchLog(child, events);
     const readData = pump(child.stdout, (bytes) => events.onData(bytes));
-    await child.status;
+    await child.exited;
     await Promise.all([watchLog, readData]);
     await this.writer.close();
     this.writer = null;
@@ -54,18 +56,23 @@ export class PtyTransport implements Transport {
     }
   }
 
-  // socat's log tells us when a client opens and closes the tty.
-  private async watchLog(child: Deno.ChildProcess, events: LinkEvents): Promise<void> {
+  // socat's log tells us when a client opens and closes the tty. A pipe read may end mid-line, so lines are
+  // put back together before they are matched.
+  private async watchLog(child: Socat, events: LinkEvents): Promise<void> {
     const decoder = new TextDecoder();
+    let partial = '';
     await pump(child.stderr, (bytes) => {
-      const text = decoder.decode(bytes);
-      if (!this.isConnected && text.includes(CONNECTED_LOG)) {
-        this.isConnected = true;
-        events.onConnect();
-      } else if (this.isConnected && DISCONNECTED_LOGS.some((log) => text.includes(log))) {
-        this.isConnected = false;
-        events.onDisconnect();
-        kill(child); // do not wait for socat to drain into a pty nobody reads
+      const lines = (partial + decoder.decode(bytes, { stream: true })).split('\n');
+      partial = lines.pop() ?? '';
+      for (const text of lines) {
+        if (!this.isConnected && text.includes(CONNECTED_LOG)) {
+          this.isConnected = true;
+          events.onConnect();
+        } else if (this.isConnected && DISCONNECTED_LOGS.some((log) => text.includes(log))) {
+          this.isConnected = false;
+          events.onDisconnect();
+          kill(child); // do not wait for socat to drain into a pty nobody reads
+        }
       }
     });
   }
@@ -82,12 +89,12 @@ export class PtyTransport implements Transport {
     this.closing = true;
     if (this.child) {
       kill(this.child); // socat removes the symlink on exit
-      await this.child.status;
+      await this.child.exited;
     }
   }
 }
 
-function kill(child: Deno.ChildProcess): void {
+function kill(child: Socat): void {
   try {
     child.kill('SIGTERM');
   } catch {
@@ -95,10 +102,8 @@ function kill(child: Deno.ChildProcess): void {
   }
 }
 
-async function assertSocatInstalled(): Promise<void> {
-  try {
-    await new Deno.Command('socat', { args: ['-V'], stdout: 'null', stderr: 'null' }).output();
-  } catch {
+function assertSocatInstalled(): void {
+  if (!Bun.which('socat')) {
     throw new Error('socat not found. Install it (apt/pacman/brew install socat), or use --tcp <port> instead.');
   }
 }

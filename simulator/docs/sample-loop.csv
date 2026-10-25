@@ -1,7 +1,7 @@
 # Sample route for the simulator's Drive mode: one lap of Jl. Medan Merdeka around Monas
 # (Merdeka Square), Jakarta: about 3.6 km at 36 km/h, following the roads as mapped
 # in OpenStreetMap. Road geometry (c) OpenStreetMap contributors, ODbL 1.0.
-#   deno task start --drive truck --route docs/sample-loop.csv --loop
+#   bun run start --drive truck --route docs/sample-loop.csv --loop
 time,lat,lon
 0,-6.171500,106.823450
 5,-6.171456,106.823937

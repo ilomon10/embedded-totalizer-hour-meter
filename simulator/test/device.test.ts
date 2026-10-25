@@ -1,5 +1,7 @@
 // device.test.ts: the simulated device follows the firmware's rules
 // (Application.cpp, CommandHandler.cpp, Telemetry.cpp). Time is a FakeClock.
+import { test } from 'bun:test';
+
 import { assert, assertEquals } from './assert.ts';
 import { ResetReason } from '../src/device.ts';
 import { Ack, Device, Flag, MSG, RESET_MAGIC } from '../src/protocol.ts';
@@ -9,7 +11,7 @@ import { command, makeDevice, tagsOf } from './helpers.ts';
 const BOOT_TAGS = [8, 1, 2, 3, 10, 4, 5, 6, 7, 50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 62, 63, 241, 54];
 const TELEMETRY_TAGS = [1, 2, 3, 10, 4, 5, 50, 53, 40, 41, 42, 43, 44];
 
-Deno.test('power-on sends the boot EVENT with the firmware record order', () => {
+test('power-on sends the boot EVENT with the firmware record order', () => {
   const { device, last } = makeDevice();
   device.powerOn();
   assertEquals(last().msgType, MSG.EVENT);
@@ -19,7 +21,7 @@ Deno.test('power-on sends the boot EVENT with the firmware record order', () => 
   assertEquals(last().seq, 0);
 });
 
-Deno.test('TELEMETRY every second, with IMU and vibration records after the first window', () => {
+test('TELEMETRY every second, with IMU and vibration records after the first window', () => {
   const { device, run, lastOf } = makeDevice();
   device.powerOn();
   run(1000);
@@ -29,7 +31,7 @@ Deno.test('TELEMETRY every second, with IMU and vibration records after the firs
   assertEquals(t.timestamp, t.values.epoch ?? 1791376497); // valid time: header timestamp is UTC
 });
 
-Deno.test('IMU stream at imuStreamHz in filtered mode (default)', () => {
+test('IMU stream at imuStreamHz in filtered mode (default)', () => {
   const { device, run, sent } = makeDevice();
   device.powerOn();
   run(1000);
@@ -38,7 +40,7 @@ Deno.test('IMU stream at imuStreamHz in filtered mode (default)', () => {
   assertEquals(tagsOf(imu[0].msg), [30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 42]);
 });
 
-Deno.test('get=1..4 answers with the requested data in one ACK', () => {
+test('get=1..4 answers with the requested data in one ACK', () => {
   const { device, last } = makeDevice();
   device.powerOn();
   device.onCommand(command(7, { get: 1 }));
@@ -53,7 +55,7 @@ Deno.test('get=1..4 answers with the requested data in one ACK', () => {
   assertEquals(last().records.length, 2 + 19);
 });
 
-Deno.test('get=1..4 in one command: the last group is cut at 250 bytes, like the firmware', () => {
+test('get=1..4 in one command: the last group is cut at 250 bytes, like the firmware', () => {
   const { device, last } = makeDevice();
   device.powerOn();
   device.onCommand(command(11, { get: 1 }, [2, 3, 4].map((v) => ({ tag: 101, fmt: 'u8', value: v }))));
@@ -63,7 +65,7 @@ Deno.test('get=1..4 in one command: the last group is cut at 250 bytes, like the
   assertEquals(tags.filter((t) => t >= 130 && t <= 148).length, 7); // 21 + 42 + 82 + 55 = 200; 50 bytes left = 7 f32 records of get=4
 });
 
-Deno.test('settings are all-or-nothing: one bad value rejects the whole command', () => {
+test('settings are all-or-nothing: one bad value rejects the whole command', () => {
   const { device, last } = makeDevice();
   device.powerOn();
   device.onCommand(command(1, { telemetryIntervalMs: 500, imuSampleHz: 5 }));
@@ -73,14 +75,14 @@ Deno.test('settings are all-or-nothing: one bad value rejects the whole command'
   assertEquals(last().values.telemetryIntervalMs, 1000);
 });
 
-Deno.test('cross-field check: imuStreamHz above imuSampleHz is rejected on tag 112', () => {
+test('cross-field check: imuStreamHz above imuSampleHz is rejected on tag 112', () => {
   const { device, last } = makeDevice();
   device.powerOn();
   device.onCommand(command(1, { imuSampleHz: 20, imuStreamHz: 50 }));
   assertEquals([last().values.ackStatus, last().values.rejectedTag], [Ack.InvalidValue, 112]);
 });
 
-Deno.test('uartBaud accepts standard rates only', () => {
+test('uartBaud accepts standard rates only', () => {
   const { device, last } = makeDevice();
   device.powerOn();
   device.onCommand(command(1, { uartBaud: 100000 }));
@@ -89,7 +91,7 @@ Deno.test('uartBaud accepts standard rates only', () => {
   assertEquals(last().values.ackStatus, Ack.Ok);
 });
 
-Deno.test('action checks: setTime range, reset magic, unknown tag', () => {
+test('action checks: setTime range, reset magic, unknown tag', () => {
   const { device, last } = makeDevice();
   device.powerOn();
   device.onCommand(command(1, { setTime: 12345 }));
@@ -102,7 +104,7 @@ Deno.test('action checks: setTime range, reset magic, unknown tag', () => {
   assertEquals([last().values.ackStatus, last().values.runSeconds], [Ack.Ok, 0]);
 });
 
-Deno.test('a retried command seq replays the same ACK and does not run twice', () => {
+test('a retried command seq replays the same ACK and does not run twice', () => {
   const { device, sent } = makeDevice();
   device.powerOn();
   device.onCommand(command(5, { setRunSeconds: 3600, get: 1 }));
@@ -113,7 +115,7 @@ Deno.test('a retried command seq replays the same ACK and does not run twice', (
   assertEquals(acks[1].values.runSeconds, 3600);
 });
 
-Deno.test('setTime fixes an invalid clock; without RTC the time is flagged not backed up', () => {
+test('setTime fixes an invalid clock; without RTC the time is flagged not backed up', () => {
   const { device, last } = makeDevice({ fitted: Device.eeprom | Device.imu | Device.mag });
   device.powerOn();
   assert(Number(last().values.statusFlags) & Flag.timeInvalid);
@@ -123,7 +125,7 @@ Deno.test('setTime fixes an invalid clock; without RTC the time is flagged not b
   assertEquals(last().timestamp, 1791376496);
 });
 
-Deno.test('RTC without battery: rtcBatteryLost and timeInvalid at power-on, header timestamp is uptime', () => {
+test('RTC without battery: rtcBatteryLost and timeInvalid at power-on, header timestamp is uptime', () => {
   const { device, last, run, lastOf } = makeDevice({ rtcBattery: false });
   device.powerOn();
   const flags = Number(last().values.statusFlags);
@@ -132,7 +134,7 @@ Deno.test('RTC without battery: rtcBatteryLost and timeInvalid at power-on, head
   assertEquals(lastOf(MSG.TELEMETRY)?.timestamp, 3);
 });
 
-Deno.test('without an EEPROM the flash keeps the counters (2.6.0); with neither store presets answer DeviceMissing', () => {
+test('without an EEPROM the flash keeps the counters (2.6.0); with neither store presets answer DeviceMissing', () => {
   const noEeprom = { fitted: Device.rtc | Device.imu | Device.mag };
   const { device, last } = makeDevice(noEeprom);
   device.powerOn();
@@ -154,7 +156,7 @@ Deno.test('without an EEPROM the flash keeps the counters (2.6.0); with neither 
   assertEquals([old.last().values.ackStatus, old.last().values.rejectedTag], [Ack.DeviceMissing, 102]);
 });
 
-Deno.test('every save goes to flash and EEPROM; a returning EEPROM is brought up to date, not added', () => {
+test('every save goes to flash and EEPROM; a returning EEPROM is brought up to date, not added', () => {
   const { device, run, last } = makeDevice({ fitted: Device.rtc | Device.imu | Device.mag });
   device.powerOn();
   device.onCommand(command(1, { setRunSeconds: 7200 })); // saved in the flash only
@@ -171,7 +173,7 @@ Deno.test('every save goes to flash and EEPROM; a returning EEPROM is brought up
   assert(afterPowerCycle >= 7200 && afterPowerCycle < 7300, `${afterPowerCycle}`);
 });
 
-Deno.test('first boot after the update: the EEPROM moves into the flash; a late EEPROM adds to counts from zero', () => {
+test('first boot after the update: the EEPROM moves into the flash; a late EEPROM adds to counts from zero', () => {
   const noEeprom = Device.rtc | Device.imu | Device.mag;
   const moved = makeDevice({ freshFlash: true });
   moved.device.powerOn();
@@ -199,7 +201,7 @@ Deno.test('first boot after the update: the EEPROM moves into the flash; a late 
   assert(Number(late.last().values.runSeconds) < 1250 * 3600 + 120, 'added only once');
 });
 
-Deno.test('reboot: ACK first, then a boot EVENT with resetReason 3 and seq restarting at 0', () => {
+test('reboot: ACK first, then a boot EVENT with resetReason 3 and seq restarting at 0', () => {
   const { device, run, last, sent } = makeDevice();
   device.powerOn();
   device.onCommand(command(1, { reboot: 1 }));
@@ -210,7 +212,7 @@ Deno.test('reboot: ACK first, then a boot EVENT with resetReason 3 and seq resta
   assertEquals([boot.values.lastCause, boot.values.lastStage], [5, 8]);
 });
 
-Deno.test('panic signal: restarts at once with lastCause 4, keeps the counters, Bluetooth ignores it', () => {
+test('panic signal: restarts at once with lastCause 4, keeps the counters, Bluetooth ignores it', () => {
   const { device, run, sent } = makeDevice();
   device.powerOn();
   run(5000);
@@ -227,7 +229,7 @@ Deno.test('panic signal: restarts at once with lastCause 4, keeps the counters, 
   assertEquals(bt.sent.filter((s) => s.msg.msgType === MSG.EVENT).length, 1);
 });
 
-Deno.test('hang: silent and deaf until a restart', () => {
+test('hang: silent and deaf until a restart', () => {
   const { device, run, sent } = makeDevice();
   device.powerOn();
   device.hang();
@@ -239,7 +241,7 @@ Deno.test('hang: silent and deaf until a restart', () => {
   assertEquals(sent.length, n + 1);
 });
 
-Deno.test('safe mode: no modules, safeMode flag, no IMU stream; a power cycle or the panic signal leaves it', () => {
+test('safe mode: no modules, safeMode flag, no IMU stream; a power cycle or the panic signal leaves it', () => {
   const { device, run, sent } = makeDevice({
     safeMode: true,
     firstBoot: { reason: ResetReason.taskWatchdog, cause: 1, stage: 7 },
@@ -261,7 +263,7 @@ Deno.test('safe mode: no modules, safeMode flag, no IMU stream; a power cycle or
   assertEquals([after?.devices, after?.lastCause, (Number(after?.statusFlags) >>> 18) & 1], [15, 4, 0]);
 });
 
-Deno.test('IMU calibration: calibrating flag, then EVENT kind 2 with the calibration values', () => {
+test('IMU calibration: calibrating flag, then EVENT kind 2 with the calibration values', () => {
   const { device, run, last, lastOf } = makeDevice();
   device.powerOn();
   device.onCommand(command(1, { calibrate: 1 }));
@@ -275,7 +277,7 @@ Deno.test('IMU calibration: calibrating flag, then EVENT kind 2 with the calibra
   assertEquals(tagsOf(event).length, 3 + 19);
 });
 
-Deno.test('unplugged IMU is lost after 3 presence checks: EVENT kind 3, no IMU records in TELEMETRY', () => {
+test('unplugged IMU is lost after 3 presence checks: EVENT kind 3, no IMU records in TELEMETRY', () => {
   const { device, run, lastOf } = makeDevice();
   device.powerOn();
   run(100);
@@ -289,7 +291,7 @@ Deno.test('unplugged IMU is lost after 3 presence checks: EVENT kind 3, no IMU r
   assertEquals(tagsOf(lastOf(MSG.TELEMETRY) as never), [1, 2, 3, 10, 4, 5, 50, 53]);
 });
 
-Deno.test('a replugged IMU brings its magnetometer back: EVENT kind 3 with all modules', () => {
+test('a replugged IMU brings its magnetometer back: EVENT kind 3 with all modules', () => {
   const { device, run, lastOf } = makeDevice();
   device.powerOn();
   device.setFitted(Device.imu, false);
@@ -299,7 +301,7 @@ Deno.test('a replugged IMU brings its magnetometer back: EVENT kind 3 with all m
   assertEquals(lastOf(MSG.EVENT)?.values.devices, Device.eeprom | Device.rtc | Device.imu | Device.mag);
 });
 
-Deno.test('Bluetooth session: Locked until unlock, BadPin on a wrong PIN, live data after unlock', () => {
+test('Bluetooth session: Locked until unlock, BadPin on a wrong PIN, live data after unlock', () => {
   const { device, last } = makeDevice({ bluetoothSession: true, btPin: 4821 });
   device.powerOn();
   assertEquals(device.liveDataAllowed(), false);
@@ -314,7 +316,7 @@ Deno.test('Bluetooth session: Locked until unlock, BadPin on a wrong PIN, live d
   assertEquals(device.liveDataAllowed(), false);
 });
 
-Deno.test('output=uart stops periodic data on the simulated USB port', () => {
+test('output=uart stops periodic data on the simulated USB port', () => {
   const { device } = makeDevice();
   device.powerOn();
   assertEquals(device.liveDataAllowed(), true);
@@ -322,7 +324,7 @@ Deno.test('output=uart stops periodic data on the simulated USB port', () => {
   assertEquals(device.liveDataAllowed(), false);
 });
 
-Deno.test('settings ACK lists runVibMinMg (129), default 0, validated 0..2000', () => {
+test('settings ACK lists runVibMinMg (129), default 0, validated 0..2000', () => {
   const { device, last } = makeDevice();
   device.powerOn();
   device.onCommand(command(1, { get: 2 }));
@@ -355,13 +357,13 @@ function accWire(runVibMinMg: number) {
   return { runSeconds: device.hourMeter().runSeconds, samples };
 }
 
-Deno.test('acc-wire without runVibMinMg: run hours grow the whole time the key is on (the bug)', () => {
+test('acc-wire without runVibMinMg: run hours grow the whole time the key is on (the bug)', () => {
   const r = accWire(0);
   assert(r.runSeconds >= 355 && r.runSeconds <= 360, `runSeconds ${r.runSeconds}`);
   assert(r.samples.every((s) => s.alternator === true && s.altInput === true));
 });
 
-Deno.test('acc-wire with runVibMinMg=30: run hours grow only while the engine runs', () => {
+test('acc-wire with runVibMinMg=30: run hours grow only while the engine runs', () => {
   const r = accWire(30);
   // 3 cycles x 60 s of engine, minus the first vibration window; confirmation lags by one telemetry-free poll.
   assert(r.runSeconds >= 175 && r.runSeconds <= 182, `runSeconds ${r.runSeconds}`);

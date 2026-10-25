@@ -1,8 +1,10 @@
 // run-confirm.test.ts: the RunConfirm cases of esp32/test/test_app/test_main.cpp.
+import { test } from 'bun:test';
+
 import { assertEquals } from './assert.ts';
 import { RunConfirm } from '../src/run-confirm.ts';
 
-Deno.test('RunConfirm: off, no IMU, first window and hysteresis', () => {
+test('RunConfirm: off, no IMU, first window and hysteresis', () => {
   const c = new RunConfirm();
   assertEquals(c.update(true, true, 0, 0), true, 'setting off: the input alone decides');
   assertEquals(c.update(false, false, 0, 40), true, 'no IMU: never lose hours');

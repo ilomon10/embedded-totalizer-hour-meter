@@ -2,10 +2,10 @@
 // v1, firmware 2.5.0) on a virtual serial port, so drivers can be written and
 // tested without hardware.
 //
-//   deno task start                          # /tmp/ttyHourMeter via socat
-//   deno task start --tcp 5555               # TCP instead of a tty
-//   deno task start --bt --pin 4821          # behave like a locked Bluetooth session
-//   deno task start --scenario no-rtc-battery --scenario corrupt=5
+//   bun run start                          # /tmp/ttyHourMeter via socat
+//   bun run start --tcp 5555               # TCP instead of a tty
+//   bun run start --bt --pin 4821          # behave like a locked Bluetooth session
+//   bun run start --scenario no-rtc-battery --scenario corrupt=5
 //
 // Run with --help for every flag.
 import { parseArgs } from 'node:util';
@@ -28,13 +28,13 @@ import { StdioTransport } from './src/transport/stdio.ts';
 import { TcpTransport } from './src/transport/tcp.ts';
 
 /** Simulator version (shipped in release v<VERSION>, scripts/release.ts). Protocol version: FIRMWARE_VERSION. */
-export const SIM_VERSION = '1.6.0';
+export const SIM_VERSION = '1.7.0';
 const POLL_MS = 10;
 const DEFAULT_WEB_PORT = 8080;
 
 const HELP = `Hour meter simulator: a fake device on a virtual serial port.
 
-Usage: deno task start [options]    (release binary: hour-meter-sim [options])
+Usage: bun run start [options]    (release binary: hour-meter-sim [options])
 
 Port (pick one):
   --pty <path>         virtual tty made by socat (default /tmp/ttyHourMeter)
@@ -126,11 +126,11 @@ function parseCli(argv: string[]): Cli {
   if (values.version) {
     const fw = [16, 8, 0].map((shift) => (FIRMWARE_VERSION >> shift) & 0xff).join('.');
     console.log(`hour-meter-sim ${SIM_VERSION} (speaks firmware ${fw} protocol)`);
-    Deno.exit(0);
+    process.exit(0);
   }
   if (values.help) {
     console.log(HELP);
-    Deno.exit(0);
+    process.exit(0);
   }
   const random = createRng(int(values.seed, 1, 0, 0xffffffff, '--seed'));
   const device: DeviceOptions = {
@@ -194,7 +194,7 @@ function parseDrive(
 
 /** Attach the --drive vehicle; with --route, load the track and start driving it. */
 async function startDrive(drive: NonNullable<Cli['drive']>, device: SimDevice, random: () => number, log: FrameLog) {
-  const waypoints = drive.route ? parseTrack(drive.route, await Deno.readTextFile(drive.route)) : null;
+  const waypoints = drive.route ? parseTrack(drive.route, await Bun.file(drive.route).text()) : null;
   const origin = drive.origin ?? (waypoints ? { lat: waypoints[0].lat, lon: waypoints[0].lon } : undefined)!;
   const sim = new VehicleSim({ kind: drive.kind, origin, random });
   if (waypoints) {
@@ -225,7 +225,8 @@ function pickTransport(pty: string | undefined, tcp: string | undefined, stdio: 
 }
 
 async function main(): Promise<void> {
-  const cli = parseCli(Deno.args[0] === '--' ? Deno.args.slice(1) : Deno.args); // `deno task start -- ...` keeps the --
+  const args = process.argv.slice(2);
+  const cli = parseCli(args[0] === '--' ? args.slice(1) : args); // `bun run start -- ...` may pass the -- on
   const log = new FrameLog(cli.verbosity);
   const { transport, scenarios, faults } = cli;
   let hub: WebHub | undefined;
@@ -298,14 +299,14 @@ async function main(): Promise<void> {
   const shutdown = async () => {
     await web?.close();
     await transport.close();
-    Deno.exit(0);
+    process.exit(0);
   };
-  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) Deno.addSignalListener(signal, shutdown);
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) process.on(signal, shutdown);
 }
 
 if (import.meta.main) {
   main().catch((err) => {
     console.error(`error: ${(err as Error).message}`);
-    Deno.exit(1);
+    process.exit(1);
   });
 }

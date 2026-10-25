@@ -4,24 +4,25 @@
 
 ```bash
 cd simulator
-deno task start                 # creates /tmp/ttyHourMeter (needs socat)
-deno task start --web           # same, plus a web UI at http://127.0.0.1:8080/: every value, a 3D bench, a vehicle on a map
+bun install                     # once: the web UI's build tools
+bun run start                   # creates /tmp/ttyHourMeter (needs socat)
+bun run start --web             # same, plus a web UI at http://127.0.0.1:8080/: every value, a 3D bench, a vehicle on a map
 ```
 
 Then open `/tmp/ttyHourMeter` in your driver like any serial port (any baud rate, 8N1). Try it with the project's own tools:
 
 ```bash
 cd configurator                                            # or the hour-meter release binary
-deno task start read /tmp/ttyHourMeter                     # live telemetry
-deno task start get hour --port /tmp/ttyHourMeter          # one command, one ACK
-deno task start /tmp/ttyHourMeter                          # full configurator (TUI)
+bun run start read /tmp/ttyHourMeter                       # live telemetry
+bun run start get hour --port /tmp/ttyHourMeter            # one command, one ACK
+bun run start /tmp/ttyHourMeter                            # full configurator (TUI)
 ```
 
-Needs [Deno](https://deno.com) 2 and, for the virtual tty, `socat` (`apt install socat` / `pacman -S socat` / `brew install socat`). Without socat, use `--tcp`.
+Needs [Bun](https://bun.com) 1.4.4 or newer and, for the virtual tty, `socat` (`apt install socat` / `pacman -S socat` / `brew install socat`). Without socat, use `--tcp`.
 
-### Without Deno: download a binary
+### Without Bun: download a binary
 
-Standalone binaries for Linux (x64, arm64), macOS (Intel, Apple Silicon) and Windows (x64) are on the [releases page](https://github.com/ilomon10/embedded-totalizer-hour-meter/releases) (each release `v*` carries the firmware, the configurator and this simulator; older ones are tagged `simulator-v*`). They take the same options as `deno task start`:
+Standalone binaries for Linux (x64) and Windows (x64) are on the [releases page](https://github.com/ilomon10/embedded-totalizer-hour-meter/releases) (each release `v*` carries the firmware, the configurator and this simulator; older ones are tagged `simulator-v*`). On macOS or an ARM board, run it from source. They take the same options as `bun run start`:
 
 ```bash
 tar -xzf hour-meter-sim-1.0.0-linux-x64.tar.gz
@@ -29,7 +30,7 @@ tar -xzf hour-meter-sim-1.0.0-linux-x64.tar.gz
 ./hour-meter-sim-1.0.0-linux-x64/hour-meter-sim --tcp 5555   # no socat needed
 ```
 
-On Windows there is no socat: use `hour-meter-sim.exe --tcp 5555`, or pair it with a virtual COM-port pair (e.g. com0com) and a TCP-to-serial bridge. On macOS, if Gatekeeper blocks the unsigned binary, run `xattr -d com.apple.quarantine hour-meter-sim` once. Check a download with `sha256sum -c SHA256SUMS`.
+On Windows there is no socat: use `hour-meter-sim.exe --tcp 5555`, or pair it with a virtual COM-port pair (e.g. com0com) and a TCP-to-serial bridge. Check a download with `sha256sum -c SHA256SUMS`. The binary runs with your user's rights: Bun has no permission sandbox.
 
 ## What you get
 
@@ -61,7 +62,7 @@ The values reach the wire exactly as the firmware would encode them: set roll to
 
 The page has no login. It listens on 127.0.0.1 only, unless you pass `--web-host 0.0.0.0` to open it to your LAN; do that only on a network you trust.
 
-It is a React + Tailwind app in `web/`, built with Vite (`deno task web:build`) and embedded in the release binaries. While working on the page itself, run the simulator with `deno task start --web 8080` and `deno task web:dev` side by side, which serves the page with hot reload and forwards the WebSocket.
+It is a React + Tailwind app in `web/`, built with Vite (`bun run web:build`) and embedded in the release binaries. While working on the page itself, run the simulator with `bun run start --web 8080` and `bun run web:dev` side by side, which serves the page with hot reload and forwards the WebSocket.
 
 ### Bench (`/3d`)
 
@@ -103,14 +104,14 @@ The panel shows what it found next to what is fitted, for example a yaw of 89.6�
 From the command line, the same without a browser (CI):
 
 ```bash
-deno task start --drive truck --route docs/sample-loop.csv --loop   # starts at the track's first point
-deno task start --drive plane --origin -6.1754,106.8272 --web       # then draw a route in the browser
+bun run start --drive truck --route docs/sample-loop.csv --loop     # starts at the track's first point
+bun run start --drive plane --origin -6.1754,106.8272 --web         # then draw a route in the browser
 ```
 
 ## Options
 
 ```text
-deno task start [options]
+bun run start [options]
 
 Port (pick one)
   --pty <path>         virtual tty made by socat (default /tmp/ttyHourMeter)
@@ -153,7 +154,7 @@ The log on stderr shows each session, every COMMAND and its ACK, and every EVENT
 Test the paths your driver will meet in the field. Combine as many as you like; `--seed` makes random faults repeatable.
 
 ```bash
-deno task start --scenario no-rtc-battery --scenario corrupt=5
+bun run start --scenario no-rtc-battery --scenario corrupt=5
 ```
 
 | Scenario | What happens | What your driver should do |
@@ -177,7 +178,7 @@ deno task start --scenario no-rtc-battery --scenario corrupt=5
 `--bt` makes the port behave like a Bluetooth SPP session: every command answers `Locked` (9) and no live data flows until `unlock` (tag 107) carries the PIN. A wrong PIN gives `BadPin` (10), and 5 wrong PINs lock out unlocking for 60 s. Each new connection starts locked again, and connecting does not reboot the device.
 
 ```bash
-deno task start --bt --pin 4821
+bun run start --bt --pin 4821
 hour-meter get status --port /tmp/ttyHourMeter --pin 4821
 ```
 
@@ -186,8 +187,8 @@ hour-meter get status --port /tmp/ttyHourMeter --pin 4821
 No socat (Windows, Docker), or a driver that already talks TCP to a serial gateway:
 
 ```bash
-deno task start --tcp 5555        # one client at a time; each connection is a new session
-deno task start --stdio | xxd     # raw frames on stdout, logs on stderr
+bun run start --tcp 5555          # one client at a time; each connection is a new session
+bun run start --stdio | xxd       # raw frames on stdout, logs on stderr
 ```
 
 ## Notes for driver tests
@@ -199,19 +200,21 @@ deno task start --stdio | xxd     # raw frames on stdout, logs on stderr
 ## Development
 
 ```bash
-deno task test         # 53 tests: firmware golden frames, catalog dumps, command rules, Bluetooth lock,
+bun install            # once
+bun run test           # 70 tests: firmware golden frames, catalog dumps, command rules, Bluetooth lock,
                        #   inputs (auto/manual), live faults, web server + WebSocket, attitude round trips,
                        #   vehicle physics, the firmware filter port, route following, track parsing,
                        #   dead reckoning (truck) and the strapdown INS (plane)
-deno task check        # type-check (simulator + web UI)
-deno task web:build    # build the web UI into web/dist (needed once before `start --web` from source)
-deno task web:dev      # web UI with hot reload, talking to `deno task start --web 8080`
-deno lint && deno fmt --check
-deno task gen-catalog  # print the FRAME-CATALOG.md frames after a protocol change
-deno task compile      # builds the web UI, then release binaries for all 5 platforms into dist/ (+ SHA256SUMS)
+bun check              # type-check (simulator + web UI)
+bun run web:build      # build the web UI into web/dist (needed once before `start --web` from source)
+bun run web:dev        # web UI with hot reload, talking to `bun run start --web 8080`
+bun run lint           # oxlint
+bun fmt --check        # formatting (settings in bunfig.toml)
+bun run gen-catalog    # print the FRAME-CATALOG.md frames after a protocol change
+bun run compile        # builds the web UI, then release binaries for Linux x64 and Windows x64 into dist/ (+ SHA256SUMS)
 ```
 
-To release: bump `SIM_VERSION` in `main.ts`, commit, and run [`scripts/release.ts`](../scripts/release.ts) from the repository root (see [Releasing](../README.md#releasing)). `deno task web:build && deno task compile` alone builds the binaries into `dist/`.
+To release: bump `SIM_VERSION` in `main.ts`, commit, and run [`scripts/release.ts`](../scripts/release.ts) from the repository root (see [Releasing](../README.md#releasing)). `bun run compile` alone builds the web UI and the binaries into `dist/`.
 
 ```
 simulator/
@@ -240,4 +243,4 @@ simulator/
 └── test/
 ```
 
-The protocol tables are not copied: `src/protocol.ts` loads the same codec and tag table the `hour-meter` configurator uses, and `./esp32/scripts/check-docs.ts` keeps those in sync with the firmware's `Protocol.h`. When the firmware changes a frame, port the change to `src/frames.ts` / `src/device.ts`, then run `deno task test`. The golden-frame tests fail until the simulator matches again.
+The protocol tables are not copied: `src/protocol.ts` loads the same codec and tag table the `hour-meter` configurator uses, and `./esp32/scripts/check-docs.ts` keeps those in sync with the firmware's `Protocol.h`. When the firmware changes a frame, port the change to `src/frames.ts` / `src/device.ts`, then run `bun run test`. The golden-frame tests fail until the simulator matches again.

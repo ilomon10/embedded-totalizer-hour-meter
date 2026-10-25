@@ -4,6 +4,10 @@
 //
 // It binds to 127.0.0.1 unless --web-host says otherwise. There is no login:
 // anyone who can reach the port can drive the simulated device.
+import { statSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { Device, type Message } from '../protocol.ts';
 import { LastCause, ResetReason, type SimDevice, Stage } from '../device.ts';
 import type { Faults } from '../faults.ts';
@@ -15,23 +19,15 @@ import type { ClientMessage, LogEntry, ModuleName, ServerMessage, SimState } fro
 
 const PUSH_MS = 100; // 10 Hz: smooth enough for the moving vehicle
 const HISTORY = 500;
-const DIST = new URL('../../web/dist/', import.meta.url);
+// The built web UI: inside the release binary (tools/compile.ts embeds web/dist, which lands as dist/ under
+// import.meta.dir), else web/dist next to the sources.
+const DISTS = [join(import.meta.dir, 'dist'), fileURLToPath(new URL('../../web/dist/', import.meta.url))];
 const MODULE_BIT: Record<ModuleName, number> = {
   eeprom: Device.eeprom,
   rtc: Device.rtc,
   imu: Device.imu,
   mag: Device.mag,
 };
-const TYPES: Record<string, string> = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.ico': 'image/x-icon',
-  '.json': 'application/json',
-};
-
 export interface WebContext {
   device: SimDevice;
   faults: Faults;
@@ -158,9 +154,16 @@ function applyDriveMessage(msg: ClientMessage, ctx: WebContext): string | null {
   }
 }
 
+/** What the hub needs of a page's WebSocket (Bun's ServerWebSocket). */
+export interface PageSocket {
+  readonly readyState: number;
+  send(data: string): unknown;
+  close(): void;
+}
+
 /** Collects log lines and pushes state + log to every open page. */
 export class WebHub {
-  private readonly sockets = new Set<WebSocket>();
+  private readonly sockets = new Set<PageSocket>();
   private history: LogEntry[] = [];
   private pending: LogEntry[] = [];
   private nextId = 1;
@@ -203,27 +206,30 @@ export class WebHub {
     this.add({ dir: 'rx', type: msgName(cmd.msgType), seq: cmd.seq, text: '', records });
   }
 
-  attach(socket: WebSocket): void {
-    socket.onopen = () => {
-      this.sockets.add(socket);
-      this.sendTo(socket, { type: 'log', entries: this.history });
-      const sim = this.ctx.device.vehicle();
-      if (sim) this.sendTo(socket, { type: 'track', points: sim.trackSince(0, -2).points, reset: true });
-      this.sendTo(socket, { type: 'state', state: this.state() });
-    };
-    socket.onclose = () => this.sockets.delete(socket);
-    socket.onerror = () => this.sockets.delete(socket);
-    socket.onmessage = (event) => {
-      let msg: ClientMessage;
-      try {
-        msg = JSON.parse(String(event.data));
-      } catch {
-        return this.info('error', 'web UI sent invalid JSON');
-      }
-      const error = applyClientMessage(msg, this.ctx);
-      if (error) this.info('error', `web UI: ${error}`);
-      this.sendTo(socket, { type: 'state', state: this.state() }); // answer at once, not at the next tick
-    };
+  /** A page connected: send it the log so far, the vehicle's track and the state. */
+  attach(socket: PageSocket): void {
+    this.sockets.add(socket);
+    this.sendTo(socket, { type: 'log', entries: this.history });
+    const sim = this.ctx.device.vehicle();
+    if (sim) this.sendTo(socket, { type: 'track', points: sim.trackSince(0, -2).points, reset: true });
+    this.sendTo(socket, { type: 'state', state: this.state() });
+  }
+
+  detach(socket: PageSocket): void {
+    this.sockets.delete(socket);
+  }
+
+  /** A control message from a page. */
+  handle(socket: PageSocket, data: string | Uint8Array): void {
+    let msg: ClientMessage;
+    try {
+      msg = JSON.parse(typeof data === 'string' ? data : new TextDecoder().decode(data));
+    } catch {
+      return this.info('error', 'web UI sent invalid JSON');
+    }
+    const error = applyClientMessage(msg, this.ctx);
+    if (error) this.info('error', `web UI: ${error}`);
+    this.sendTo(socket, { type: 'state', state: this.state() }); // answer at once, not at the next tick
   }
 
   start(): void {
@@ -276,23 +282,27 @@ export class WebHub {
     return { type: 'track', points: t.points, reset: t.reset || first };
   }
 
-  private sendTo(socket: WebSocket, msg: ServerMessage): void {
+  private sendTo(socket: PageSocket, msg: ServerMessage): void {
     if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(msg));
   }
 }
 
-async function staticFile(pathname: string): Promise<Response> {
-  const clean = pathname.replace(/^\/+/, '').replace(/\.\.+/g, '');
-  for (const candidate of [clean || 'index.html', 'index.html']) { // unknown paths: the SPA
-    try {
-      const body = await Deno.readFile(new URL(candidate, DIST));
-      const ext = candidate.slice(candidate.lastIndexOf('.'));
-      return new Response(body, { headers: { 'content-type': TYPES[ext] ?? 'application/octet-stream' } });
-    } catch {
-      // try the next candidate
-    }
+function isFile(path: string): boolean {
+  try {
+    return statSync(path).isFile();
+  } catch {
+    return false;
   }
-  return new Response('The web UI is not built yet: run `deno task web:build` in simulator/, then restart.\n', {
+}
+
+function staticFile(pathname: string): Response {
+  const dist = DISTS.find((dir) => isFile(join(dir, 'index.html')));
+  const clean = pathname.replace(/^\/+/, '').replace(/\.\.+/g, '');
+  for (const candidate of dist ? [clean || 'index.html', 'index.html'] : []) { // unknown paths: the SPA
+    const path = join(dist!, candidate);
+    if (isFile(path)) return new Response(Bun.file(path)); // the content type comes from the extension
+  }
+  return new Response('The web UI is not built yet: run `bun run web:build` in simulator/, then restart.\n', {
     status: 503,
     headers: { 'content-type': 'text/plain; charset=utf-8' },
   });
@@ -303,25 +313,30 @@ export function startWebServer(
   hub: WebHub,
   { port, hostname }: { port: number; hostname: string },
 ): { url: string; close(): Promise<void> } {
-  const server = Deno.serve({ port, hostname, onListen: () => {} }, (req) => {
-    const url = new URL(req.url);
-    if (url.pathname === '/api/ws') {
-      if (req.headers.get('upgrade') !== 'websocket') return new Response('WebSocket only', { status: 426 });
-      const { socket, response } = Deno.upgradeWebSocket(req);
-      hub.attach(socket);
-      return response;
-    }
-    if (url.pathname === '/api/state') return Response.json(hub.state());
-    return staticFile(url.pathname);
+  const server = Bun.serve({
+    port,
+    hostname,
+    fetch(req, srv) {
+      const url = new URL(req.url);
+      if (url.pathname === '/api/ws') {
+        return srv.upgrade(req) ? undefined : new Response('WebSocket only', { status: 426 });
+      }
+      if (url.pathname === '/api/state') return Response.json(hub.state());
+      return staticFile(url.pathname);
+    },
+    websocket: {
+      open: (ws) => hub.attach(ws),
+      message: (ws, data) => hub.handle(ws, data),
+      close: (ws) => hub.detach(ws),
+    },
   });
   hub.start();
-  const addr = server.addr as Deno.NetAddr;
-  const shownHost = addr.hostname === '0.0.0.0' ? 'localhost' : addr.hostname;
+  const shownHost = server.hostname === '0.0.0.0' ? 'localhost' : server.hostname;
   return {
-    url: `http://${shownHost}:${addr.port}/`,
+    url: `http://${shownHost}:${server.port}/`,
     close: async () => {
       hub.stop();
-      await server.shutdown();
+      await server.stop(true);
     },
   };
 }

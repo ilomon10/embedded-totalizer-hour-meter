@@ -1,5 +1,7 @@
 // vehicle.test.ts: the vehicle physics, the sensor readings derived from them, the
 // firmware pipeline port, route following, track parsing and dead reckoning.
+import { test } from 'bun:test';
+
 import { assert, assertEquals } from './assert.ts';
 import { pitchFromAccel, rollFromAccel, upVector } from '../src/attitude.ts';
 import { axesOf, toBody } from '../src/vehicle/body.ts';
@@ -15,7 +17,7 @@ import { createRng } from '../src/clock.ts';
 
 const near = (a: number, b: number, eps: number) => Math.abs(a - b) <= eps;
 
-Deno.test('body axes agree with the firmware: world up in the board frame is upVector(roll, pitch)', () => {
+test('body axes agree with the firmware: world up in the board frame is upVector(roll, pitch)', () => {
   for (const [roll, pitch, heading] of [[0, 0, 0], [20, -10, 75], [-35, 15, 300], [5, 40, 180]]) {
     const up = toBody(axesOf({ rollDeg: roll, pitchDeg: pitch, headingDeg: heading }), { x: 0, y: 0, z: 1 });
     const want = upVector(roll, pitch);
@@ -23,7 +25,7 @@ Deno.test('body axes agree with the firmware: world up in the board frame is upV
   }
 });
 
-Deno.test('geo: metres <-> lat/lon round trip, and a 1 km step is 1 km', () => {
+test('geo: metres <-> lat/lon round trip, and a 1 km step is 1 km', () => {
   const frame = new LocalFrame({ lat: -1.2654, lon: 116.8312 });
   const p = frame.toLatLon({ e: 1000, n: 0, u: 0 });
   assert(near(distanceM(frame.origin, p), 1000, 2));
@@ -31,7 +33,7 @@ Deno.test('geo: metres <-> lat/lon round trip, and a 1 km step is 1 km', () => {
   assert(near(back.e, 1000, 1e-6) && near(back.n, 0, 1e-6));
 });
 
-Deno.test('truck: constant steer drives a circle of radius L / tan(steer), and the IMU feels v²/r', () => {
+test('truck: constant steer drives a circle of radius L / tan(steer), and the IMU feels v²/r', () => {
   const truck = new Truck(initialState(0));
   const synth = new ImuSynth(() => 0.5);
   const steer = 0.3; // 10.5°: a gentle, truck-like circle
@@ -62,7 +64,7 @@ Deno.test('truck: constant steer drives a circle of radius L / tan(steer), and t
   assert(near(yawDps, (v / radius) * 180 / Math.PI, 0.6), `yaw ${yawDps} °/s`);
 });
 
-Deno.test('truck: full lock at speed is limited by tyre grip (about 0.45 g), not by geometry', () => {
+test('truck: full lock at speed is limited by tyre grip (about 0.45 g), not by geometry', () => {
   const truck = new Truck(initialState(0, 0, 16)); // 58 km/h
   const synth = new ImuSynth(() => 0.5);
   synth.ideal(truck.state);
@@ -78,7 +80,7 @@ Deno.test('truck: full lock at speed is limited by tyre grip (about 0.45 g), not
   assert(maxHorizontal < 0.5, `horizontal ${maxHorizontal.toFixed(3)} g`);
 });
 
-Deno.test('plane: a coordinated turn has no sideways force; turn rate = g·tan(bank)/v', () => {
+test('plane: a coordinated turn has no sideways force; turn rate = g·tan(bank)/v', () => {
   const plane = new Plane(initialState(0, 300, Plane.CRUISE));
   const synth = new ImuSynth(() => 0.5);
   for (let i = 0; i < 800; i++) plane.step({ throttle: 0.35, brake: 0, steer: 0.6, pitch: 0 }); // bank settles at 27°
@@ -97,7 +99,7 @@ Deno.test('plane: a coordinated turn has no sideways force; turn rate = g·tan(b
   start = 0;
 });
 
-Deno.test('KalmanAngle port: first sample resets, then it tracks a step change', () => {
+test('KalmanAngle port: first sample resets, then it tracks a step change', () => {
   const k = new KalmanAngle();
   assertEquals(k.update(10, 0, 0.01), 10);
   let a = 10;
@@ -105,7 +107,7 @@ Deno.test('KalmanAngle port: first sample resets, then it tracks a step change',
   assert(near(a, 20, 0.5), `angle ${a}`);
 });
 
-Deno.test('route follower: a truck reaches every corner of a square and stops at the end', () => {
+test('route follower: a truck reaches every corner of a square and stops at the end', () => {
   const frame = new LocalFrame({ lat: 0, lon: 0 });
   const corners = [[0, 0], [150, 0], [150, 150], [0, 150]].map(([e, n]) => frame.toLatLon({ e, n, u: 0 }));
   const follower = new RouteFollower(frame, { waypoints: corners, speed: 10, loop: false }, 'truck');
@@ -123,7 +125,7 @@ Deno.test('route follower: a truck reaches every corner of a square and stops at
   assert(truck.state.speed < 2, `stopped at the end (${truck.state.speed} m/s)`);
 });
 
-Deno.test('route follower: a plane flies every leg, even when it cuts the corners', () => {
+test('route follower: a plane flies every leg, even when it cuts the corners', () => {
   const frame = new LocalFrame({ lat: 0, lon: 0 });
   const legs = [[0, 0], [600, 300], [700, -300], [0, -350]].map(([e, n]) => frame.toLatLon({ e, n, u: 0 }));
   const follower = new RouteFollower(frame, { waypoints: legs, speed: 55, alt: 300, loop: false }, 'plane');
@@ -140,7 +142,7 @@ Deno.test('route follower: a plane flies every leg, even when it cuts the corner
   assert(closest.every((d) => d < 200), `closest approach per turn point: ${closest.map((d) => d.toFixed(0))}`);
 });
 
-Deno.test('tracks: GPX and CSV with times become waypoints with speeds', () => {
+test('tracks: GPX and CSV with times become waypoints with speeds', () => {
   const gpx = `<gpx><trk><trkseg>
     <trkpt lat="-1.0000" lon="116.0000"><ele>10</ele><time>2026-10-12T00:00:00Z</time></trkpt>
     <trkpt lat="-1.0009" lon="116.0000"><ele>12</ele><time>2026-10-12T00:00:10Z</time></trkpt>
@@ -201,7 +203,7 @@ function trip(hz: number): number {
   return Math.hypot(est.e - truck.state.e, est.n - truck.state.n);
 }
 
-Deno.test('dead reckoning from the wire data follows a 40 s trip, and drifts more at a low stream rate', () => {
+test('dead reckoning from the wire data follows a 40 s trip, and drifts more at a low stream rate', () => {
   const fast = trip(100);
   const slow = trip(5);
   // About 10% of 166 m: suspension squat under acceleration tilts gravity onto the forward axis,
@@ -210,7 +212,7 @@ Deno.test('dead reckoning from the wire data follows a 40 s trip, and drifts mor
   assert(slow > fast, `5 Hz drift (${slow.toFixed(1)} m) should exceed 100 Hz drift (${fast.toFixed(1)} m)`);
 });
 
-Deno.test('right after a vehicle is attached, the first IMU frame already carries its gravity', async () => {
+test('right after a vehicle is attached, the first IMU frame already carries its gravity', async () => {
   const { makeDevice } = await import('./helpers.ts');
   const { VehicleSim } = await import('../src/vehicle/sim.ts');
   const { command } = await import('./helpers.ts');
@@ -270,7 +272,7 @@ async function flight(hz: number): Promise<{ errorM: number; distanceM: number }
   return { errorM: Math.hypot(est.e - plane.state.e, est.n - plane.state.n), distanceM };
 }
 
-Deno.test('strapdown INS follows a plane through banked turns (where accelerometer tilt fails)', async () => {
+test('strapdown INS follows a plane through banked turns (where accelerometer tilt fails)', async () => {
   const fast = await flight(100);
   const slow = await flight(10);
   assert(

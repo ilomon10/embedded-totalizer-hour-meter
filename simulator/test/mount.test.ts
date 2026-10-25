@@ -1,5 +1,7 @@
 // mount.test.ts: the reverse gear, a board fitted turned/tilted in the truck, the
 // host-side mounting calibration (level + front), and dead reckoning that uses it.
+import { test } from 'bun:test';
+
 import { assert } from './assert.ts';
 import { pitchFromAccel, rollFromAccel } from '../src/attitude.ts';
 import type { Mount } from '../src/vehicle/body.ts';
@@ -67,7 +69,7 @@ function calibrate(mount: Mount) {
   return cal;
 }
 
-Deno.test('truck: reverse gear backs up, and steering right then turns the nose left', () => {
+test('truck: reverse gear backs up, and steering right then turns the nose left', () => {
   const forward = new Truck(initialState(0));
   const back = new Truck(initialState(0));
   for (let i = 0; i < 500; i++) {
@@ -81,7 +83,7 @@ Deno.test('truck: reverse gear backs up, and steering right then turns the nose 
   assert(back.state.n < 0, 'it moved backwards (south)');
 });
 
-Deno.test('truck: the gear waits for standstill, and brakes never push the speed past 0', () => {
+test('truck: the gear waits for standstill, and brakes never push the speed past 0', () => {
   const truck = new Truck(initialState(0));
   for (let i = 0; i < 400; i++) truck.step({ throttle: 1, brake: 0, steer: 0, pitch: 0 });
   assert(truck.state.speed > 5, 'moving forward');
@@ -97,7 +99,7 @@ Deno.test('truck: the gear waits for standstill, and brakes never push the speed
   assert(truck.state.speed === 0, `brake stops at 0, not past it: ${truck.state.speed}`);
 });
 
-Deno.test('mount calibration: level + front recover a board turned 90° and tilted 10°', () => {
+test('mount calibration: level + front recover a board turned 90° and tilted 10°', () => {
   const cal = calibrate({ yawDeg: 90, pitchDeg: 0, rollDeg: 10 }).result();
   assert(cal, 'calibrated');
   assert(near(cal.yawOffsetDeg, 90, 2), `yaw ${cal.yawOffsetDeg}`);
@@ -106,14 +108,14 @@ Deno.test('mount calibration: level + front recover a board turned 90° and tilt
   assert(near(cal.front.y, 1, 0.05), JSON.stringify(cal.front));
 });
 
-Deno.test('mount calibration: a board fitted backwards and nose-up', () => {
+test('mount calibration: a board fitted backwards and nose-up', () => {
   const cal = calibrate({ yawDeg: 180, pitchDeg: 15, rollDeg: 0 }).result();
   assert(cal, 'calibrated');
   assert(near(Math.abs(cal.yawOffsetDeg), 180, 2), `yaw ${cal.yawOffsetDeg}`);
   assert(near(cal.tiltPitchDeg, 15, 2), `pitch ${cal.tiltPitchDeg}`);
 });
 
-Deno.test('mount calibration: each step says why it failed', () => {
+test('mount calibration: each step says why it failed', () => {
   const early = new MountCalibrator();
   early.start('front');
   assert(early.status().phase === 'failed' && /Level first/.test(early.status().message));
@@ -147,7 +149,7 @@ Deno.test('mount calibration: each step says why it failed', () => {
   }
 });
 
-Deno.test('dead reckoning with a calibrated 90° mount follows 50 m forward and 20 m back', () => {
+test('dead reckoning with a calibrated 90° mount follows 50 m forward and 20 m back', () => {
   const mount = { yawDeg: 90, pitchDeg: 0, rollDeg: 0 };
   const r = rig(mount, 5);
   const cal = new MountCalibrator();

@@ -2,13 +2,13 @@
 // Markdown (records table + wire hex) so the doc can be refreshed after a
 // protocol change:
 //
-//   deno task gen-catalog            # all frames
-//   deno task gen-catalog telemetry  # one frame by id
+//   bun run gen-catalog            # all frames
+//   bun run gen-catalog telemetry  # one frame by id
 //
 // Paste the blocks into the doc; test/catalog.test.ts checks they match.
 import { catalogFrames, recordRows, sizes, wireHex } from './catalog.ts';
 
-const only = Deno.args[0];
+const only = process.argv[2];
 for (const f of catalogFrames()) {
   if (only && f.id !== only) continue;
   const { packet, wire } = sizes(f);

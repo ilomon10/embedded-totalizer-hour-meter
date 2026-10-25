@@ -21,6 +21,23 @@ export interface Transport {
   close(): Promise<void>;
 }
 
+/** Where a transport's bytes go: a socket, a pipe to socat, stdout. */
+export interface ByteWriter {
+  write(bytes: Uint8Array): Promise<unknown>;
+  close(): Promise<unknown>;
+}
+
+/** A ByteWriter over a Bun FileSink (a child's stdin, stdout): each chunk is flushed before the next. */
+export function sinkWriter(sink: Bun.FileSink): ByteWriter {
+  return {
+    write: async (bytes) => {
+      sink.write(bytes);
+      await sink.flush();
+    },
+    close: async () => await sink.end(),
+  };
+}
+
 const MAX_BACKLOG_BYTES = 16 * 1024;
 
 /**
@@ -33,7 +50,7 @@ export class DroppingWriter {
   private busy = false;
   dropped = 0;
 
-  constructor(private readonly writer: WritableStreamDefaultWriter<Uint8Array>) {}
+  constructor(private readonly writer: ByteWriter) {}
 
   write(bytes: Uint8Array): void {
     if (this.queuedBytes + bytes.length > MAX_BACKLOG_BYTES) {

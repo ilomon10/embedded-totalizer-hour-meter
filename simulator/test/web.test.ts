@@ -1,4 +1,6 @@
 // web.test.ts: the web UI server over a real socket: page, state, control messages.
+import { test } from 'bun:test';
+
 import { assert, assertEquals } from './assert.ts';
 import { Faults } from '../src/faults.ts';
 import { MSG } from '../src/protocol.ts';
@@ -22,7 +24,7 @@ function context() {
   return { ...sim, faults, ctx };
 }
 
-Deno.test('control messages drive the device', () => {
+test('control messages drive the device', () => {
   const { device, faults, ctx, run, lastOf } = context();
   const apply = (msg: ClientMessage) => assertEquals(applyClientMessage(msg, ctx), null);
   apply({ type: 'set', group: 'motion', patch: { rollDeg: 15 } });
@@ -42,7 +44,7 @@ Deno.test('control messages drive the device', () => {
   assertEquals(applyClientMessage({ type: 'counters', runSeconds: -1 }, ctx), 'counters must be 0..4294967295');
 });
 
-Deno.test('drive messages: reverse gear, board mount (clamped) and the mounting calibration', () => {
+test('drive messages: reverse gear, board mount (clamped) and the mounting calibration', () => {
   const { device, ctx, run } = context();
   const apply = (msg: ClientMessage) => applyClientMessage(msg, ctx);
   assertEquals(apply({ type: 'mount-cal', step: 'level' }), 'no vehicle: start one first');
@@ -63,14 +65,14 @@ Deno.test('drive messages: reverse gear, board mount (clamped) and the mounting 
   assertEquals(vehicle().gear, 'R');
 });
 
-Deno.test('web server: page or build hint, JSON state, and a WebSocket round trip', async () => {
+test('web server: page or build hint, JSON state, and a WebSocket round trip', async () => {
   const { device, ctx } = context();
   const hub = new WebHub(ctx);
   const web = startWebServer(hub, { port: 0, hostname: '127.0.0.1' });
   try {
     const page = await fetch(web.url);
     const body = await page.text();
-    assert(page.status === 200 ? body.includes('<div id="root">') : body.includes('deno task web:build'));
+    assert(page.status === 200 ? body.includes('<div id="root">') : body.includes('bun run web:build'));
 
     const state = (await (await fetch(`${web.url}api/state`)).json()) as SimState;
     assertEquals(state.deviceId, 0x1a2b3c4d);
