@@ -3,8 +3,9 @@
 One tool for the hour-meter device: a full-screen **configurator and live viewer** (TUI), a **live reader**, a **command line** for single commands, and a **firmware updater**. It is one Deno program, also shipped as a standalone binary, so no Node, npm or Deno install is needed to use it.
 
 ```bash
+hour-meter                              # pick the board's port on the connect screen
 hour-meter --demo                       # try everything with a simulated device (no hardware)
-hour-meter /dev/ttyUSB0                 # the real device (USB, or a USB-TTL adapter on the UART pins)
+hour-meter /dev/ttyUSB0                 # straight to that port (USB, or a USB-TTL adapter on the UART pins)
 hour-meter get hour --port /dev/ttyUSB0 # one command, one ACK
 hour-meter firmware flash               # update the firmware to the newest release (over USB)
 ```
@@ -21,11 +22,51 @@ deno task start --demo                  # same options as the binary
 deno task start /dev/ttyUSB0
 ```
 
-**Ports:** a serial device (`/dev/ttyUSB0`, `/dev/rfcomm0`, `/dev/cu.usbserial-*` on macOS) or `tcp://host:port`. The default is `$HOUR_METER_PORT`, else `/dev/ttyUSB0`. Serial ports work on **Linux and macOS** (the port is configured with `stty`, 115200 8N1).
+**Ports:** a serial device (`/dev/ttyUSB0`, `/dev/rfcomm0`, `/dev/cu.usbserial-*` on macOS) or `tcp://host:port`. The TUI without a port opens the [connect screen](#connect-screen). Commands and `read` without a port use `$HOUR_METER_PORT`, else `/dev/ttyUSB0`. Serial ports work on **Linux and macOS** (the port is configured with `stty`, 115200 8N1).
 
 **Windows:** the binary runs, but COM ports are not supported yet. Use `--demo`, the [simulator](../simulator/README.md) over TCP, or a serial-to-TCP bridge with `tcp://host:port`. `firmware list` and `firmware download` work; flashing needs Linux or macOS.
 
 ## TUI: configurator + live viewer
+
+### Connect screen
+
+`hour-meter` without a port starts here:
+
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ HOUR METER                                               configurator 1.4.0 │
+│ Connect to a device                                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Ports                                                                        │
+│ ▸ /dev/ttyUSB0      Silicon Labs CP2102 USB to UART Bridge  just plugged in  │
+│   /dev/rfcomm0      Bluetooth (asks for the PIN)                             │
+│   Other port or tcp://host:port...                                           │
+│   Demo              a simulated device, no hardware needed                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+ ↑↓ select · Enter connect · q quit
+```
+
+- **The list updates by itself.** Plug in the board and its port appears, already selected. On Linux each USB port is named by its adapter chip (from `/dev/serial/by-id`).
+- **The last port used is selected first.** Without one, `$HOUR_METER_PORT`, else the first port that looks like an ESP32 board (CP210x, CH340, FTDI).
+- **Other port** takes a typed path or `tcp://host:port` (the simulator, a serial-to-TCP bridge). A Bluetooth port asks for the PIN, unless `--pin` gave it.
+- **A port that does not open says why** on this screen: it is not there, it is in use by another program, or you have no permission. For permission it names the group to join, e.g. `sudo usermod -aG uucp $USER` (Arch) or `dialout` (Debian, Ubuntu).
+
+`hour-meter /dev/ttyUSB0` (or `--demo`) skips this screen. `p` in the TUI comes back to it.
+
+### Unplug and replug
+
+The TUI keeps going when the board is unplugged. The header turns red (`○ disconnected`) and a banner says how long ago it happened:
+
+```
+▲ The board was disconnected (12 s ago). Plug it back in: it reconnects by itself · p: other port.
+```
+
+When the port comes back, the TUI connects again and reads everything anew. A board that comes back under another name (`/dev/ttyUSB1`) is found by its adapter. Bluetooth drops and a restarted TCP bridge work the same way. While disconnected, commands say `not connected` at once instead of timing out. The last values stay on screen; when another board shows up on the port, the old one's values are cleared.
+
+A port given on the command line that is not there yet is waited for the same way, so `hour-meter /dev/ttyUSB0` can start before the board is plugged in.
+
+### Screens
 
 ```
 ╭──────────────────────────────────────────────────────────────────────────────╮
@@ -50,7 +91,7 @@ deno task start /dev/ttyUSB0
 | `4` | Actions | Set time from the PC; set the hour meter (hours) or totalizer (units or pulses) to any value, showing the current value; reset hour meter only, totalizer only, or both (type `RESET`); calibrate; unlock Bluetooth; reboot |
 | `5` | Log | Device events (boot, modules plugged/unplugged, calibration results), command results, errors |
 | `6` | Firmware | The device's firmware and the releases on GitHub. `↑↓` select, `Enter` flash the selected release (type `FLASH`), `d` download, `c` check again, `f` flash a file. The header shows `→ 2.6.0 available` when a newer release exists. See [Update the firmware](#update-the-firmware) |
-| `Tab`, `g`, `q` | | Next screen, refresh everything, quit |
+| `Tab`, `g`, `p`, `q` | | Next screen, refresh everything, back to the connect screen (another port), quit |
 | `H` | any | Hard-reset the board over USB (also *Actions → Hard reset (USB)*). Local serial ports only |
 
 If no frame arrives for 5 s (from connecting, or after the last frame), a banner says **"No data from the device. Press H to hard-reset."**. The reset is only ever offered, never automatic. A boot is logged with its cause, for example `device restarted: watchdog while IMU (reset reason 6)`, and the Dashboard shows the last restart cause and a **safeMode** warning.
@@ -171,6 +212,7 @@ The protocol is documented for other languages in [`esp32/docs/INTEGRATION-GUIDE
 
 ```bash
 deno task test         # command words, DeviceClient protocol rules, TUI reducer, a --demo round trip,
+                       # port listing, reconnecting after an unplug (fake ports),
                        # the ROM bootloader protocol and whole flashes against a fake ROM, release lists
 deno task check        # type-check
 deno lint && deno fmt --check
@@ -188,6 +230,8 @@ configurator/
 │   ├── reset.ts        panic signal, USB hard reset and bootloader reset (DTR/RTS through libc ioctl)
 │   ├── restart.ts      boot EVENT cause/stage text
 │   ├── links.ts        serial (Deno.open + stty), TCP, in-memory link pair
+│   ├── ports.ts        the serial ports now (connect screen), plain words for a port that does not open
+│   ├── connection.ts   the TUI's link: reconnects after an unplug, hands the port to the flasher
 │   ├── demo.ts         --demo: the simulator's device in-process
 │   ├── cli.ts          shared flags and connect()
 │   ├── commands.ts     one command, one ACK
@@ -196,7 +240,8 @@ configurator/
 │   ├── flash.ts        firmware images, the regions written (NVS kept), the flash sequence
 │   ├── releases.ts     firmware on the GitHub releases: list (API, else the release feed), checked downloads
 │   ├── firmware.ts     `firmware`: version, list, download, flash with backup and restore
-│   └── tui/            Ink screens (App.tsx, FirmwareView.tsx), pure reducer (state.ts), entry (main.tsx)
+│   └── tui/            Ink screens (ConnectView.tsx, App.tsx, FirmwareView.tsx), pure reducer (state.ts),
+│                       entry (main.tsx)
 ├── tools/compile.ts    release binaries
 └── test/
 ```

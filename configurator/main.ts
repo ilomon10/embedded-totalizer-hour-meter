@@ -1,6 +1,6 @@
 // main.ts: `hour-meter`, the host tool for the hour-meter device. One binary:
 //
-//   hour-meter [port] [--demo] [--pin N]     full-screen configurator + live viewer (TUI)
+//   hour-meter [port] [--demo] [--pin N]     full-screen configurator + live viewer (TUI); no port: connect screen
 //   hour-meter read [port] [--imu]           one line per frame
 //   hour-meter get hour --port <port>        one command, one ACK (see `hour-meter help`)
 //   hour-meter firmware [version|list|download|flash]   firmware releases, update over USB
@@ -16,10 +16,11 @@ const HELP = `hour-meter ${TOOL_VERSION}: configure and watch the hour-meter dev
 
 Usage:
   hour-meter [port] [--demo] [--pin PIN] [--no-time-sync]       full-screen configurator (TUI)
+                                                                 without a port: pick one on the connect screen
   hour-meter read [port] [--imu] [--demo] [--pin PIN] [--no-time-sync]
   hour-meter <command> [--port port] [--demo] [--pin PIN]
 
-Port: a serial device (default /dev/ttyUSB0, or $HOUR_METER_PORT) or tcp://host:port.
+Port: a serial device or tcp://host:port. Commands and read default to $HOUR_METER_PORT, else /dev/ttyUSB0.
 PIN:  only for Bluetooth sessions (or $HOUR_METER_PIN).
 
 ${USAGE}

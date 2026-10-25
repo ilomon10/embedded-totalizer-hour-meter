@@ -9,7 +9,6 @@ import TextInput from 'ink-text-input';
 import { type FirmwareImage, type Note, progressLine } from '../firmware.ts';
 import type { FlashProgress } from '../flash.ts';
 import { compareVersions, findRelease, type FirmwareRelease, formatFirmware } from '../releases.ts';
-import type { Client } from './App.tsx';
 import type { Value } from './state.ts';
 
 export interface FirmwareActions {
@@ -20,14 +19,14 @@ export interface FirmwareActions {
   /** A local image file (refused unless it is an ESP32 image). */
   file(path: string): Promise<FirmwareImage>;
   /**
-   * Back up, flash, reconnect, restore. Resolves with the new client, also after a failed flash; without one only
-   * if the port did not come back. Only given for the board's USB port: `flashNote` says why it is missing.
+   * Back up, flash, reconnect, restore. The connection gets the new client (or reconnects by itself when the port
+   * did not come back). Only given for the board's USB port: `flashNote` says why it is missing.
    */
   flash?(
     image: FirmwareImage,
     onProgress: (progress: FlashProgress) => void,
     note: (note: Note) => void,
-  ): Promise<{ client?: Client; ok: boolean }>;
+  ): Promise<{ ok: boolean }>;
   flashNote?: string;
 }
 

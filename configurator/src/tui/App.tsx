@@ -1,9 +1,9 @@
 // App.tsx: the hour-meter configurator & live viewer (Ink = React for terminals).
 //
-//   [1] Dashboard  [2] IMU  [3] Settings  [4] Actions  [5] Log  [6] Firmware      q = quit
+//   [1] Dashboard  [2] IMU  [3] Settings  [4] Actions  [5] Log  [6] Firmware      p = port, q = quit
 //
-// All device I/O goes through the DeviceClient passed in (a firmware update hands
-// back a new one); the screen is a pure function of DeviceState (see state.ts).
+// All device I/O goes through the Connection's current DeviceClient (connection.ts): it changes after an
+// unplug and replug, and after a firmware update. The screen is a pure function of DeviceState (see state.ts).
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import TextInput from 'ink-text-input';
@@ -22,10 +22,12 @@ import { progressLine } from '../firmware.ts';
 import type { FlashProgress } from '../flash.ts';
 import type { FirmwareRelease } from '../releases.ts';
 import { causeText } from '../restart.ts';
+import type { ConnState } from '../connection.ts';
 import { type FirmwareActions, type FirmwarePrompt, FirmwareView } from './FirmwareView.tsx';
 import {
   activeFlags,
   addLog,
+  applyConnState,
   applyMessage,
   confirmSettings,
   type DecodedMessage,
@@ -47,6 +49,15 @@ export interface Client {
   request(values: Record<string, number | boolean>): Promise<DecodedMessage>;
   on(event: string, listener: Listener): unknown;
   off(event: string, listener: Listener): unknown;
+}
+
+/** The link to the device (connection.ts Connection): its client changes on a reconnect. */
+export interface Link {
+  client?: Client;
+  state: ConnState;
+  port: string;
+  on(event: 'client' | 'state', listener: Listener): unknown;
+  off(event: 'client' | 'state', listener: Listener): unknown;
 }
 
 const TABS = ['Dashboard', 'IMU', 'Settings', 'Actions', 'Log', 'Firmware'] as const;
@@ -98,19 +109,40 @@ export function parseSetting(name: string, text: string): { value?: number | boo
 
 // --------------------------------------------------------------- components --
 
+/** The link in a word and a color: the header's dot. */
+function linkText(state: DeviceState): { text: string; color: string; mark: string } {
+  const live = state.lastFrameMs !== undefined && Date.now() - state.lastFrameMs < 5000;
+  switch (state.connection) {
+    case 'demo':
+      return { text: 'DEMO', color: 'green', mark: '●' };
+    case 'waiting':
+      return { text: 'disconnected', color: 'red', mark: '○' };
+    case 'paused':
+      return { text: 'flashing', color: 'yellow', mark: '◌' };
+    case 'connecting':
+      return { text: 'connecting', color: 'yellow', mark: '◌' };
+    default:
+      return live
+        ? { text: 'connected', color: 'green', mark: '●' }
+        : { text: state.frames ? 'no data' : 'waiting for data', color: 'yellow', mark: '●' };
+  }
+}
+
 function Header({ state, tab, update }: { state: DeviceState; tab: Tab; update?: string }) {
-  const age = state.lastFrameMs ? (Date.now() - state.lastFrameMs) / 1000 : Infinity;
-  const live = age < 5;
-  const conn = state.connection === 'demo' ? 'DEMO' : live ? 'connected' : state.frames ? 'no data' : 'waiting';
+  const link = linkText(state);
   return (
-    <Box flexDirection='column' borderStyle='round' borderColor={live ? 'green' : 'yellow'} paddingX={1}>
+    <Box flexDirection='column' borderStyle='round' borderColor={link.color} paddingX={1}>
       <Box justifyContent='space-between'>
-        <Text bold>HOUR METER</Text>
-        <Text color={live ? 'green' : 'yellow'}>● {conn} {state.port}</Text>
-        <Text>
-          dev {state.deviceId?.toString(16) ?? '-'} fw {formatFirmware(state.values.fwVersion)}
-          {update ? <Text color='yellow'>{` → ${update} available (6)`}</Text> : null}
-        </Text>
+        <Box flexShrink={0} marginRight={2}>
+          <Text bold>HOUR METER</Text>
+        </Box>
+        <Text color={link.color} wrap='truncate-middle'>{link.mark} {link.text} {state.port}</Text>
+        <Box flexShrink={0} marginLeft={2}>
+          <Text>
+            dev {state.deviceId?.toString(16) ?? '-'} fw {formatFirmware(state.values.fwVersion)}
+            {update ? <Text color='yellow'>{` → ${update} available (6)`}</Text> : null}
+          </Text>
+        </Box>
       </Box>
       <Box gap={2}>
         {TABS.map((t, i) => <Text key={t} inverse={t === tab} bold={t === tab}>{` ${i + 1} ${t} `}</Text>)}
@@ -169,7 +201,9 @@ function Dashboard({ state }: { state: DeviceState }) {
         <Panel title='Modules' width='50%'>
           <Box gap={2}>
             {devicesPresent(v.devices as number | undefined).map(([name, ok]) => (
-              <Text key={name} color={ok ? 'green' : 'red'}>{ok ? '✔' : '✘'} {name}</Text>
+              v.devices === undefined
+                ? <Text key={name} color='gray'>? {name}</Text>
+                : <Text key={name} color={ok ? 'green' : 'red'}>{ok ? '✔' : '✘'} {name}</Text>
             ))}
           </Box>
           <Text color='gray'>
@@ -179,11 +213,15 @@ function Dashboard({ state }: { state: DeviceState }) {
         </Panel>
       </Box>
       <Panel title='Status'>
-        {flags.length === 0 ? <Text color='green'>all OK</Text> : (
-          <Box flexWrap='wrap' gap={2}>
-            {flags.map((f) => <Text key={f} color={flagColor(f, flags, v.fwVersion)}>▲ {f}</Text>)}
-          </Box>
-        )}
+        {v.statusFlags === undefined
+          ? <Text color='gray'>no data yet</Text>
+          : flags.length === 0
+          ? <Text color='green'>all OK</Text>
+          : (
+            <Box flexWrap='wrap' gap={2}>
+              {flags.map((f) => <Text key={f} color={flagColor(f, flags, v.fwVersion)}>▲ {f}</Text>)}
+            </Box>
+          )}
         {lastRestart ? <Text color='gray'>Last restart: {lastRestart}</Text> : null}
         {flags.includes('safeMode')
           ? <Text color='red'>Safe mode: I2C is off after repeated restarts. Power-cycle or reboot to leave it.</Text>
@@ -251,10 +289,10 @@ function SettingsView({ state, cursor, editing, draft, setDraft, onSubmit, error
         const selected = i === cursor;
         return (
           <Box key={name}>
-            <Box width={22}>
+            <Box width={22} flexShrink={0}>
               <Text inverse={selected}>{name}</Text>
             </Box>
-            <Box width={16}>
+            <Box width={16} flexShrink={0}>
               {selected && editing
                 ? (
                   <TextInput
@@ -347,6 +385,17 @@ function LogView({ state }: { state: DeviceState }) {
 
 // --------------------------------------------------------------------- app --
 
+/** The banner while the link is not up: why, since when, and what to do. */
+export function linkBanner(state: DeviceState, nowMs: number, canSwitch: boolean): string | undefined {
+  if (state.connection === 'connecting') return `Connecting to ${state.port}...`;
+  if (state.connection !== 'waiting') return undefined;
+  const s = Math.floor((nowMs - (state.waitingSinceMs ?? nowMs)) / 1000);
+  const since = s >= 1 ? ` (${s >= 60 ? `${Math.floor(s / 60)} min ${s % 60} s ago` : `${s} s ago`})` : '';
+  const problem = state.problem ?? 'not connected';
+  const next = state.lost ? 'Plug it back in: it reconnects by itself' : 'Trying again every second';
+  return `${problem[0].toUpperCase()}${problem.slice(1)}${since}. ${next}${canSwitch ? ' · p: other port' : ''}.`;
+}
+
 /** Same stage and same whole percent: not worth a new frame on the terminal. */
 function sameStep(old: FlashProgress | undefined, p: FlashProgress): boolean {
   const pct = (x: FlashProgress) => Math.floor((100 * x.done) / (x.total || 1));
@@ -354,20 +403,21 @@ function sameStep(old: FlashProgress | undefined, p: FlashProgress): boolean {
 }
 
 /**
- * `hardReset` pulses EN through the USB adapter; it is only given for a local serial port.
- * `hardResetNote` says why it is missing (shown instead). `firmware` lists, downloads and flashes (tab 6);
- * a flash hands back a new client, which replaces `client`.
+ * `conn` holds the device: its client changes after a reconnect or a flash. `hardReset` pulses EN through the USB
+ * adapter; it is only given for a local serial port. `hardResetNote` says why it is missing (shown instead).
+ * `firmware` lists, downloads and flashes (tab 6). `onSwitchPort` (key p) goes back to the connect screen.
  */
-export function App({ client: firstClient, initial, hardReset, hardResetNote, firmware }: {
-  client: Client;
+export function App({ conn, initial, hardReset, hardResetNote, firmware, onSwitchPort }: {
+  conn: Link;
   initial: DeviceState;
   hardReset?: () => Promise<void>;
   hardResetNote?: string;
   firmware: FirmwareActions;
+  onSwitchPort?: () => void;
 }) {
   const { exit } = useApp();
-  const [client, setClient] = useState(firstClient);
-  const [state, setState] = useState(initial);
+  const [client, setClient] = useState(conn.client);
+  const [state, setState] = useState(() => applyConnState(initial, conn.state, conn.port, Date.now()));
   const [tab, setTab] = useState<Tab>('Dashboard');
   const [cursor, setCursor] = useState(0);
   const [editing, setEditing] = useState(false);
@@ -385,6 +435,10 @@ export function App({ client: firstClient, initial, hardReset, hardResetNote, fi
   const log = useCallback((level: Level, text: string) => setState((s) => addLog(s, level, text, Date.now())), []);
 
   const send = useCallback(async (label: string, values: Record<string, number | boolean>, quiet = false) => {
+    if (!client) {
+      if (!quiet) log('warn', `${label}: not connected (wait for the board, or p to pick another port)`);
+      return false;
+    }
     try {
       const ack = await client.request(values); // rejects unless ackStatus is Ok
       setState((s) => confirmSettings(applyMessage(s, ack, Date.now()), values));
@@ -411,6 +465,29 @@ export function App({ client: firstClient, initial, hardReset, hardResetNote, fi
   }, [send, log]);
 
   useEffect(() => {
+    const onClient = (next: Client) => setClient(next);
+    const onState = (next: ConnState) => {
+      setState((s) => applyConnState(s, next, conn.port, Date.now()));
+      if (next.kind !== 'connected') setClient(undefined);
+    };
+    conn.on('client', onClient);
+    conn.on('state', onState);
+    // The connection may have changed between the first render and now (an open that finished meanwhile).
+    setClient(conn.client);
+    setState((s) => applyConnState(s, conn.state, conn.port, Date.now()));
+    return () => {
+      conn.off('client', onClient);
+      conn.off('state', onState);
+    };
+  }, [conn]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 1000); // keep "last frame" age fresh
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!client) return;
     const onFrame = (msg: DecodedMessage) => setState((s) => applyMessage(s, msg, Date.now()));
     const onSynced = (epoch: number) =>
       log('ok', `auto time sync: device clock set to ${new Date(epoch * 1000).toISOString()}`);
@@ -419,7 +496,6 @@ export function App({ client: firstClient, initial, hardReset, hardResetNote, fi
     client.on('timeSynced', onSynced);
     client.on('timeSyncError', onSyncError);
     void refresh();
-    const timer = setInterval(() => setTick((t) => t + 1), 1000); // keep "last frame" age fresh
     // Uptime, I2C errors, RTC temperature... only come with a full status: poll it quietly.
     // Not during a flash: the old client is closed then.
     const status = setInterval(() => job.current === 'flash' || void send('get status', { get: 3 }, true), 10000);
@@ -427,7 +503,6 @@ export function App({ client: firstClient, initial, hardReset, hardResetNote, fi
       client.off('frame', onFrame);
       client.off('timeSynced', onSynced);
       client.off('timeSyncError', onSyncError);
-      clearInterval(timer);
       clearInterval(status);
     };
   }, [client, refresh, send, log]);
@@ -553,9 +628,7 @@ export function App({ client: firstClient, initial, hardReset, hardResetNote, fi
         (n) => log(n.level, n.text),
       );
       startMs.current = Date.now();
-      setState((s) => ({ ...s, lastFrameMs: undefined }));
-      if (result.client) setClient(result.client); // the effects above subscribe to it and refresh everything
-      else log('error', 'no connection to the board: plug it in, then quit (q) and start hour-meter again');
+      setState((s) => ({ ...s, lastFrameMs: undefined })); // the connection hands over the new client
       log(result.ok ? 'ok' : 'error', result.ok ? `firmware update done: ${image.label}` : 'firmware update failed');
     } catch (err) {
       log('error', `firmware update: ${(err as Error).message}`);
@@ -568,6 +641,10 @@ export function App({ client: firstClient, initial, hardReset, hardResetNote, fi
 
   // q and Ctrl+C (Ink's own Ctrl+C exit is off, see main.tsx): never in the middle of a flash.
   const quit = () => (flashing ? log('warn', 'a firmware update is running: wait for it') : exit());
+  const switchPort = () => {
+    if (flashing) return log('warn', 'a firmware update is running: wait for it');
+    onSwitchPort?.();
+  };
 
   const askFirmware = (prompt: FirmwarePrompt) => {
     if (!firmware.flash) return log('warn', `flash: ${firmware.flashNote ?? 'not available'}`);
@@ -606,6 +683,7 @@ export function App({ client: firstClient, initial, hardReset, hardResetNote, fi
       return; // TextInput owns the keyboard while editing
     }
     if (input === 'q') return quit();
+    if (input === 'p' && onSwitchPort) return switchPort();
     const n = Number(input);
     if (n >= 1 && n <= TABS.length) {
       setTab(TABS[n - 1]);
@@ -677,13 +755,16 @@ export function App({ client: firstClient, initial, hardReset, hardResetNote, fi
   };
 
   const lastLog = state.log[state.log.length - 1];
-  const banner = state.connection === 'demo' || flashing
-    ? undefined
-    : noDataBanner(state.lastFrameMs, startMs.current, Date.now(), hardReset ? undefined : hardResetNote);
+  const banner = linkBanner(state, Date.now(), onSwitchPort !== undefined) ??
+    (state.connection !== 'connected' || flashing
+      ? undefined
+      : noDataBanner(state.lastFrameMs, startMs.current, Date.now(), hardReset ? undefined : hardResetNote));
+  const keys = ['1-6/Tab screens', 'g refresh', hardReset ? 'H hard reset' : '', onSwitchPort ? 'p port' : '', 'q quit']
+    .filter(Boolean).join(' · ');
   return (
     <Box flexDirection='column'>
       <Header state={state} tab={tab} update={updateAvailable(state.values.fwVersion, releases)} />
-      {banner ? <Text color='yellow' bold>▲ {banner}</Text> : null}
+      {banner ? <Text color={state.connection === 'waiting' ? 'red' : 'yellow'} bold>▲ {banner}</Text> : null}
       {tab === 'Dashboard' && <Dashboard state={state} />}
       {tab === 'IMU' && <ImuView state={state} />}
       {tab === 'Settings' && (
@@ -723,13 +804,13 @@ export function App({ client: firstClient, initial, hardReset, hardResetNote, fi
           flashNote={firmware.flash ? undefined : firmware.flashNote}
         />
       )}
-      <Box paddingX={1}>
-        <Text color='gray'>1-6/Tab switch g refresh H hard reset q quit</Text>
+      <Box paddingX={1} flexDirection='column'>
         {progress && tab !== 'Firmware'
           ? <Text color='yellow'>{progressLine(progress)}</Text>
           : lastLog
-          ? <Text color={LEVEL_COLOR[lastLog.level]}>{lastLog.text}</Text>
-          : null}
+          ? <Text color={LEVEL_COLOR[lastLog.level]} wrap='truncate-end'>{lastLog.text}</Text>
+          : <Text></Text>}
+        <Text color='gray'>{keys}</Text>
       </Box>
     </Box>
   );

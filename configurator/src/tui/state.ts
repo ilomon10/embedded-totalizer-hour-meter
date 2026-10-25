@@ -1,5 +1,6 @@
 // state.ts: the TUI's view of the device, built from incoming frames.
 // Pure functions only (no I/O), so it is unit-tested in state.test.ts.
+import type { ConnState } from '../connection.ts';
 import { compareVersions, findRelease, type FirmwareRelease, formatFirmware } from '../releases.ts';
 import { bootText, causeText } from '../restart.ts';
 import { ACK_STATUS, decodeStatusFlags, EVENT_KIND, MSG, SETTINGS } from '../tags.ts';
@@ -22,7 +23,14 @@ export interface DecodedMessage {
 }
 
 export interface DeviceState {
-  connection: 'connecting' | 'connected' | 'demo' | 'error';
+  /** The link (connection.ts), or 'demo' for the simulated device. */
+  connection: 'connecting' | 'connected' | 'demo' | 'waiting' | 'paused' | 'closed';
+  /** Why the link is not open, while `connection` is 'waiting'. */
+  problem?: string;
+  /** Since when, while 'waiting'. */
+  waitingSinceMs?: number;
+  /** While 'waiting': it was connected (unplugged, link dropped), not a port that has not opened yet. */
+  lost?: boolean;
   port: string;
   deviceId?: number;
   lastFrameMs?: number;
@@ -38,6 +46,34 @@ export const MAX_LOG = 200;
 
 export function initialState(port: string, demo: boolean): DeviceState {
   return { connection: demo ? 'demo' : 'connecting', port, frames: 0, values: {}, settings: {}, log: [] };
+}
+
+/**
+ * Fold a change of the link into the state, and log the changes worth a line: a disconnect, the reconnect, a new
+ * reason for not connecting. The demo stays 'demo'.
+ */
+export function applyConnState(state: DeviceState, conn: ConnState, port: string, nowMs: number): DeviceState {
+  if (state.connection === 'demo') return state;
+  const was = state.connection;
+  let next: DeviceState = {
+    ...state,
+    port,
+    connection: conn.kind,
+    problem: undefined,
+    waitingSinceMs: undefined,
+    lost: undefined,
+  };
+  if (conn.kind === 'waiting') {
+    next = { ...next, problem: conn.problem, waitingSinceMs: conn.sinceMs, lost: conn.lost };
+    if (was !== 'waiting' || state.problem !== conn.problem) {
+      next = addLog(next, conn.lost ? 'error' : 'warn', `${conn.problem}: waiting for ${port}`, nowMs);
+    }
+  }
+  if (conn.kind === 'connected') {
+    next = { ...next, lastFrameMs: undefined }; // the no-data banner counts from the reconnect
+    if (was === 'waiting') next = addLog(next, 'ok', `connected to ${port}`, nowMs);
+  }
+  return next;
 }
 
 export function addLog(state: DeviceState, level: Level, text: string, atMs: number): DeviceState {
@@ -117,6 +153,16 @@ export function confirmSettings(state: DeviceState, sent: Record<string, Value>)
 
 /** Fold one decoded frame into the state. */
 export function applyMessage(state: DeviceState, msg: DecodedMessage, nowMs: number): DeviceState {
+  if (state.deviceId !== undefined && msg.deviceId !== state.deviceId) {
+    // Another board on this port (swapped while unplugged): nothing of the old one's values stays on screen.
+    const id = msg.deviceId.toString(16);
+    state = addLog(
+      { ...state, values: {}, settings: {}, frames: 0 },
+      'warn',
+      `another device on this port: ${id}`,
+      nowMs,
+    );
+  }
   const settings = { ...state.settings };
   for (const [name, value] of Object.entries(msg.values)) {
     if (name in SETTINGS) settings[name] = value;
