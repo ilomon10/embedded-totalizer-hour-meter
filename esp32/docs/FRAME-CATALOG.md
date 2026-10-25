@@ -4,7 +4,7 @@
 **Covers:** firmware **2.6.0**, SensorFrame v1. For each frame: when it is sent, the records in wire order, which records are optional, and a real hex dump you can feed to your decoder.
 **Read with:** [INTEGRATION-GUIDE.md](INTEGRATION-GUIDE.md) for ports, commands and flows, and [SensorFrame SPEC.md](../../sensorframe/SPEC.md) for the encoding rules. This page does not repeat them.
 
-> **No hardware?** The [simulator](../../simulator/README.md) sends these same frames on a virtual serial port and answers your commands. Start it with `cd simulator && deno task start`, then point your driver at `/tmp/ttyHourMeter`.
+> **No hardware?** The [simulator](../../simulator/README.md) sends these same frames on a virtual serial port and answers your commands. Start it with `cd simulator && bun run start`, then point your driver at `/tmp/ttyHourMeter`.
 
 Every hex dump below comes from fixed inputs (`simulator/tools/catalog.ts`). The simulator's tests check that each dump matches its generator, and that the generator reproduces the firmware's own golden frames, so the dumps on this page are bytes the device really sends.
 

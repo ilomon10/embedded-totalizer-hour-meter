@@ -6,14 +6,14 @@ Engine hour meter and totalizer with persistent storage, real-time clock, and an
 |---|---|
 | Building an app that talks to the device | **[docs/INTEGRATION-GUIDE.md](docs/INTEGRATION-GUIDE.md)** (self-contained, send it to third parties together with [SPEC.md](../sensorframe/SPEC.md)) |
 | Writing a driver and need exact bytes | [docs/FRAME-CATALOG.md](docs/FRAME-CATALOG.md) (every frame, annotated hex dumps) |
-| Developing without hardware | [simulator/](../simulator/README.md): a fake device on a virtual serial port (`cd ../simulator && deno task start`) |
+| Developing without hardware | [simulator/](../simulator/README.md): a fake device on a virtual serial port (`cd ../simulator && bun run start`) |
 | Wiring the hardware | [docs/WIRING.md](docs/WIRING.md) |
 | Working on the firmware | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/CODING-STANDARD.md](docs/CODING-STANDARD.md) |
 | A TypeScript developer new to C++ | [docs/CPP-FOR-TYPESCRIPT.md](docs/CPP-FOR-TYPESCRIPT.md) |
 | Curious how data survives power cuts | [docs/STORAGE.md](docs/STORAGE.md), [docs/EEPROM-LAYOUT.md](docs/EEPROM-LAYOUT.md) |
 | Setting up the IMU | [docs/CALIBRATION.md](docs/CALIBRATION.md) |
 | Testing modules before soldering | [docs/TESTING-MODULES.md](docs/TESTING-MODULES.md) (bench firmware: `pio run -e bench -t upload`) |
-| Configuring / watching the device | `hour-meter` TUI (`cd ../configurator && deno task start`, or `--demo` without hardware), see [configurator/README.md](../configurator/README.md) |
+| Configuring / watching the device | `hour-meter` TUI (`cd ../configurator && bun run start`, or `--demo` without hardware), see [configurator/README.md](../configurator/README.md) |
 
 ## Hardware
 
@@ -25,10 +25,11 @@ ESP32 DevKit · AT24C256 EEPROM (0x50) · DS3231 RTC (0x68) · MPU9250 IMU (**0x
 cd esp32
 pio run -e esp32dev -t upload      # build + flash
 cd ../configurator                 # or use the hour-meter release binary
-deno task start read /dev/ttyUSB0  # live view
-deno task start set-time           # set the RTC from the PC clock (UTC)
-deno task start get hour           # read the hour meter
-deno task start                    # full-screen configurator + live viewer
+bun install                        # once
+bun run start read /dev/ttyUSB0    # live view
+bun run start set-time             # set the RTC from the PC clock (UTC)
+bun run start get hour             # read the hour meter
+bun run start                      # full-screen configurator + live viewer
 ```
 
 Expected reader output:
@@ -45,7 +46,7 @@ More commands: `hour-meter --help` (see [configurator/README.md](../configurator
 pio test -e native           # unit tests on the PC with fake chips (ASan + UBSan)
 pio check -e esp32dev        # clang-tidy static analysis
 ./scripts/check-docs.ts      # docs, host tag table and firmware tables agree; reference decoders work
-cd ../configurator && deno task test   # host tool tests
+cd ../configurator && bun run test     # host tool tests
 ```
 
 ## Project map
@@ -65,6 +66,6 @@ esp32/
 │   ├── Storage/          counter journal + settings A/B in EEPROM and in flash (FlashStore), StorageMirror
 │   └── App/              protocol tags, settings schema, hour meter, IMU pipeline, commands, telemetry
 ├── test/                 fakes/ + test_drivers, test_storage, test_filters, test_app
-├── scripts/check-docs.ts consistency checker (Deno)
+├── scripts/check-docs.ts consistency checker (Bun)
 └── docs/                 guides listed above
 ```

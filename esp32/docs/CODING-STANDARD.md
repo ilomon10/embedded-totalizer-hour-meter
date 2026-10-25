@@ -44,5 +44,5 @@ cd esp32
 pio run -e esp32dev          # zero warnings (warnings are errors)
 pio check -e esp32dev        # zero clang-tidy defects
 pio test -e native           # all unit tests, with sanitizers
-./scripts/check-docs.ts      # docs, host tag table and firmware agree (needs Deno)
+./scripts/check-docs.ts      # docs, host tag table and firmware agree (needs Bun)
 ```

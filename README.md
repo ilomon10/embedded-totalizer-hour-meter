@@ -24,7 +24,7 @@ Firmware version: **2.6.0** (see `kFirmwareVersion` in [`Protocol.h`](esp32/lib/
 | Path | What it is |
 |---|---|
 | [`esp32/`](esp32/README.md) | PlatformIO firmware. Envs: `esp32dev` (firmware), `bench` (module test firmware), `native` (unit tests on the PC) |
-| [`configurator/`](configurator/README.md) | `hour-meter` (Deno, released as a standalone binary): full-screen TUI, live reader (`read`), single commands (`get`, `set`, ...), firmware update over USB (`firmware`) and the `DeviceClient` library |
+| [`configurator/`](configurator/README.md) | `hour-meter` (Bun, released as a standalone binary): full-screen TUI, live reader (`read`), single commands (`get`, `set`, ...), firmware update over USB (`firmware`) and the `DeviceClient` library |
 | [`sensorframe/`](sensorframe/README.md) | The wire format: [SPEC.md](sensorframe/SPEC.md), header-only C++ library (`arduino/`), zero-dependency npm package (`js/`), shared golden test vectors |
 | [`schematic/hour-meter-board/`](schematic/hour-meter-board/README.md) | Main board rev B (KiCad, draft): chip-down, one schematic sheet per former module, 4-layer 100 × 90 mm, JLCPCB in-stock parts, runs from 5 V |
 | [`schematic/hour-meter-board-2layer/`](schematic/hour-meter-board-2layer/README.md) | The same rev-B board routed on 2 copper layers, for a cheaper PCB. It is a KiCad *Save As* copy, so the 4-layer design stays as it is |
@@ -33,7 +33,7 @@ Firmware version: **2.6.0** (see `kFirmwareVersion` in [`Protocol.h`](esp32/lib/
 | [`schematic/hour-meter-psu-b/`](schematic/hour-meter-psu-b/README.md) | Plug-on 9–36 V → 5.3 V supply (TPS54360B) for the rev-B board |
 | [`schematic/hour-meter-esp32/`](schematic/hour-meter-esp32/README.md) | Carrier PCB rev A (KiCad): schematic, 2-layer THT board for the loose modules, JLCPCB Gerbers + BOM in `production/`, generator scripts `tools-*.py`. Superseded by rev B |
 | `schematic/totalizator-hour-meter-schematic/` | Early KiCad draft (DevKit pin headers only), superseded by `hour-meter-esp32/` |
-| [`simulator/`](simulator/README.md) | Deno device simulator: the real protocol on a virtual serial port (socat), TCP or stdio, with fault scenarios, the Bluetooth lock, and a web UI (`--web`): every value live, a 3D bench, and a truck/plane on an OpenStreetMap map with IMU-only dead reckoning. For driver development without hardware |
+| [`simulator/`](simulator/README.md) | Bun device simulator: the real protocol on a virtual serial port (socat), TCP or stdio, with fault scenarios, the Bluetooth lock, and a web UI (`--web`): every value live, a 3D bench, and a truck/plane on an OpenStreetMap map with IMU-only dead reckoning. For driver development without hardware |
 | `canbus/` | `can.sh`: CANable2 (slcan) helper for can-utils: `up [rate] [--tx]`, `down`, `scan [seconds]`, `status`. Listen-only by default |
 
 ## Hardware at a glance
@@ -46,7 +46,7 @@ The rev-B [main board](schematic/hour-meter-board/README.md) puts all of this on
 
 ## Quick start
 
-Prerequisites: [PlatformIO](https://platformio.org/) CLI (firmware), [Deno](https://deno.com) 2 (configurator, simulator, doc checks). Optional: socat (simulator tty), Node.js ≥ 18 (only for the `sensorframe/js` npm package tests), KiCad 8+ (hardware), can-utils (`canbus/can.sh`). Users who only need the tools can download the `hour-meter` / `hour-meter-sim` binaries from the releases page instead.
+Prerequisites: [PlatformIO](https://platformio.org/) CLI (firmware), [Bun](https://bun.com) 1.4.4 or newer (configurator, simulator, scripts, doc checks). Optional: socat (simulator tty), Node.js ≥ 18 (only for the `sensorframe/js` npm package tests), KiCad 8+ (hardware), can-utils (`canbus/can.sh`). Users who only need the tools can download the `hour-meter` / `hour-meter-sim` binaries (Linux x64, Windows x64) from the releases page instead.
 
 ```bash
 # Firmware
@@ -55,14 +55,15 @@ pio run -e esp32dev -t upload       # build + flash
 
 # Host tools
 cd ../configurator                  # or download hour-meter from the releases page
-deno task start --demo              # try the TUI with a simulated device (no hardware)
-deno task start /dev/ttyUSB0        # the real device
-deno task start set-time --port /dev/ttyUSB0   # set the RTC from the PC clock (UTC)
-deno task start get hour --port /dev/ttyUSB0   # read the hour meter
-deno task start firmware flash --port /dev/ttyUSB0   # update to the newest release (no PlatformIO needed)
+bun install                         # once: the TUI's packages
+bun run start --demo                # try the TUI with a simulated device (no hardware)
+bun run start /dev/ttyUSB0          # the real device
+bun run start set-time --port /dev/ttyUSB0   # set the RTC from the PC clock (UTC)
+bun run start get hour --port /dev/ttyUSB0   # read the hour meter
+bun run start firmware flash --port /dev/ttyUSB0   # update to the newest release (no PlatformIO needed)
 ```
 
-No device at hand? `deno task start --demo` runs a simulated one inside the configurator, or `cd simulator && deno task start` creates one at `/tmp/ttyHourMeter` for any tool or driver.
+No device at hand? `bun run start --demo` runs a simulated one inside the configurator, or `cd simulator && bun install && bun run start` creates one at `/tmp/ttyHourMeter` for any tool or driver.
 
 Testing loose modules before soldering: `pio run -e bench -t upload`, see [TESTING-MODULES.md](esp32/docs/TESTING-MODULES.md).
 
@@ -72,10 +73,12 @@ Testing loose modules before soldering: `pio run -e bench -t upload`, see [TESTI
 cd esp32 && pio test -e native            # firmware unit tests with fake chips (ASan + UBSan)
 cd esp32 && pio check -e esp32dev         # clang-tidy static analysis
 ./esp32/scripts/check-docs.ts             # docs, host tag table and firmware tables agree
-cd configurator && deno task test         # hour-meter: commands, DeviceClient, TUI reducer
+cd configurator && bun run test           # hour-meter: commands, DeviceClient, TUI reducer
 cd sensorframe/js && npm test             # SensorFrame JS library
 make -C sensorframe/arduino/test          # SensorFrame C++ library on the desktop
-cd simulator && deno task test            # simulator: firmware golden frames, frame catalog, command rules
+cd simulator && bun run test              # simulator: firmware golden frames, frame catalog, command rules
+bun test scripts/                         # release notes and asset names, JLCPCB BOM parsing
+cd configurator && bun check && bun run lint && bun fmt --check   # types, lint, format (the same in simulator/)
 ```
 
 ## Releasing
@@ -120,6 +123,6 @@ It warns when a part changed since the previous release but still has the same v
 ## Design rules
 
 - **Time is UTC only.** The device stores a Unix epoch with no timezone; host tools convert for display.
-- **`esp32/lib/App/src/Protocol.h` is the single source of truth for tags.** After any protocol change, run `./esp32/scripts/check-docs.ts`, update `configurator/src/tags.ts`, port the change to `simulator/src/frames.ts`, and run `deno task test` there (it fails until the simulator's frames match the firmware's golden frames again).
+- **`esp32/lib/App/src/Protocol.h` is the single source of truth for tags.** After any protocol change, run `./esp32/scripts/check-docs.ts`, update `configurator/src/tags.ts`, port the change to `simulator/src/frames.ts`, and run `bun run test` there (it fails until the simulator's frames match the firmware's golden frames again).
 - **USB is the recovery path:** fixed at 115200 baud and always accepts commands. `uartBaud` only affects the UART pins.
 - **The stores (ESP32 flash, EEPROM) hold only counters, calibration and settings**, never sample logs. Filtering (Kalman) runs in RAM.
