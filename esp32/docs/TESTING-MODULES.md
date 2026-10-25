@@ -69,7 +69,7 @@ Getting the current UTC epoch for `t`: `date +%s` (Linux/macOS) or `Math.floor(D
 The product firmware does **not** require every module:
 
 - Boots and counts engine hours with **no modules at all** (inputs only).
-- Each I2C module is **detected while running**: plug it in and it is attached within ~2 s; unplug it and it is marked missing after ~6 s. Every change is reported as an EVENT (`devicesChanged`) and in the TUI's *Modules* panel.
+- Each I2C module is **detected while running**: plug it in and it is attached within ~2 s; unplug it and it is marked missing after ~6 s. Every change is reported as an EVENT (`devicesChanged`), and the TUI shows it in the *Modules* row of *1 Overview* and in *0 Log*.
 - An EEPROM plugged in later: its stored hour meter is **added** to what was counted meanwhile, and its settings take effect (or your RAM settings are saved to it if you changed any).
 - Missing RTC: `setTime` still works (RAM clock, flag `timeNotBackedUp`).
 - Missing IMU: no vibration/orientation data; everything else works.

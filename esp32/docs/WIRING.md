@@ -132,6 +132,8 @@ If you can't reach L / D+ or the oil-pressure switch (sealed harness, rental mac
 3. Set a value about halfway and at least twice the engine-off value: `hour-meter set runVibMinMg=25`.
 4. Check: with the key on and the engine off, `hour-meter read` shows `engine OFF (input on)`; at idle it shows `engine ON`.
 
+In the TUI, *5 Live inputs* does steps 1 to 3: `o` measures 10 s with the key on and the engine off, `i` 10 s at idle, and `t` shows the suggested value for review before it is set.
+
 How it behaves:
 - **Starting and stopping:** the engine counts from the first vibration window above the threshold. That is at most `vibrationWindowMs` (default 1 s) after it starts. Counting stops when the RMS falls below 70 % of the threshold, so quiet moments at idle don't stop it.
 - **No IMU fitted or unplugged:** the input alone decides, so no hours are lost.
