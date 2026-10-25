@@ -73,7 +73,7 @@ Testing loose modules before soldering: `pio run -e bench -t upload`, see [TESTI
 cd esp32 && pio test -e native            # firmware unit tests with fake chips (ASan + UBSan)
 cd esp32 && pio check -e esp32dev         # clang-tidy static analysis
 ./esp32/scripts/check-docs.ts             # docs, host tag table and firmware tables agree
-cd configurator && bun run test           # hour-meter: commands, DeviceClient, TUI reducer
+cd configurator && bun run test           # hour-meter: commands, DeviceClient, the TUI
 cd sensorframe/js && npm test             # SensorFrame JS library
 make -C sensorframe/arduino/test          # SensorFrame C++ library on the desktop
 cd simulator && bun run test              # simulator: firmware golden frames, frame catalog, command rules

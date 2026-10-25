@@ -18,7 +18,7 @@ hour-meter firmware flash               # update the firmware to the newest rele
 
 ```bash
 cd configurator
-bun install                             # once: ink and React
+bun install                             # once: OpenTUI and React
 bun run start --demo                    # same options as the binary
 bun run start /dev/ttyUSB0
 ```
@@ -29,73 +29,95 @@ bun run start /dev/ttyUSB0
 
 ## TUI: configurator + live viewer
 
+Ten screens in three groups: **maintain** (read and correct the counters, keep a record), **set up** (install, check the wiring, configure, calibrate) and **service** (find faults, update the firmware). It works in an 80×24 terminal; from 100 columns the menu becomes a sidebar.
+
 ### Connect screen
 
 `hour-meter` without a port starts here:
 
 ```
-╭──────────────────────────────────────────────────────────────────────────────╮
-│ HOUR METER                                               configurator 1.4.0 │
-│ Connect to a device                                                         │
-╰──────────────────────────────────────────────────────────────────────────────╯
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ Ports                                                                        │
-│ ▸ /dev/ttyUSB0      Silicon Labs CP2102 USB to UART Bridge  just plugged in  │
-│   /dev/rfcomm0      Bluetooth (asks for the PIN)                             │
-│   Other port or tcp://host:port...                                           │
-│   Demo              a simulated device, no hardware needed                   │
-└──────────────────────────────────────────────────────────────────────────────┘
- ↑↓ select · Enter connect · q quit
+ HOUR METER  configurator 2.0.0                                                 Connect to a device
+╭─ Ports ──────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                  │
+│ ▸ /dev/ttyUSB0          Silicon Labs CP2102 USB to UART… · ESP32 board   last used               │
+│   /dev/rfcomm0          Bluetooth · asks for the PIN                                             │
+│                                                                                                  │
+│   Type a port or tcp://host:port…                                                                │
+│   Demo device: a simulated hour meter, no hardware needed                                        │
+│                                                                                                  │
+╰────────────────────────────────────────────────────────────────────────────── rescans every 1 s ─╯
+╭─ Tips ───────────────────────────────────────────────────────────────────────────────────────────╮
+│ The board restarts when its USB port opens and answers after about 2 s.                          │
+│ No port listed? Try another cable (some only charge) and check you are in the                    │
+│ dialout (Debian/Ubuntu) or uucp (Arch) group.                                                    │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+                                        ↑↓ select   Enter connect   e type a port   d demo   q quit
 ```
 
 - **The list updates by itself.** Plug in the board and its port appears, already selected. On Linux each USB port is named by its adapter chip (from `/dev/serial/by-id`).
 - **The last port used is selected first.** Without one, `$HOUR_METER_PORT`, else the first port that looks like an ESP32 board (CP210x, CH340, FTDI).
-- **Other port** takes a typed path or `tcp://host:port` (the simulator, a serial-to-TCP bridge). A Bluetooth port asks for the PIN, unless `--pin` gave it.
+- **`e` takes a typed port**: a path or `tcp://host:port` (the simulator, a serial-to-TCP bridge). A Bluetooth port asks for the PIN, unless `--pin` gave it. The PIN is kept for reconnects.
 - **A port that does not open says why** on this screen: it is not there, it is in use by another program, or you have no permission. For permission it names the group to join, e.g. `sudo usermod -aG uucp $USER` (Arch) or `dialout` (Debian, Ubuntu).
 
 `hour-meter /dev/ttyUSB0` (or `--demo`) skips this screen. `p` in the TUI comes back to it.
 
-### Unplug and replug
-
-The TUI keeps going when the board is unplugged. The header turns red (`○ disconnected`) and a banner says how long ago it happened:
-
-```
-▲ The board was disconnected (12 s ago). Plug it back in: it reconnects by itself · p: other port.
-```
-
-When the port comes back, the TUI connects again and reads everything anew. A board that comes back under another name (`/dev/ttyUSB1`) is found by its adapter. Bluetooth drops and a restarted TCP bridge work the same way. While disconnected, commands say `not connected` at once instead of timing out. The last values stay on screen; when another board shows up on the port, the old one's values are cleared.
-
-A port given on the command line that is not there yet is waited for the same way, so `hour-meter /dev/ttyUSB0` can start before the board is plugged in.
-
 ### Screens
 
 ```
-╭──────────────────────────────────────────────────────────────────────────────╮
-│ HOUR METER                ● connected /dev/ttyUSB0        dev 1a2b3c4d fw 2.5.0│
-│  1 Dashboard    2 IMU    3 Settings    4 Actions    5 Log    6 Firmware        │
-╰──────────────────────────────────────────────────────────────────────────────╯
-┌ Hour meter ──────────────────────┐┌ Motion ───────────────────────────────┐
-│ Run hours   1250.00 h            ││ Roll / pitch  2.50° / -0.48°          │
-│ Engine      RUNNING              ││ Heading       33.5°                   │
-│ Totalizer   15038 pulses         ││ Vibration     RMS 37 mg  peak 103 mg  │
-└──────────────────────────────────┘└───────────────────────────────────────┘
-┌ Time (device is UTC) ────────────┐┌ Modules ──────────────────────────────┐
-│ 2026-10-07T05:27:10Z (local ...) ││ ✔ EEPROM  ✔ RTC  ✔ IMU  ✘ MAG          │
-└──────────────────────────────────┘└───────────────────────────────────────┘
+ HOUR METER │ 1A2B3C4D │ fw 2.6.0 │ ● DEMO simulated │ 08:16:33 UTC                    ▲ 2 to check
+╭──────────────────╮╭─ Overview ───────────────────────────────────────────────────────────────────╮
+│ MAINTAIN         ││ HOUR METER               TOTALIZER                ENGINE                     │
+│ ▸1 Overview      ││ 1250.00 h                15017.00 units           ● RUNNING                  │
+│  2 Counters      ││ 4500005 s                15017 pulses · 1 per unit input on · vib 39 mg      │
+│  3 Report        ││ saved 1 min 5 s ago (#812)                                                   │
+│ SET UP           ││                                                                              │
+│  4 Commission    ││ NEEDS ATTENTION                                                            2 │
+│  5 Live inputs   ││ ▸▲ IMU not calibrated      Tilt and vibration are inaccurate.  → 7 Calibrate │
+│  6 Settings      ││  ▲ Compass not calibrated  The heading is off.                 → 7 Calibrate │
+│  7 Calibrate     ││                                                                              │
+│ SERVICE          ││ DEVICE                                                                       │
+│  8 Diagnostics▲2 ││ Clock      2026-10-25 08:16:33 UTC · local 16:16 · ✔ same as this PC         │
+│  9 Firmware      ││ Modules    ✔ EEPROM   ✔ RTC   ✔ IMU   ✔ compass                              │
+│  0 Log           ││ Storage    ✔ flash + EEPROM · settings from flash copy A                     │
+│                  ││ Restart    power-on, 0 s ago · previous run ended normally                   │
+│                  ││ Link       demo device · telemetry every 1 s · 53 frames                     │
+│                  ││ Firmware   2.6.0                                                             │
+│                  ││                                                                              │
+│                  ││ [h] set hours…   [t] set time   [r] refresh   [w] service report             │
+│                  ││                                                                              │
+╰──────────────────╯╰────────────────────────────────────────────────────────── updated 0.1 s ago ─╯
+                            ↑↓ select   Enter open   h hours   t time   ? help   : command   q quit
 ```
 
-| Key | Screen | What it does |
+| Key | Screen | What it is for |
 |---|---|---|
-| `1` | Dashboard | Hour meter, engine state, totalizer, time (UTC + local), modules present, motion and vibration, status warnings |
-| `2` | IMU | Raw vs filtered accel/gyro/mag side by side. `r`/`f`/`b`/`o` = stream raw / filtered / both / off, `+`/`-` = stream rate |
-| `3` | Settings | All 17 settings with ranges. `↑↓` select, `Enter` edit, type the new value, `Enter` apply, `Esc` cancel. Values are checked before sending (same ranges as the firmware) |
-| `4` | Actions | Set time from the PC; set the hour meter (hours) or totalizer (units or pulses) to any value, showing the current value; reset hour meter only, totalizer only, or both (type `RESET`); calibrate; unlock Bluetooth; reboot |
-| `5` | Log | Device events (boot, modules plugged/unplugged, calibration results), command results, errors |
-| `6` | Firmware | The device's firmware and the releases on GitHub. `↑↓` select, `Enter` flash the selected release (type `FLASH`), `d` download, `c` check again, `f` flash a file. The header shows `→ 2.6.0 available` when a newer release exists. See [Update the firmware](#update-the-firmware) |
-| `Tab`, `g`, `p`, `q` | | Next screen, refresh everything, back to the connect screen (another port), quit |
-| `H` | any | Hard-reset the board over USB (also *Actions → Hard reset (USB)*). Local serial ports only |
+| `1` | Overview | The counters and the engine; what needs attention, each with the screen that fixes it; the device clock against this PC, modules, storage, last restart, link. `h` set hours…, `t` set the time, `w` service report |
+| `2` | Counters | Set the hour meter (hours) or the totalizer (units or pulses) to any value. The dialog shows now → new and the change, and refuses an empty value. A reset to 0 needs `RESET` typed. Saved on the device at once |
+| `3` | Report | A service report in Markdown, with the raw values as JSON at the end, saved in `~/hour-meter-reports` (`$HOUR_METER_REPORTS`). Technician and unit are remembered per device |
+| `4` | Commission | Eight install steps, checked from live data where it can: the engine input at key-on and with the engine running, pulses counting, the clock, the modules. `Enter` runs a step, then moves on once it passed; `Space` ticks the modules that are fitted. Progress is kept per device |
+| `5` | Live inputs | The wiring check: the raw engine input against what is counted; the vibration RMS as a chart over time (`-` and `+` show 30 s to 10 min), with the threshold as a dotted line and the 10 s measurements shaded; the measurements with the key on and the engine off (`o`) and idling (`i`), which suggest a vibration threshold (`t`). Roll, pitch and heading as gauges: the machine seen from behind and from the side, and a compass |
+| `6` | Settings | All 20 settings in groups, with plain names, units, ranges and factory defaults. Changes wait (`• was 200`) until `a` shows them before → after with what they do, then go as one command: all or none. A change that cuts your own link (`output` over USB, `bluetooth` off over Bluetooth) is flagged in red |
+| `7` | Calibrate | Accel + gyro, and the compass, guided: the checks first (IMU fitted, engine off, board level), then progress and the result |
+| `8` | Diagnostics | Every status flag in plain words, with its fix; restarts, storage, I2C and link counters. Reboot, panic signal and hard reset, each after a confirmation |
+| `9` | Firmware | The releases (the newest is selected, never a prerelease) and the update, with `FLASH` typed, shown as a checklist. See [Update the firmware](#update-the-firmware) |
+| `0` | Log | Events, commands and problems, scrollable and filtered, kept when you switch ports. `s` saves it to a file |
 
-If no frame arrives for 5 s (from connecting, or after the last frame), a banner says **"No data from the device. Press H to hard-reset."**. The reset is only ever offered, never automatic. A boot is logged with its cause, for example `device restarted: watchdog while IMU (reset reason 6)`, and the Dashboard shows the last restart cause and a **safeMode** warning.
+On every screen: `Tab` moves between the menu and the screen, `?` lists the keys, `:` or `Ctrl+K` finds any screen, setting or action, `r` reads everything again, `p` picks another port and `q` quits (it asks first if settings are not applied yet). A screen never takes these keys for itself, except while you type in a field. Nothing that changes the device runs on one key: you see what will change and confirm it.
+
+### When something is wrong
+
+A banner under the header names the problem and the key that helps. Nothing shows while all is well:
+
+```
+ ✖ The board was unplugged (12 s ago). Plug it back in: it reconnects by itself.     [p] other port
+ ▲ Bluetooth session locked: live data, settings and counters need the PIN.               [u] unlock
+ ▲ No data for 8 s (telemetry is every 1 s).                                            [8] diagnose
+ ▲ Live data goes to the UART pins only (output = UART). Commands still work.           [6] settings
+```
+
+"No data" waits 5 s, or three telemetry intervals if that is longer. A reset is only offered, never automatic: 8 Diagnostics has the panic signal and the hard reset. A boot is logged with its cause, for example `device restarted: watchdog while IMU (reset reason 6)`, and 8 Diagnostics shows the last restart cause and **safe mode**.
+
+**Unplug and replug.** The TUI keeps going when the board is unplugged. When the port comes back, it connects again and reads everything anew. A board that comes back under another name (`/dev/ttyUSB1`) is found by its adapter. Bluetooth drops and a restarted TCP bridge work the same way. While disconnected, commands say `not connected` at once instead of timing out. The last values stay on screen; when another board shows up on the port, the old one's values are cleared. A port given on the command line that is not there yet is waited for the same way, so `hour-meter /dev/ttyUSB0` can start before the board is plugged in.
 
 **Automatic time sync** is on: whenever the device reports an unknown time (for example an RTC without battery after a power cut), the TUI sends the PC clock as UTC. Disable with `--no-time-sync`.
 
@@ -117,7 +139,7 @@ sudo rfcomm bind 0 <MAC> 1
 hour-meter /dev/rfcomm0 --pin 4821
 ```
 
-Every Bluetooth connection starts **locked**. `--pin` (or `HOUR_METER_PIN`, or *Actions → Unlock* in the TUI) unlocks it. A wrong PIN answers `BadPin`; after 5 wrong tries the device refuses for 60 s. `hour-meter read` and every command accept `--pin` too.
+Every Bluetooth connection starts **locked**. `--pin` (or `HOUR_METER_PIN`, or `u` in the TUI) unlocks it. A wrong PIN answers `BadPin`; after 5 wrong tries the device refuses for 60 s. `hour-meter read` and every command accept `--pin` too.
 
 ## Update the firmware
 
@@ -132,7 +154,7 @@ hour-meter firmware list                    # every firmware release
 hour-meter firmware download -o firmware/   # only download it, checked against SHA256SUMS
 ```
 
-In the TUI, press `6`, pick a release, press `Enter` and type `FLASH`.
+In the TUI, press `9`, pick a release, press `Enter` and type `FLASH` (`f` flashes a file). The update shows as a checklist: download and check, back up, enter the bootloader, write, verify, restart and reconnect, check and restore. Another screen can be opened meanwhile; `q` and `p` wait until it is done.
 
 `flash` does this:
 
@@ -191,9 +213,9 @@ The engine-running input is on a wire that is live at ACC/ON. `hour-meter read` 
 
 ### Device sends nothing over USB
 
-1. Try `hour-meter reset` (or press `H` in the TUI). The device restarts and the boot EVENT says why it was stuck.
+1. Try `hour-meter reset` (or `n` and `x` in the TUI's 8 Diagnostics). The device restarts and the boot EVENT says why it was stuck.
 2. Check the `output` setting is not UART-only: `hour-meter get settings` over the UART pins (or Bluetooth) shows `output`. `uart` keeps the USB port silent; set `output=both`.
-3. After a restart, `lastCause` and `lastStage` (in `get status`, the boot EVENT and the TUI Dashboard) say what happened: `watchdog`, `i2cStuck`, `usbStalled`, `panicSignal`, `rebootCommand` or `crash`, and what the firmware was doing (IMU, RTC, EEPROM...).
+3. After a restart, `lastCause` and `lastStage` (in `get status`, the boot EVENT and the TUI's 8 Diagnostics) say what happened: `watchdog`, `i2cStuck`, `usbStalled`, `panicSignal`, `rebootCommand` or `crash`, and what the firmware was doing (IMU, RTC, EEPROM...).
 4. **Safe mode:** after 3 unplanned restarts in a row the device boots without I2C (flag `safeMode`; no RTC, IMU or EEPROM). Firmware 2.6.0 still keeps the hour meter, totalizer and settings in the ESP32's flash meanwhile. It leaves safe mode on a power-cycle, a hard reset, or `hour-meter reboot`. Fix the bus fault (a loose or shorted I2C module) first, or it will come back.
 
 ## Library
@@ -213,14 +235,17 @@ The protocol is documented for other languages in [`esp32/docs/INTEGRATION-GUIDE
 
 ```bash
 bun install            # once
-bun run test           # command words, DeviceClient protocol rules, TUI reducer, a --demo round trip,
-                       # port listing, reconnecting after an unplug (fake ports),
-                       # the ROM bootloader protocol and whole flashes against a fake ROM, release lists
+bun run test           # command words, DeviceClient protocol rules, a --demo round trip, port listing,
+                       # reconnecting after an unplug (fake ports), the ROM bootloader protocol and whole
+                       # flashes against a fake ROM, release lists; the TUI's models, its controller, and
+                       # its screens drawn by OpenTUI's test renderer (also a flash's checklist)
 bun check              # type-check
 bun run lint           # oxlint
 bun fmt --check        # formatting (settings in bunfig.toml)
 bun run compile        # release binaries for Linux x64 and Windows x64 into dist/ (+ SHA256SUMS)
 ```
+
+The TUI draws with OpenTUI's native library, one per platform. `bun install` fetches only this machine's; for the Windows binary, run `bun install --os='*' --cpu='*'` once (the release script does).
 
 ```
 configurator/
@@ -244,8 +269,9 @@ configurator/
 │   ├── flash.ts        firmware images, the regions written (NVS kept), the flash sequence
 │   ├── releases.ts     firmware on the GitHub releases: list (API, else the release feed), checked downloads
 │   ├── firmware.ts     `firmware`: version, list, download, flash with backup and restore
-│   └── tui/            Ink screens (ConnectView.tsx, App.tsx, FirmwareView.tsx), pure reducer (state.ts),
-│                       entry (main.tsx)
+│   └── tui/            the TUI (OpenTUI + React): main.tsx entry, shell.tsx frame and menu, screens/ (one
+│                       per screen), controller.ts (device actions, no UI), model/ (pure: health, settings,
+│                       counters, commission, report...), state.ts (frames → device state)
 ├── tools/compile.ts    release binaries
 └── test/
 ```
