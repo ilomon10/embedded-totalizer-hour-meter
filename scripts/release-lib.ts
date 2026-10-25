@@ -29,14 +29,11 @@ export const INFO: Record<Component, ComponentInfo> = {
 /** The project version file (the release tag is v<its content>). */
 export const VERSION_FILE = 'VERSION';
 
-/** Platforms `deno task compile` builds, as they appear in archive names. */
-export const TOOL_PLATFORMS = ['linux-x64', 'linux-arm64', 'macos-x64', 'macos-arm64', 'windows-x64'] as const;
+/** Platforms `bun run compile` builds, as they appear in archive names. */
+export const TOOL_PLATFORMS = ['linux-x64', 'windows-x64'] as const;
 
 const PLATFORM_LABEL: Record<(typeof TOOL_PLATFORMS)[number], string> = {
   'linux-x64': 'Linux x64',
-  'linux-arm64': 'Linux arm64 (Raspberry Pi 4/5 64-bit)',
-  'macos-x64': 'macOS Intel',
-  'macos-arm64': 'macOS Apple Silicon',
   'windows-x64': 'Windows x64',
 };
 

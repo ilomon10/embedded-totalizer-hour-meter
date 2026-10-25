@@ -1,7 +1,7 @@
-#!/usr/bin/env -S deno run --allow-read --allow-write --allow-run=python3
+#!/usr/bin/env bun
 // check-docs.ts: fails (exit 1) when firmware, the host tag table and docs disagree.
 //
-//   ./scripts/check-docs.ts          (or: deno run --allow-read --allow-write --allow-run=python3 scripts/check-docs.ts)
+//   ./scripts/check-docs.ts          (or: bun scripts/check-docs.ts)
 //
 // Checks:
 //  1. every tag in lib/App/src/Protocol.h exists in configurator/src/tags.ts with the same number
@@ -15,7 +15,9 @@
 //  7. the firmware version in Protocol.h matches the guide, the frame catalog and the simulator
 //  8. every hex dump in FRAME-CATALOG.md is a valid frame (COBS + CRC) for the shared codec
 import { Buffer } from 'node:buffer';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -24,10 +26,10 @@ import { SETTINGS, STATUS_FLAGS, tags } from '../../configurator/src/tags.ts';
 const esp32 = join(dirname(fileURLToPath(import.meta.url)), '..');
 const root = join(esp32, '..');
 const require = createRequire(import.meta.url);
-const read = (p: string) => Deno.readTextFileSync(join(esp32, p));
+const read = (p: string) => readFileSync(join(esp32, p), 'utf8');
 const exists = (p: string) => {
   try {
-    Deno.statSync(p);
+    statSync(p);
     return true;
   } catch {
     return false;
@@ -124,9 +126,9 @@ const codeAfter = (marker: string, lang: string) => {
   const start = rest.indexOf('```' + marker) + marker.length + 3;
   return rest.slice(start, rest.indexOf('```', start));
 };
-const tmp = Deno.makeTempDirSync({ prefix: 'check-docs-' });
+const tmp = mkdtempSync(join(tmpdir(), 'check-docs-'));
 const frames = Object.fromEntries(Object.entries(golden).map(([k, v]) => [k, v.replace(/ /g, '')]));
-// deno-lint-ignore no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Decoded = Record<string, { msgType: number; seq: number; records: Record<string, any> }>;
 const expectations = (d: Decoded) => [
   [d.Telemetry.msgType, 1], [d.Telemetry.records[1], 4500000], [d.Telemetry.records[4], 125000],
@@ -136,7 +138,7 @@ const expectations = (d: Decoded) => [
 try {
   const jsCode = codeAfter('js', 'js');
   if (!jsCode) throw new Error('JS reference decoder block not found');
-  Deno.writeTextFileSync(join(tmp, 'decoder.cjs'), jsCode);
+  writeFileSync(join(tmp, 'decoder.cjs'), jsCode);
   const { decodeFrame } = require(join(tmp, 'decoder.cjs'));
   const decoded: Decoded = {};
   for (const [k, hex] of Object.entries(frames)) {
@@ -147,7 +149,7 @@ try {
 
   const pyCode = codeAfter('python', 'python');
   if (!pyCode) throw new Error('Python reference decoder block not found');
-  Deno.writeTextFileSync(join(tmp, 'sensorframe_decoder.py'), pyCode);
+  writeFileSync(join(tmp, 'sensorframe_decoder.py'), pyCode);
   const harness = `
 import importlib.util, json, sys
 spec = importlib.util.spec_from_file_location("dec", sys.argv[1]); dec = importlib.util.module_from_spec(spec); spec.loader.exec_module(dec)
@@ -155,28 +157,26 @@ frames = json.loads(sys.argv[2]); out = {}
 for k, h in frames.items():
     d = dec.decode_frame(bytes.fromhex(h)[:-1]); d["records"] = {str(t): v for t, v in d["records"].items()}; out[k] = d
 print(json.dumps(out))`;
-  const py = new Deno.Command('python3', {
-    args: ['-I', '-c', harness, join(tmp, 'sensorframe_decoder.py'), JSON.stringify(frames)],
-  }).outputSync();
-  if (py.code !== 0) throw new Error(new TextDecoder().decode(py.stderr));
-  const out = JSON.parse(new TextDecoder().decode(py.stdout));
+  const py = Bun.spawnSync(['python3', '-I', '-c', harness, join(tmp, 'sensorframe_decoder.py'), JSON.stringify(frames)]);
+  if (py.exitCode !== 0) throw new Error(py.stderr.toString());
+  const out = JSON.parse(py.stdout.toString());
   expectations(out).forEach(([got, want], i) => { if (got !== want) fail(`Python decoder check ${i}: got ${got}, want ${want}`); });
 } catch (err) {
   fail(`reference decoder: ${(err as Error).message}`);
 } finally {
-  Deno.removeSync(tmp, { recursive: true });
+  rmSync(tmp, { recursive: true, force: true });
 }
 
 // ---- 6. relative links ----
 const mdFiles = [
-  ...[...Deno.readDirSync(join(esp32, 'docs'))].map((f) => join(esp32, 'docs', f.name)),
+  ...readdirSync(join(esp32, 'docs')).map((name) => join(esp32, 'docs', name)),
   join(esp32, 'README.md'),
   join(root, 'README.md'),
   join(root, 'simulator', 'README.md'),
   join(root, 'configurator', 'README.md'),
 ].filter((f) => f.endsWith('.md'));
 for (const file of mdFiles) {
-  const text = Deno.readTextFileSync(file);
+  const text = readFileSync(file, 'utf8');
   for (const [, target] of text.matchAll(/\]\(([^)#\s]+)(?:#[^)]*)?\)/g)) {
     if (/^https?:/.test(target)) continue;
     if (!exists(resolve(dirname(file), target))) fail(`${relative(root, file)}: broken link ${target}`);
@@ -188,7 +188,7 @@ const fwHex = protocol.match(/kFirmwareVersion = (0x[0-9A-Fa-f]+)/)?.[1];
 const fw = fwHex ? [16, 8, 0].map((shift) => (Number(fwHex) >> shift) & 0xff).join('.') : null;
 if (!fw) fail('kFirmwareVersion not found in Protocol.h');
 const catalog = read('docs/FRAME-CATALOG.md');
-const simProtocol = Deno.readTextFileSync(join(root, 'simulator', 'src', 'protocol.ts'));
+const simProtocol = readFileSync(join(root, 'simulator', 'src', 'protocol.ts'), 'utf8');
 const versionChecks = [
   ['INTEGRATION-GUIDE.md header', guide.match(/firmware (\d+\.\d+\.\d+)\./)?.[1]],
   ['FRAME-CATALOG.md header', catalog.match(/firmware \*\*(\d+\.\d+\.\d+)\*\*/)?.[1]],
@@ -213,6 +213,6 @@ for (const [, id, body] of dumps) {
 
 if (errors.length) {
   console.error(`check-docs: ${errors.length} problem(s)\n - ${errors.join('\n - ')}`);
-  Deno.exit(1);
+  process.exit(1);
 }
 console.log(`check-docs: OK (${Object.keys(tags).length} tags, ${flags.length} status flags, ${rows.length} settings, ${Object.keys(golden).length} golden frames, JS + Python decoders, ${mdFiles.length} docs, firmware ${fw}, ${dumps.length} catalog frames)`);

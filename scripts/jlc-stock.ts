@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-read --allow-net=jlcpcb.com
+#!/usr/bin/env bun
 // jlc-stock.ts: check every LCSC part of a JLCPCB BOM against JLCPCB's live stock.
 //
 //   ./scripts/jlc-stock.ts schematic/hour-meter-board/production/BOM-hour-meter-board.csv --boards 10
@@ -23,17 +23,17 @@ async function fetchPart(code: string): Promise<JlcPart | undefined> {
   return hit ? toPart(hit) : undefined;
 }
 
-const args = [...Deno.args];
+const args = process.argv.slice(2);
 const at = args.indexOf('--boards');
 const boards = at >= 0 ? Number(args.splice(at, 2)[1]) : 5;
 const [bomPath] = args;
 if (!bomPath || !(boards > 0)) {
   console.error('usage: jlc-stock.ts <bom.csv> [--boards N]');
-  Deno.exit(2);
+  process.exit(2);
 }
 
 let problems = 0;
-for (const line of parseBom(await Deno.readTextFile(bomPath))) {
+for (const line of parseBom(await Bun.file(bomPath).text())) {
   const part = /^C\d+$/.test(line.lcsc) ? await fetchPart(line.lcsc) : undefined;
   const v = verdict(line, part, boards);
   if (v !== 'OK' && v !== 'BOARD-ONLY') problems++;
@@ -42,4 +42,4 @@ for (const line of parseBom(await Deno.readTextFile(bomPath))) {
   await new Promise((r) => setTimeout(r, 250)); // keep the request rate low
 }
 console.log(problems ? `${problems} line(s) need attention` : `all parts in stock for ${boards} boards`);
-Deno.exit(problems ? 1 : 0);
+process.exit(problems ? 1 : 0);

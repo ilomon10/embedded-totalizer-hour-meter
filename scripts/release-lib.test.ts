@@ -1,5 +1,7 @@
 // release-lib.test.ts: versions, tags, release files and generated notes.
-//   deno test scripts/
+//   bun test scripts/
+import { test } from 'bun:test';
+
 import { deepStrictEqual as assertEquals, throws as assertThrows } from 'node:assert/strict';
 import {
   assetNames,
@@ -15,7 +17,7 @@ import {
   tagOf,
 } from './release-lib.ts';
 
-Deno.test('component versions come from Protocol.h, version.ts and main.ts', () => {
+test('component versions come from Protocol.h, version.ts and main.ts', () => {
   assertEquals(parseVersion('firmware', 'constexpr uint32_t kFirmwareVersion = 0x00020500;'), '2.5.0');
   assertEquals(parseVersion('firmware', 'kFirmwareVersion = 0x000A0C0F;'), '10.12.15');
   assertEquals(parseVersion('configurator', "export const TOOL_VERSION = '1.2.0';"), '1.2.0');
@@ -23,7 +25,7 @@ Deno.test('component versions come from Protocol.h, version.ts and main.ts', () 
   assertThrows(() => parseVersion('simulator', "TOOL_VERSION = '1.0.0'"), /SIM_VERSION not found/);
 });
 
-Deno.test('the project version: VERSION file, bumps and the tag', () => {
+test('the project version: VERSION file, bumps and the tag', () => {
   assertEquals(parseProjectVersion('1.0.0\n'), '1.0.0');
   assertThrows(() => parseProjectVersion('v1.0'), /must hold a version like 1.0.0/);
   assertEquals(bumpVersion('1.2.3', 'patch'), '1.2.4');
@@ -32,18 +34,18 @@ Deno.test('the project version: VERSION file, bumps and the tag', () => {
   assertEquals(tagOf('1.0.0'), 'v1.0.0');
 });
 
-Deno.test('release files match the names the builds produce', () => {
+test('release files match the names the builds produce', () => {
   assertEquals(assetNames('firmware', '2.5.0'), [
     'hour-meter-2.5.0-esp32dev-merged.bin',
     'hour-meter-firmware-2.5.0-esp32dev.tar.gz',
   ]);
   const sim = assetNames('simulator', '1.5.0');
   assertEquals(sim[0], 'hour-meter-sim-1.5.0-linux-x64.tar.gz');
-  assertEquals(sim[4], 'hour-meter-sim-1.5.0-windows-x64.zip');
-  assertEquals(assetNames('configurator', '1.2.0').length, 5);
+  assertEquals(sim[1], 'hour-meter-sim-1.5.0-windows-x64.zip');
+  assertEquals(assetNames('configurator', '1.2.0').length, 2);
 });
 
-Deno.test('change list: subjects without type(scope), body bullets joined across wrapped lines', () => {
+test('change list: subjects without type(scope), body bullets joined across wrapped lines', () => {
   const lines = changeList('firmware', [
     {
       subject: 'feat(firmware): confirm engine running by vibration (2.5.0)',
@@ -63,7 +65,7 @@ Deno.test('change list: subjects without type(scope), body bullets joined across
   ]);
 });
 
-Deno.test('generated notes: one release, every part with its version, files and changes', () => {
+test('generated notes: one release, every part with its version, files and changes', () => {
   const n = generateNotes({
     version: '1.0.0',
     repo: 'me/repo',
@@ -86,7 +88,7 @@ Deno.test('generated notes: one release, every part with its version, files and 
       '| Configurator (`hour-meter`) | 1.2.0 | no |',
       '| Simulator (`hour-meter-sim`) | 1.5.0 | new |',
       '`hour-meter-2.5.0-esp32dev-merged.bin`',
-      '`hour-meter-1.2.0-macos-arm64.tar.gz`',
+      '`hour-meter-1.2.0-windows-x64.zip`',
       '- Vibration',
       'No changes since the previous release.',
     ]
@@ -96,7 +98,7 @@ Deno.test('generated notes: one release, every part with its version, files and 
   assertEquals(n.body.includes('compare/'), false);
 });
 
-Deno.test('notes files, remotes and shell lines', () => {
+test('notes files, remotes and shell lines', () => {
   assertEquals(splitNotes('# Hour meter 1.0.0: the ACC fix\n\nBody\n', 'x'), {
     title: 'Hour meter 1.0.0: the ACC fix',
     body: 'Body\n',
@@ -109,10 +111,10 @@ Deno.test('notes files, remotes and shell lines', () => {
   assertEquals(repoFromRemote('git@github.com:me/repo.git'), 'me/repo');
   assertThrows(() => repoFromRemote('https://gitlab.com/me/repo.git'), /not a GitHub remote/);
   assertEquals(shellLine('git', ['tag', '-a', 'v1', '-m', "it's done"]), "git tag -a v1 -m 'it'\\''s done'");
-  assertEquals(shellLine('deno', ['task', 'test'], 'simulator'), '(cd simulator && deno task test)');
+  assertEquals(shellLine('bun', ['run', 'test'], 'simulator'), '(cd simulator && bun run test)');
 });
 
-Deno.test('a version bump is needed for features and fixes, not for docs or build changes', () => {
+test('a version bump is needed for features and fixes, not for docs or build changes', () => {
   const c = (subject: string) => ({ subject, body: '' });
   assertEquals(needsBump([c('docs(simulator): typo'), c('build(release): script')]), false);
   assertEquals(needsBump([c('docs: typo'), c('fix(simulator): reverse sign')]), true);

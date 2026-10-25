@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-read --allow-write --allow-run --allow-env
+#!/usr/bin/env bun
 // release.ts: publish one GitHub release (tag v<VERSION>) with the firmware, the
 // configurator and the simulator, each built from the same commit and keeping its
 // own version (kFirmwareVersion, TOOL_VERSION, SIM_VERSION).
@@ -19,6 +19,8 @@
 //
 // With --dry-run, steps 1, 2 and the notes still run (they only read), and every
 // command that would commit, build, write, tag, push or publish is printed instead.
+import { mkdir, rm, stat } from 'node:fs/promises';
+
 import {
   assetNames,
   type Bump,
@@ -94,7 +96,7 @@ function parseOptions(argv: string[]): Options {
     };
     if (a === '-h' || a === '--help') {
       console.log(HELP);
-      Deno.exit(0);
+      process.exit(0);
     } else if (a === '--dry-run') o.dryRun = true;
     else if (a === '--draft') o.draft = true;
     else if (a === '--skip-tests') o.skipTests = true;
@@ -115,21 +117,22 @@ function parseOptions(argv: string[]): Options {
 
 function fail(message: string): never {
   console.error(`release: ${message}`);
-  Deno.exit(2);
+  process.exit(2);
 }
 
 // -------------------------------------------------------------------- running ----
 
-const opts = parseOptions(Deno.args);
+const opts = parseOptions(process.argv.slice(2));
 const DRY = opts.dryRun;
-const bold = (s: string) => Deno.stdout.isTerminal() ? `\x1b[1m${s}\x1b[0m` : s;
-const dim = (s: string) => Deno.stdout.isTerminal() ? `\x1b[2m${s}\x1b[0m` : s;
+const bold = (s: string) => process.stdout.isTTY ? `\x1b[1m${s}\x1b[0m` : s;
+const dim = (s: string) => process.stdout.isTTY ? `\x1b[2m${s}\x1b[0m` : s;
 
 /** A read-only command: runs in the dry run too. Returns trimmed stdout, or null on a non-zero exit. */
 async function query(cmd: string, args: string[], cwd?: string): Promise<string | null> {
   try {
-    const r = await new Deno.Command(cmd, { args, cwd, stdout: 'piped', stderr: 'piped' }).output();
-    return r.success ? new TextDecoder().decode(r.stdout).trim() : null;
+    const p = Bun.spawn([cmd, ...args], { cwd, stdout: 'pipe', stderr: 'ignore' });
+    const [code, out] = await Promise.all([p.exited, new Response(p.stdout).text()]);
+    return code === 0 ? out.trim() : null;
   } catch {
     return null; // not installed
   }
@@ -143,7 +146,7 @@ async function run(cmd: string, args: string[], cwd?: string): Promise<void> {
     return;
   }
   console.log(`  $ ${line}`);
-  const { code } = await new Deno.Command(cmd, { args, cwd, stdout: 'inherit', stderr: 'inherit' }).output();
+  const code = await Bun.spawn([cmd, ...args], { cwd, stdout: 'inherit', stderr: 'inherit' }).exited;
   if (code !== 0) throw new Error(`failed (exit ${code}): ${line}`);
 }
 
@@ -153,12 +156,12 @@ async function writeFile(path: string, text: string): Promise<void> {
     console.log(`  ${dim('would write')} ${path}`);
     return;
   }
-  await Deno.writeTextFile(path, text);
+  await Bun.write(path, text);
 }
 
 const exists = async (path: string) => {
   try {
-    await Deno.stat(path);
+    await stat(path);
     return true;
   } catch {
     return false;
@@ -169,8 +172,8 @@ const exists = async (path: string) => {
 
 const root = await query('git', ['rev-parse', '--show-toplevel']);
 if (!root) fail('run it inside the repository');
-Deno.chdir(root);
-const HOME = Deno.env.get('HOME') ?? '';
+process.chdir(root);
+const HOME = process.env.HOME ?? '';
 const PIO = `${HOME}/.platformio`;
 const PIO_PYTHON = `${PIO}/penv/bin/python`;
 const ESPTOOL = `${PIO}/packages/tool-esptoolpy/esptool.py`;
@@ -186,7 +189,7 @@ const repo = repoFromRemote(remoteUrl);
 console.log(bold(`Release to github.com/${repo}${DRY ? ' (dry run)' : ''}\n`));
 console.log(bold('Checks'));
 
-for (const tool of ['git', 'gh', 'deno', 'pio', 'tar', 'zip', 'sha256sum']) {
+for (const tool of ['git', 'gh', 'bun', 'pio', 'tar', 'zip', 'sha256sum']) {
   if ((await query('sh', ['-c', `command -v ${tool}`])) === null) problems.push(`${tool} is not installed`);
 }
 for (const path of [PIO_PYTHON, ESPTOOL, BOOT_APP0]) {
@@ -272,7 +275,7 @@ let notes = generateNotes({ version, repo, previousTag, components: parts });
 let notesFrom = `generated from the commits since ${previousTag ?? "each part's last release"}`;
 if (opts.notes) {
   if (!(await exists(opts.notes))) problems.push(`notes file ${opts.notes} not found`);
-  notes = splitNotes(await Deno.readTextFile(opts.notes).catch(() => ''), releaseTitle(version, versions));
+  notes = splitNotes(await Bun.file(opts.notes).text().catch(() => ''), releaseTitle(version, versions));
   notesFrom = opts.notes;
 }
 const assets = COMPONENTS.flatMap((c) => assetNames(c, versions[c]));
@@ -330,7 +333,7 @@ if (pushMain) console.log('  push main to origin');
 
 if (problems.length && !DRY) {
   console.error(`\nrelease: stopped, ${problems.length} problem(s) above. Nothing was changed.`);
-  Deno.exit(1);
+  process.exit(1);
 }
 
 // ------------------------------------------------------------------ bump + build ----
@@ -388,7 +391,7 @@ if (declined) {
 }
 if (DRY && problems.length) {
   console.log(`\n${problems.length} problem(s) above would stop a real run.`);
-  Deno.exit(1);
+  process.exit(1);
 }
 
 // ------------------------------------------------------------------- steps ----
@@ -401,9 +404,9 @@ function commitArg(): string {
 async function build(): Promise<void> {
   console.log(bold(`\nBuild ${tag} from ${DRY && opts.bump ? 'the bump commit' : sha.slice(0, 7)}`));
   if (!DRY) {
-    await Deno.remove(outDir, { recursive: true }).catch(() => {});
-    await Deno.remove(wt, { recursive: true }).catch(() => {});
-    await Deno.mkdir(outDir, { recursive: true });
+    await rm(outDir, { recursive: true, force: true });
+    await rm(wt, { recursive: true, force: true });
+    await mkdir(outDir, { recursive: true });
     await query('git', ['worktree', 'prune']);
   }
   await run('git', ['worktree', 'add', '--detach', wt, commitArg()]);
@@ -418,9 +421,10 @@ async function build(): Promise<void> {
   for (const c of ['configurator', 'simulator'] as const) {
     console.log(bold(`\n  ${c} ${versions[c]}`));
     const src = `${wt}/${INFO[c].dir}`;
-    if (!opts.skipTests) await run('deno', ['task', 'test'], src);
-    if (c === 'simulator') await run('deno', ['task', 'web:build'], src); // the binary embeds the web UI
-    await run('deno', ['task', 'compile'], src);
+    await run('bun', ['install', '--frozen-lockfile'], src); // a fresh checkout has no node_modules
+    if (!opts.skipTests) await run('bun', ['run', 'test'], src);
+    if (c === 'simulator') await run('bun', ['run', 'web:build'], src); // the binary embeds the web UI
+    await run('bun', ['run', 'compile'], src);
     for (const name of assetNames(c, versions[c])) await run('cp', [`${src}/dist/${name}`, `${outDir}/${name}`]);
   }
 
@@ -470,17 +474,17 @@ async function packageFirmware(build: string): Promise<void> {
 async function verify(): Promise<void> {
   console.log(bold('\nVerify'));
   const dir = `${opts.out}/verify/${tag}`;
-  if (!DRY) await Deno.remove(dir, { recursive: true }).catch(() => {});
+  if (!DRY) await rm(dir, { recursive: true, force: true });
   await run('gh', ['release', 'download', tag, '--repo', repo, '--dir', dir]);
   await run('sha256sum', ['-c', 'SHA256SUMS'], dir);
   const merged = assetNames('firmware', versions.firmware)[0];
   if (DRY) console.log(`  ${dim('would check')} ${merged} has an ESP32 image header (0xE9) at 0x1000`);
   else {
-    const image = await Deno.readFile(`${dir}/${merged}`);
+    const image = await Bun.file(`${dir}/${merged}`).bytes();
     if (image[0x1000] !== 0xe9) throw new Error(`${merged}: no ESP32 image at 0x1000`);
     console.log(`  ✔ ${merged}: bootloader image at 0x1000, ${image.length} bytes`);
   }
-  if (Deno.build.os !== 'linux' || Deno.build.arch !== 'x86_64') return; // only the host's own binaries run here
+  if (process.platform !== 'linux' || process.arch !== 'x64') return; // only the host's own binaries run here
   for (const c of ['configurator', 'simulator'] as const) {
     const archive = assetNames(c, versions[c])[0]; // linux-x64
     const exe = c === 'configurator' ? 'hour-meter' : 'hour-meter-sim';
