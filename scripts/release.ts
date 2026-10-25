@@ -421,7 +421,10 @@ async function build(): Promise<void> {
   for (const c of ['configurator', 'simulator'] as const) {
     console.log(bold(`\n  ${c} ${versions[c]}`));
     const src = `${wt}/${INFO[c].dir}`;
-    await run('bun', ['install', '--frozen-lockfile'], src); // a fresh checkout has no node_modules
+    // A fresh checkout has no node_modules. The configurator's TUI (OpenTUI) has a native package per platform:
+    // all of them, so it can be compiled for Windows on Linux.
+    const platforms = c === 'configurator' ? ['--os=*', '--cpu=*'] : [];
+    await run('bun', ['install', '--frozen-lockfile', ...platforms], src);
     if (!opts.skipTests) await run('bun', ['run', 'test'], src);
     if (c === 'simulator') await run('bun', ['run', 'web:build'], src); // the binary embeds the web UI
     await run('bun', ['run', 'compile'], src);
