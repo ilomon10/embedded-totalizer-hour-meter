@@ -9073,7 +9073,7 @@
 			(uuid "cbf780a3-490e-4acb-8cfa-c9d0625f418c")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_DIP.3dshapes/DIP-8_W7.62mm_Socket.step"
+		(model "${KICAD10_3DMODEL_DIR}/Package_DIP.3dshapes/DIP-8_W7.62mm.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -15286,7 +15286,7 @@
 			(uuid "86ead389-8ea8-4f65-90df-70d29e050c26")
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Fuse.3dshapes/Fuse_1812_4532Metric.step"
+		(model "${KICAD10_3DMODEL_DIR}/Resistor_SMD.3dshapes/R_1812_4532Metric.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -16511,7 +16511,7 @@
 			)
 		)
 		(embedded_fonts no)
-		(model "${KICAD10_3DMODEL_DIR}/Package_DFN_QFN.3dshapes/QFN-24_3x3mm_P0.4mm_EP1.7x1.54mm.step"
+		(model "${KICAD10_3DMODEL_DIR}/Package_DFN_QFN.3dshapes/QFN-24_3x3mm_P0.4mm.step"
 			(offset
 				(xyz 0 0 0)
 			)
