@@ -11,11 +11,16 @@ The folder is a KiCad *Save As* copy of [`../hour-meter-board-2layer`](../hour-m
 | Script | `tools-pcb.py` with `check`, `place`, `route [tries]`, `finish [passes]` or `production` |
 | Order files | `production/`: Gerber zip, `BOM-hour-meter-board-compact.csv` (59 lines), `CPL-hour-meter-board-compact.csv` (109 parts) |
 
-**Checks at this revision (2026-10-21):**
+**Checks at this revision (2026-10-26):**
 - **ERC:** 0 errors, 2 intended warnings (the IMU address straps, as on the main board).
-- **DRC:** 0 errors, 0 unconnected items, 0 schematic-parity issues. The 8 warnings are silkscreen that the fab clips at an edge: the overhanging module's outline, the optocoupler outlines over their slots, and three references next to a slot.
-- **Routing:** Freerouting's first try connected everything; `finish` only had to make 5 thermal reliefs solid.
-- **Stock:** all parts are in JLCPCB stock for 10 boards.
+- **DRC:** 0 errors, 0 unconnected items, 0 schematic-parity issues, with the `Vehicle` (0.8 mm), `Power` and `Plane` net classes. The 10 warnings:
+  - 8 are silkscreen that the fab clips at an edge: the overhanging module's outline, the optocoupler outlines over their slots, and three references next to a slot;
+  - the PSU-B outline on the top silkscreen crosses copper, and the mask clips it there;
+  - U201's footprint differs from the copy in KiCad 10's library. Don't update it from the library: check its thermal-pad vias first.
+- **Design rules:** from JLCPCB's 1–2 layer template: 0.127 mm default clearance and track, 0.12 mm minimum track, 0.12 mm minimum solder-mask web. That web merges no mask openings between different nets. All of these are within JLCPCB's current limits (0.10 mm tracks, 0.15 mm via holes). The 0.5/0.25 mm vias are standard price.
+- **Routing:** Freerouting connected everything and `finish` made 5 thermal reliefs solid. On 2026-10-26 the routing was tidied by hand in KiCad 10, and C602 and C605 next to the IMU were rotated. The two vehicle-input links R302–R303 and R307–R308 keep their 0.8 mm route.
+- **Order files:** the Gerbers have 2 copper layers (L1 top, L2 bottom).
+- **Stock:** all parts are in JLCPCB stock for 10 boards (checked 2026-10-26).
 
 ## Circuit changes
 
@@ -34,7 +39,7 @@ The folder is a KiCad *Save As* copy of [`../hour-meter-board-2layer`](../hour-m
 - **CR2032 holder (BT401) on the underside**, under the RS485 / RTC area. It hangs below the board by its own height, so check that in the MYOUNG BS-07-A1BJ001 datasheet and choose mounting standoffs at least 2 mm longer.
 - **Under PSU-B** (bottom-left, 40 × 30 mm): only low SMD parts (power input, RTC, port passives). J102 and the H101 standoff sit at the same offsets as on the main board, so the same PSU-B plugs in.
 - **Mounting:** H102 (top-left, a plain hole inside the isolated corner), H103 (right edge), H104 and H105 (bottom corners), plus H101 for PSU-B.
-- **Silkscreen:** parts under 30 mm² and the mounting holes have their references on the fab layer only, and the PSU-B outline is on the fab layer; the board is too dense for more. Connectors, ICs, switches, jumpers and the battery keep theirs.
+- **Silkscreen:** parts under 30 mm² and the mounting holes have their references on the fab layer only; the board is too dense for more. Connectors, ICs, switches, jumpers and the battery keep theirs, and the PSU-B outline is on the top silkscreen.
 
 ### Isolated vehicle inputs
 
@@ -67,6 +72,9 @@ The 2-layer board's [Before you order](../hour-meter-board-2layer/README.md#befo
 1. **Antenna overhang:** the module sticks out 6.5 mm past the board edge. Check the JLCPCB placement preview, and that the enclosure leaves room.
 2. **Bottom-side holder:** BT401 is a through-hole part on the underside. Hand-solder it, or order JLC THT assembly for the bottom side.
 3. **Slots and rule areas:** if you edit the board, keep the slots, the `BARRIER_*` and `EDGE_*` rule areas, and the IMU keep-outs.
+   - Keep the `Vehicle`, `Power` and `Plane` net classes too.
+   - Importing settings from a fab template (*Board Setup → Import Settings*) replaces them. The KiCad 5 JLCPCB templates also switch the board to 4 copper layers.
+   - Afterwards, check that the board still has **2 copper layers** and that the net classes are there.
 4. **Fault limits** that still apply (see the [fault analysis](../fault-analysis/README.md)):
    - **24 V vehicles:** PSU-B does not survive a 24 V vehicle's clamped load dump.
    - **Port data lines:** J801 and J802 are logic-level and not battery-proof.
