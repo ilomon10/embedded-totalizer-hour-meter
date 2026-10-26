@@ -70,15 +70,27 @@ The opto inputs (J301 and everything up to the optocouplers' LEDs) sit in the to
 The 2-layer board's [Before you order](../hour-meter-board-2layer/README.md#before-you-order) list applies (GND stitching, USB pair, AMS1117 heat, JLCPCB via sizes). In addition:
 
 1. **Antenna overhang:** the module sticks out 6.5 mm past the board edge. Check the JLCPCB placement preview, and that the enclosure leaves room.
-2. **Bottom-side holder:** BT401 is a through-hole part on the underside. Hand-solder it, or order JLC THT assembly for the bottom side.
+2. **Bottom-side holder:** BT401 is a through-hole part on the underside. JLCPCB's Standard assembly fits it (see [Ordering it assembled](#ordering-it-assembled-jlcpcb)), or hand-solder it.
 3. **Slots and rule areas:** if you edit the board, keep the slots, the `BARRIER_*` and `EDGE_*` rule areas, and the IMU keep-outs.
    - Keep the `Vehicle`, `Power` and `Plane` net classes too.
    - Importing settings from a fab template (*Board Setup → Import Settings*) replaces them. The KiCad 5 JLCPCB templates also switch the board to 4 copper layers.
    - Afterwards, check that the board still has **2 copper layers** and that the net classes are there.
 4. **Fault limits** that still apply (see the [fault analysis](../fault-analysis/README.md)):
-   - **24 V vehicles:** PSU-B does not survive a 24 V vehicle's clamped load dump.
+   - **24 V vehicles:** PSU-B does not survive a 24 V vehicle's clamped load dump. Feed the board from a 12 V converter rated for 24 V vehicles (PSU-B then only sees 12 V), or use another supply on J102.
    - **Port data lines:** J801 and J802 are logic-level and not battery-proof.
    - **RS485 jumpers:** with J702/J703 fitted, a supply short burns R704–R706.
+
+### Ordering it assembled (JLCPCB)
+
+JLCPCB can deliver the board fully assembled from `production/`. Every part is in its library: 28 basic, 1 preferred and 30 extended parts. Each extended part type adds a one-time loading fee to the quote.
+
+- **PCBA type: Standard, both sides.** BT401 is on the underside, and Economic places parts on one side only. The board is 80 × 70 mm; Standard needs at least 70 × 70 mm.
+- **Through-hole parts: keep all 12 selected.** J101, J102, J301, J501, J701–J703, J801, J802, J804, U501 and BT401 are wave- or hand-soldered by JLCPCB. U601 and U602 get X-ray inspection automatically.
+- **U501:** JLCPCB solders the AT24C256 straight into the board, without a socket. That is more robust on a vibrating vehicle than a socket. The main copy of the counters is in the ESP32's flash anyway.
+- **Order remark:** "ESP32 module overhangs the top edge by 6.5 mm, please place the tooling rails on the left and right edges." Standard assembly adds rails, and one on the top edge would hit the antenna.
+- **Placement preview:** check the rotations before you pay. The CPL is KiCad's, and a few packages may need turning.
+- **Not included:** the CR2032 cell, cables and the enclosure. [PSU-B](../hour-meter-psu-b/README.md) is a separate order: at 40 × 30 mm it is below Standard's minimum, so use Economic and hand-solder its pin header P1 on the underside.
+- **3D view:** KiCad 10 has no models for J201 (USB-C), SW201/SW202 and BT401. F101 shows a 1812 chip body as a stand-in. These parts look empty or plain in the 3D viewer only; the order files are not affected.
 
 ## Re-generating the board
 
