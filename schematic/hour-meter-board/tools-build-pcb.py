@@ -411,12 +411,14 @@ def build(sch=SCH, pcb=PCB, layers=4):
     board = pcbnew.NewBoard(pcb)   # an empty board bound to this project, written to `pcb` at once
     setup_board(board, layers)
     footprints = add_footprints_and_nets(board, comps, nets, LAYOUT.placement)
-    add_track(board, footprints, "J102", "3", "4", pcbnew.B_Cu, 0.8)   # the two +5V_PSU pins
+    if "J102" in footprints:   # boards with the PSU-B socket (the LM2596 variant has none)
+        add_track(board, footprints, "J102", "3", "4", pcbnew.B_Cu, 0.8)   # the two +5V_PSU pins
     x0, y0, w, h = LAYOUT.outline
     rect_shape(board, pcbnew.Edge_Cuts, (x0, y0, x0 + w, y0 + h))
     for slot in LAYOUT.slots:
         add_slot(board, slot)
-    rect_shape(board, pcbnew.F_SilkS, LAYOUT.psu_area, 0.15)     # where the PSU-B board sits
+    if LAYOUT.psu_area:
+        rect_shape(board, pcbnew.F_SilkS, LAYOUT.psu_area, 0.15)     # where the PSU-B board sits
     add_labels(board, LAYOUT.labels)
     title = board.GetTitleBlock()
     title.SetTitle("Hour Meter main board")
