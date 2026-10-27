@@ -48,6 +48,8 @@ Based on TI's TPS54360B reference design (datasheet SNVSB93, Figure 32: 8.5–60
 
 - **Layout:** the board is auto-routed. Tighten the hot loop by hand (C2/C3 → U1 VIN/GND → D3 → C2/C3 GND), keep the SW node small, and route FB away from SW and L1. See the TPS54360B datasheet, §10 Layout.
 - **Assembly:** C1 (radial, THT, top) and P1 (pin header, bottom side) are hand-soldered. Everything else is SMD, top side.
+- **JLCPCB assembly:** at 40 × 30 mm the board is below Standard PCBA's 70 × 70 mm minimum. Use Economic (top side, C1 included) and hand-solder P1.
+- **Order number:** the bottom silkscreen carries `JLCJLCJLCJLC` in the middle of the board. Select **Order Number → Specify Position** on the order form ([JLCPCB help](https://jlcpcb.com/help/article/how-to-remove-order-number-from-your-pcb)).
 
 ## Bring-up
 

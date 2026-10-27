@@ -38,6 +38,7 @@ route, build = finish.route, finish.build
 
 X0, Y0, W, H = 100.0, 100.0, 80.0, 70.0
 PSU_AREA = (112.0, 140.0, 152.0, 170.0)      # PSU-B: J102 at (+7, +16), H101 at (+36, +26), as on the main board
+ORDER_MARK_AT = (140.0, 160.0)               # JLCPCB order number, bottom silkscreen
 BARRIER_X = 131.0                            # isolation barrier: through the optocoupler centres
 VEHICLE_AREA = (100.0, 100.0, BARRIER_X + 2.5, 126.0)   # no pours within 2.5 mm of the barrier
 SLOT = 1.5                                   # slot width, mm
@@ -153,6 +154,7 @@ def place(pcb=PCB):
         route.add_rule_area(board, rect, f"BARRIER_{i + 1}", tracks=True)
     edge_keepouts(board)
     tidy_silkscreen(board)
+    build.add_order_mark(board, "B", ORDER_MARK_AT)
     title = board.GetTitleBlock()
     title.SetTitle("Hour Meter main board, compact (80 x 70 mm, 2 layers)")
     board.SetTitleBlock(title)

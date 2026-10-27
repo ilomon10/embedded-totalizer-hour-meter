@@ -36,6 +36,7 @@ _spec.loader.exec_module(lib)
 mm = lib.mm
 
 X0, Y0, W, H = 100.0, 100.0, 40.0, 30.0
+ORDER_MARK_AT = (120.0, 115.5)   # JLCPCB order number, bottom silkscreen
 MAIN_OFFSET = (13.0, 1.0)   # main-board coordinates = local + offset
 
 
@@ -113,6 +114,7 @@ def build(pcb=PCB):
                 pad.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
     lib.rect_shape(board, pcbnew.Edge_Cuts, (X0, Y0, X0 + W, Y0 + H))
     lib.add_labels(board, LABELS)
+    lib.add_order_mark(board, "B", ORDER_MARK_AT)
     title = board.GetTitleBlock()
     title.SetTitle("Hour Meter PSU-B (9-36 V -> 5.3 V)")
     title.SetRevision("B")

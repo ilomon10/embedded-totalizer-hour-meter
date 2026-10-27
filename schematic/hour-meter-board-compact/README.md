@@ -89,6 +89,7 @@ JLCPCB can deliver the board fully assembled from `production/`. Every part is i
 - **U501:** JLCPCB solders the AT24C256 straight into the board, without a socket. That is more robust on a vibrating vehicle than a socket. The main copy of the counters is in the ESP32's flash anyway.
 - **Order remark:** "ESP32 module overhangs the top edge by 6.5 mm, please place the tooling rails on the left and right edges." Standard assembly adds rails, and one on the top edge would hit the antenna.
 - **Placement preview:** check the rotations before you pay. The CPL is KiCad's, and a few packages may need turning.
+- **Order number:** the bottom silkscreen carries `JLCJLCJLCJLC`, below the middle of the board. Select **Order Number → Specify Position** on the order form, or JLCPCB may print the number anywhere ([JLCPCB help](https://jlcpcb.com/help/article/how-to-remove-order-number-from-your-pcb)). `tools-pcb.py place` puts the mark back at `ORDER_MARK_AT`.
 - **Not included:** the CR2032 cell, cables and the enclosure. [PSU-B](../hour-meter-psu-b/README.md) is a separate order: at 40 × 30 mm it is below Standard's minimum, so use Economic and hand-solder its pin header P1 on the underside.
 - **3D view:** KiCad 10 has no models for J201 (USB-C), SW201/SW202 and BT401. F101 shows a 1812 chip body as a stand-in. These parts look empty or plain in the 3D viewer only; the order files are not affected.
 

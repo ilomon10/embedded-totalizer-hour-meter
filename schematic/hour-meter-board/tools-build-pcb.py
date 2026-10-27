@@ -265,6 +265,78 @@ def add_labels(board, labels=LABELS):
         board.Add(t)
 
 
+ORDER_MARK = "JLCJLCJLCJLC"   # JLCPCB prints its order number here when the order says "Specify Position"
+
+
+def add_order_mark(board, side, near, size=1.0, thickness=0.15, clearance=0.3, search=30.0):
+    """JLCPCB's order-number placeholder on the top ("F") or bottom ("B") silkscreen, at the free spot nearest
+    `near` (x, y). Free: clear of pads, holes, courtyards and silkscreen on that side, and inside the board
+    outline by `clearance` (slots included). JLCPCB wants the text alone, >= 0.8 mm high and 0.15 mm thick;
+    1.0 mm is its silkscreen minimum. An existing mark is replaced. Returns (x, y), or raises if nothing fits."""
+    layer = pcbnew.F_SilkS if side == "F" else pcbnew.B_SilkS
+    drawings = board.Drawings()
+    for item in [drawings[i] for i in range(len(drawings))]:
+        if item.GetClass() == "PCB_TEXT" and item.Cast().GetText() == ORDER_MARK:
+            board.Remove(item)
+    text = pcbnew.PCB_TEXT(board)
+    text.SetText(ORDER_MARK)
+    text.SetLayer(layer)
+    text.SetMirrored(side == "B")
+    text.SetTextSize(pcbnew.VECTOR2I(mm(size), mm(size)))
+    text.SetTextThickness(mm(thickness))
+    gap = mm(clearance)
+
+    obstacles = []   # boxes in board units
+    fps = board.Footprints()
+    copper = pcbnew.F_Cu if side == "F" else pcbnew.B_Cu
+    court = pcbnew.F_CrtYd if side == "F" else pcbnew.B_CrtYd
+    for fp in (fps[i] for i in range(len(fps))):
+        for p in fp.Pads():
+            if p.IsOnLayer(copper) or p.GetDrillSizeX() > 0:
+                obstacles.append(p.GetBoundingBox())
+        if fp.GetLayer() == copper:
+            obstacles.append(courtyard_box(fp))
+        for g in fp.GraphicalItems():
+            if g.GetLayer() == layer:
+                obstacles.append(g.GetBoundingBox())
+        for t in (fp.Reference(), fp.Value()):
+            if t.IsVisible() and t.GetLayer() == layer:
+                obstacles.append(t.GetBoundingBox())
+    for item in (drawings[i] for i in range(len(drawings))):
+        if item.GetLayer() == layer:
+            obstacles.append(item.GetBoundingBox())
+    edges = [d for d in (drawings[i] for i in range(len(drawings))) if d.GetLayer() == pcbnew.Edge_Cuts]
+    outline = board.GetBoardEdgesBoundingBox()
+
+    def fits(x, y):
+        text.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
+        box = text.GetBoundingBox()
+        box.Inflate(gap)
+        if not (outline.Contains(box.GetOrigin()) and outline.Contains(box.GetEnd())):
+            return False
+        return not any(box.Intersects(o) for o in obstacles) and not any(box.Intersects(e.GetBoundingBox()) and
+                                                                         _crosses_edge(e, box) for e in edges)
+
+    x0, y0 = near
+    step = 0.5
+    for ring in range(int(search / step) + 1):          # square spiral outwards from `near`
+        r = ring * step
+        candidates = [(x0, y0)] if ring == 0 else [(x0 + dx * step, y0 + dy * step)
+                                                     for dx in range(-ring, ring + 1) for dy in (-ring, ring)] + \
+            [(x0 + dx * step, y0 + dy * step) for dy in range(-ring + 1, ring) for dx in (-ring, ring)]
+        for x, y in sorted(candidates, key=lambda c: math.hypot(c[0] - x0, c[1] - y0)):
+            if fits(x, y):
+                board.Add(text)
+                return (x, y)
+    raise RuntimeError(f"no free {size} mm spot for {ORDER_MARK} within {search} mm of {near}")
+
+
+def _crosses_edge(shape, box):
+    """True if an Edge.Cuts shape (outline segment, slot side or arc) passes through `box`."""
+    poly = pcbnew.SHAPE_RECT(box.GetX(), box.GetY(), box.GetWidth(), box.GetHeight())
+    return shape.GetEffectiveShape().Collide(poly, 0)
+
+
 def setup_board(board, layers=4):
     board.SetCopperLayerCount(layers)
     if layers == 4:

@@ -27384,6 +27384,18 @@
 			)
 		)
 	)
+	(gr_text "JLCJLCJLCJLC"
+		(at 140 160 0)
+		(layer "B.SilkS")
+		(uuid "7163356c-2c3c-442f-bbf1-02c8814c1aad")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+			(justify mirror)
+		)
+	)
 	(segment
 		(start 162.6706 129.8794)
 		(end 165.2381 129.8794)
