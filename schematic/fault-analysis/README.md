@@ -1,4 +1,4 @@
-# Fault analysis (rev B boards and PSU-B)
+# Fault analysis (rev B boards, PSU-B and the I/O port)
 
 SPICE simulations of the faults a vehicle installation can throw at the hour meter: supply transients, reverse polarity, shorted outputs and miswired connectors. Each case is a small ngspice deck built from the parts on the real schematics, and each result is checked against the parts' ratings.
 
@@ -9,7 +9,7 @@ python3 faults.py      # needs ngspice, numpy and matplotlib; prints the table b
 ## Method
 
 - **Models:** the semiconductor models are fitted to datasheet points (listed in `faults.py`, next to each `.model`). They are good for stresses and pass/fail margins, not for exact waveforms.
-- **Test pulses:** ISO 16750-2 load dump (Test A unclamped, Test B clamped by the alternator) and ISO 7637-2 pulses 1 and 2a, with the source resistances the standards give. Sources disagree on the 24 V Test B clamp (58 V or 65 V); both are far above the TVS breakdown, so the verdict is the same.
+- **Test pulses:** ISO 16750-2 load dump (Test A unclamped, Test B clamped by the alternator) and ISO 7637-2 pulses 1 and 2a (and 3a/3b on AIN1), with the source resistances the standards give. Sources disagree on the 24 V Test B clamp (58 V or 65 V); both are far above the TVS breakdown, so the verdict is the same.
 - **Pass criteria:**
   - **TVS energy:** under half the energy the TVS survives for the event's length. That rating is extrapolated from 600 W (10/1000 µs) along the √t slope of its pulse-power curve, which is generous for events much longer than 10 ms.
   - **Converter input:** VIN_P under 60 V (TPS54360B operating limit; 65 V absolute).
@@ -17,6 +17,7 @@ python3 faults.py      # needs ngspice, numpy and matplotlib; prints the table b
 - **Not simulated:**
   - **PTC trip:** the fuse's thermal trip is calculated from its datasheet (marked *calculated*).
   - **ESD and burst:** not covered; they are handled by the parts' own IEC ratings.
+  - **DOUT1:** the BSP75N has no SPICE model here; its rows are worked from the [Diodes BSP75N datasheet](https://www.diodes.com/assets/Datasheets/BSP75N.pdf) (marked *calculated*).
 
 ## Results
 
@@ -45,6 +46,17 @@ The 4-layer board, the 2-layer copy and PSU-B share these circuits. The compact 
 | Same, compact board, termination/bias jumpers fitted | Pass\* | The transceiver survives, but R704–R706 (0.37–3.1 W) burn open: replace them after the fault |
 | **UART / GPS port data lines (J801, J802)** | | |
 | A data line wired to 12 V or 24 V | **Fail** | SRV05-4 takes 3.6–10.7 A and lifts +5V to 11–22 V. These are 3.3/5 V logic ports, not battery-proof |
+| **AIN1 (J902-2, [I/O board](../hour-meter-board-compact-lm2596-io/README.md))** | | |
+| Reading at 30 V | Pass | ADC pin at 2.732 V, the ideal 10 / 109.8 ratio |
+| ±60 V continuous | Pass | 0.18 / 0.54 mA into the clamp (ADS1115 input: 10 mA); 16–18 mW per 49.9k. The ADC pin sits at 3.84 V / −0.59 V, past the ±0.3 V rail limit but current-limited, as the ADS1115's input-current rating allows |
+| 24 V unclamped load dump (Test A, 202 V, 350 ms) | Pass | 99 V and 20 mJ per 49.9k (400 V overload rating); 1.6 mA into the clamp |
+| ISO 7637-2 pulse 1 (−600 V, 50 Ω, 1 ms) | Pass | C901 sees 596 V, which is why it is a 1 kV part; 299 V per 49.9k; 5.2 mA into the clamp |
+| ISO 7637-2 pulses 2a (+112 V), 3a (−220 V), 3b (+150 V) | Pass | C901 holds the 150 ns pulses 3a/3b to 27 V; pulse 2a peaks at 139 V on C901 |
+| **DOUT1 (J902-4, I/O board, *calculated*)** | | |
+| 24 V clamped load dump (58 V), DOUT1 off | Pass | Below the BSP75N's 60 V minimum clamp voltage: it stays off |
+| Relay or solenoid switched off without a flyback diode | Pass | A 0.5 A, 0.5 H solenoid stores 63 mJ; the BSP75N clamps 200 mJ at 150 °C (550 mJ at 25 °C) |
+| DOUT1 shorted to 24 V (28.8 V) while on | Pass | Current limit 0.7–1.5 A, then thermal shutdown with auto restart. The short-circuit protection is specified up to 36 V with the 5 V input (U902 gives it 4.9 V) |
+| 24 V unclamped load dump (Test A) through a relay coil | **Fail** | With a 240 Ω coil the clamp takes about 3 J over 200 ms (rated 0.2–0.55 J). Like the supply input, DOUT1 needs the vehicle's central clamp |
 
 ## Plots
 
@@ -57,6 +69,7 @@ The 4-layer board, the 2-layer copy and PSU-B share these circuits. The compact 
 2. **Unclamped load dump (Test A).** Not covered by any rev-B PSU. Modern alternators clamp centrally.
 3. **Port data lines.** J801 and J802 are logic-level module ports. Making them survive a wire to the battery would need series resistors on every line; the compact board documents them as not battery-proof instead.
 4. **RS485 jumpers.** With J702/J703 fitted, a bus wire shorted to the supply burns the 120 Ω and 330 Ω resistors (the THVD2410 survives).
+5. **DOUT1 and unclamped load dumps.** A load on DOUT1 hangs on the vehicle supply directly, so in a 24 V vehicle without central load-dump suppression the BSP75N's clamp absorbs the event and fails. AIN1 survives it.
 
 ## Sources
 
@@ -64,3 +77,4 @@ The 4-layer board, the 2-layer copy and PSU-B share these circuits. The compact 
 - TPS54360B current limit and thermal shutdown: [TI datasheet](https://www.ti.com/document-viewer/TPS54360B/datasheet/electrical-characteristics-snvsb92162)
 - THVD2410 bus ratings and pinout: [TI THVD2410](https://www.ti.com/product/THVD2410), [datasheet](https://www.ti.com/lit/ds/symlink/thvd2410.pdf)
 - PSM712: [LCSC C2875817](https://www.lcsc.com/product-detail/C2875817.html)
+- BSP75N clamp, current limit and avalanche energy: [Diodes BSP75N datasheet](https://www.diodes.com/assets/Datasheets/BSP75N.pdf); BAV99 forward voltage and leakage: [onsemi BAV99L](https://www.onsemi.com/pdf/datasheet/bav99lt1-d.pdf); ADS1115 input-current rating: [TI ADS1115](https://www.ti.com/lit/ds/symlink/ads1115.pdf)

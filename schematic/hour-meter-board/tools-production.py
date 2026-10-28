@@ -6,7 +6,8 @@
 
 Writes <name>-gerbers-JLCPCB.zip (Gerbers + Excellon drill), BOM-<name>.csv
 (Comment, Designator, Footprint, LCSC, Qty) and CPL-<name>.csv (Designator, Mid X, Mid Y,
-Layer, Rotation). Board-only parts (holes, solder jumpers) are left out of the BOM and CPL.
+Layer, Rotation). Board-only parts (holes, solder jumpers) and Do-Not-Populate parts are left out
+of the BOM and CPL.
 Check the rotations in JLCPCB's placement preview before ordering; the CPL is KiCad's.
 """
 import csv
@@ -54,7 +55,7 @@ def main():
         bom = os.path.join(tmp, "bom.csv")
         run("sch", "export", "bom", "--fields", "Value,Reference,Footprint,LCSC,${QUANTITY}",
             "--labels", "Comment,Designator,Footprint,LCSC,Qty", "--group-by", "Value,Footprint,LCSC",
-            "--ref-range-delimiter", "", "-o", bom, sch)
+            "--ref-range-delimiter", "", "--exclude-dnp", "-o", bom, sch)
         with open(bom, newline="") as src, open(os.path.join(out, f"BOM-{name}.csv"), "w", newline="") as dst:
             rows = list(csv.DictReader(src))
             w = csv.DictWriter(dst, fieldnames=["Comment", "Designator", "Footprint", "LCSC", "Qty"])
@@ -67,7 +68,7 @@ def main():
                 w.writerow(r)
 
         pos = os.path.join(tmp, "pos.csv")
-        run("pcb", "export", "pos", "--format", "csv", "--units", "mm", "--side", "both", "-o", pos, pcb)
+        run("pcb", "export", "pos", "--format", "csv", "--units", "mm", "--side", "both", "--exclude-dnp", "-o", pos, pcb)
         with open(pos, newline="") as src, open(os.path.join(out, f"CPL-{name}.csv"), "w", newline="") as dst:
             w = csv.writer(dst)
             w.writerow(["Designator", "Mid X", "Mid Y", "Layer", "Rotation"])

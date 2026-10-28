@@ -42,6 +42,8 @@ MODELS = """
 .model DZ47 D(Is=1e-14 N=1 Rs=12 BV=4.7 IBV=5m)
 * PC817C input LED: 1.2 V @ 20 mA, about 1.0 V @ 1 mA
 .model LED817 D(Is=1e-13 N=1.7 Rs=2)
+* BAV99 (I/O variant D901): about 0.62 V @ 1 mA, 0.75 V @ 10 mA (onsemi max 0.715 / 0.855 V)
+.model BAV99 D(Is=2.4e-9 N=1.85 Rs=2 BV=100 IBV=1u Cjo=1.5p)
 """
 
 
@@ -234,6 +236,60 @@ def opto(results):
                         f"LED peak {m.get('iled_max', 0) * 1e3:.0f} mA (1 A pulse rating), M7 reverse {abs(m.get('vd_min', 0)):.0f} V (1000 V)"))
 
 
+# --- AIN1 (I/O variant, J902-2): C901 10 nF 1 kV -> 2 x 49.9k -> 10k || 100 nF, BAV99 to GND / +3V3 -> ADS1115 ---
+AIN = """
+C901 in 0 10n
+R901 in mid 49.9k
+R902 mid adc 49.9k
+R903 adc 0 10k
+C902 adc 0 100n
+VDL 0 dla 0
+DL dla adc BAV99
+VDH adc dha 0
+DH dha v33 BAV99
+* +3V3 rail: the LDO does not sink, but the board's load (> 20 mA) takes the clamp current
+V33 v33r 0 3.3
+R33 v33r v33 1
+"""
+
+
+def ain(results):
+    """Ratings: YAGEO RT1206 0.25 W, 200 V working / 400 V overload; ADS1115 input current 10 mA continuous,
+    100 mA momentary (its own ESD diodes share the clamp current with the BAV99, so this is conservative)."""
+    run("ain_dc", "VIN in 0 0\n" + AIN,
+        "dc vin -60 60 0.05\nlet iclamp = i(vdh) - i(vdl)\nlet p901 = (v(in) - v(mid))^2 / 49.9k\n"
+        "wrdata DATA v(adc) iclamp p901\n")
+    w = waveforms("ain_dc")
+    x = "v-sweep" if "v-sweep" in w else "time"
+    at = lambda v, key: float(np.interp(v, w[x], w[key]))
+    reading = at(30, "v(adc)")
+    results.append(("AIN1 reading at 30 V", "PASS" if abs(reading - 30 * 10 / 109.8) < 0.01 else "FAIL",
+                    f"ADC pin {reading:.3f} V (ideal {30 * 10 / 109.8:.3f} V; ADS1115 +/-4.096 V range, VDD 3.3 V)"))
+    for vin, label in ((60, "+60 V"), (-60, "-60 V")):
+        i, p, v = abs(at(vin, "iclamp")), at(vin, "p901"), at(vin, "v(adc)")
+        ok = i < 10e-3 and p < 0.25 and -0.9 < v < 4.2
+        results.append((f"AIN1 at {label} continuous", "PASS" if ok else "FAIL",
+                        f"clamp {i * 1e3:.2f} mA (ADS1115 10 mA), each 49.9k {p * 1e3:.0f} mW (rated 250), ADC pin {v:.2f} V"))
+    for label, name, expr, ri, tstop, tstep in (
+            ("AIN1, 24 V unsuppressed load dump (Test A, 202 V, 350 ms)", "ain_ld24a", load_dump(27, 202, None, 1, 0.35), 1, 0.5, 2e-5),
+            ("AIN1, ISO 7637-2 pulse 1 (-600 V, 50 ohm, 1 ms)", "ain_p1", iso_pulse(27, -600, 1e-3, 3e-6, battery_off=True), 50, 4e-3, 1e-7),
+            ("AIN1, ISO 7637-2 pulse 2a (+112 V, 2 ohm, 50 us)", "ain_p2a", iso_pulse(27, 112, 50e-6, 1e-6), 2, 4e-4, 2e-8),
+            ("AIN1, ISO 7637-2 pulse 3a (-220 V, 50 ohm, 150 ns)", "ain_p3a", iso_pulse(27, -220, 150e-9, 5e-9), 50, 2e-6, 1e-10),
+            ("AIN1, ISO 7637-2 pulse 3b (+150 V, 50 ohm, 150 ns)", "ain_p3b", iso_pulse(27, 150, 150e-9, 5e-9), 50, 2e-6, 1e-10)):
+        m = run(name, f"BGEN gen 0 V = {expr}\nRI gen in {ri}\n" + AIN,
+                f"tran {tstep} {tstop}\nlet iclamp = i(vdh) - i(vdl)\nlet vr = v(in) - v(mid)\nlet p901 = vr^2 / 49.9k\n"
+                f"meas tran ic_max max iclamp\nmeas tran ic_min min iclamp\nmeas tran vr_max max vr\nmeas tran vr_min min vr\n"
+                f"meas tran vin_max max v(in)\nmeas tran vin_min min v(in)\nmeas tran e901 integ p901 from=0 to={tstop}\n"
+                f"meas tran adc_max max v(adc)\nmeas tran adc_min min v(adc)\n")
+        ic = max(abs(m.get("ic_max", 0)), abs(m.get("ic_min", 0)))
+        vr = max(abs(m.get("vr_max", 0)), abs(m.get("vr_min", 0)))
+        vc = max(abs(m.get("vin_max", 0)), abs(m.get("vin_min", 0)))
+        ok = ic < 0.1 and vr < 400 and vc < 1000
+        results.append((label, "PASS" if ok else "FAIL",
+                        f"C901 {vc:.0f} V (1 kV), each 49.9k {vr:.0f} V peak (400 V overload) and {abs(m.get('e901', 0)) * 1e3:.2g} mJ, "
+                        f"clamp {ic * 1e3:.1f} mA peak (100 mA momentary), ADC pin {m.get('adc_min', 0):.2f}..{m.get('adc_max', 0):.2f} V"))
+
+
 # --- RS485 A/B miswired to the vehicle supply: PSM712 + SP3485 ------------------------------------------------
 def rs485(results):
     netlist = """
@@ -365,6 +421,7 @@ def main():
     short_5v(results)
     short_5v_fused(results)
     opto(results)
+    ain(results)
     rs485(results)
     rs485_compact(results)
     port_lines(results)

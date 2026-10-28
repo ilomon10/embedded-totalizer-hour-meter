@@ -173,6 +173,7 @@ def export_netlist(sch=SCH):
             "datasheet": fields.get("Datasheet", ""),
             "extra": {k: v for k, v in fields.items() if k not in STANDARD_FIELDS},   # LCSC, MPN, ...
             "in_bom": not any(p.get("name") == "exclude_from_bom" for p in c.iter("property")),
+            "dnp": any(p.get("name") == "dnp" for p in c.iter("property")),
             "path": sheet + c.findtext("tstamps"),   # links footprint <-> schematic symbol
         }
     nets = []
@@ -372,6 +373,7 @@ def add_footprints_and_nets(board, comps, nets, placement):
         fp.GetField(pcbnew.FIELD_T_DATASHEET).SetText(comp["datasheet"])
         fp.GetField(pcbnew.FIELD_T_DESCRIPTION).SetText(comp["description"])
         fp.SetExcludedFromBOM(not comp["in_bom"])   # the symbol decides, as DRC's parity check expects
+        fp.SetDNP(comp["dnp"])
         for name, text in comp["extra"].items():   # keeps DRC's schematic-parity check quiet
             fp.SetField(name, text)
             fp.GetField(name).SetVisible(False)
