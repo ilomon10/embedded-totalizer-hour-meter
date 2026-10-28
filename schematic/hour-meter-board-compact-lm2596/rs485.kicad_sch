@@ -2602,7 +2602,7 @@
 				)
 			)
 		)
-		(property "Footprint" "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal"
+		(property "Footprint" "Connector_JST:JST_VH_B3P-VH_1x03_P3.96mm_Vertical"
 			(at 256.54 114.3 0)
 			(hide yes)
 			(effects
@@ -2629,7 +2629,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C474953"
+		(property "LCSC" "C160316"
 			(at 256.54 114.3 0)
 			(hide yes)
 			(effects
@@ -2638,7 +2638,7 @@
 				)
 			)
 		)
-		(property "MPN" "KF128-5.08-3P-AA"
+		(property "MPN" "B3P-VH(LF)(SN)"
 			(at 256.54 114.3 0)
 			(hide yes)
 			(effects

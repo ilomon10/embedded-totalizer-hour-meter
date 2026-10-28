@@ -23,15 +23,15 @@ SMAJ33CA,"D701,D702",Diode_SMD:D_SMA,C115251,2
 0.5A 60V,F101,Fuse:Fuse_1812_4532Metric,C19078719,1
 0.5A 6V,F201,Fuse:Fuse_1206_3216Metric,C69688,1
 0.2A,"F801,F802,F803",Fuse:Fuse_1206_3216Metric,C20984,3
-VIN 9-36V,J101,"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",C474952,1
+VIN 9-30V,J101,Connector_JST:JST_VH_B2P-VH_1x02_P3.96mm_Vertical,C160315,1
 USB-C,J201,Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12,C165948,1
-VEHICLE IN,J301,"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal",C474953,1
+VEHICLE IN,J301,Connector_JST:JST_VH_B3P-VH_1x03_P3.96mm_Vertical,C160316,1
 WP,J501,Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical,C53055672,1
-RS485,J701,"TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal",C474953,1
+RS485,J701,Connector_JST:JST_VH_B3P-VH_1x03_P3.96mm_Vertical,C160316,1
 TERM,J702,Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical,C53055672,1
 BIAS,J703,Connector_PinHeader_2.54mm:PinHeader_2x02_P2.54mm_Vertical,C66690,1
-UART,J801,Connector_JST:JST_XH_B4B-XH-A_1x04_P2.50mm_Vertical,C144395,1
-GPS,J802,Connector_PinSocket_2.54mm:PinSocket_1x05_P2.54mm_Vertical,C50950,1
+UART,J801,Connector_JST:JST_VH_B4P-VH_1x04_P3.96mm_Vertical,C160317,1
+GPS,J802,Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical,C492404,1
 QWIIC,J803,Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal,C160404,1
 EXP,J804,Connector_PinHeader_2.54mm:PinHeader_2x05_P2.54mm_Vertical,C225520,1
 33uH 3A,L101,Inductor_SMD:L_12x12mm_H8mm,C9400,1

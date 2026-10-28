@@ -3956,7 +3956,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_JST:JST_XH_B4B-XH-A_1x04_P2.50mm_Vertical"
+		(property "Footprint" "Connector_JST:JST_VH_B4P-VH_1x04_P3.96mm_Vertical"
 			(at 30.48 63.5 0)
 			(hide yes)
 			(effects
@@ -3983,7 +3983,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C144395"
+		(property "LCSC" "C160317"
 			(at 30.48 63.5 0)
 			(hide yes)
 			(effects
@@ -3992,7 +3992,7 @@
 				)
 			)
 		)
-		(property "MPN" "B4B-XH-A(LF)(SN)"
+		(property "MPN" "B4P-VH(LF)(SN)"
 			(at 30.48 63.5 0)
 			(hide yes)
 			(effects
@@ -4429,7 +4429,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_PinSocket_2.54mm:PinSocket_1x05_P2.54mm_Vertical"
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical"
 			(at 30.48 121.92 0)
 			(hide yes)
 			(effects
@@ -4456,7 +4456,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C50950"
+		(property "LCSC" "C492404"
 			(at 30.48 121.92 0)
 			(hide yes)
 			(effects
@@ -4465,7 +4465,7 @@
 				)
 			)
 		)
-		(property "MPN" "2.54-1*5PFemale"
+		(property "MPN" "PZ254V-11-05P"
 			(at 30.48 121.92 0)
 			(hide yes)
 			(effects

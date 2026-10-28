@@ -7,6 +7,7 @@ with the 5 V supply on the board (LM2596S-ADJ) instead of the plug-on PSU-B.
   python3 tools-pcb.py route [tries]    -> Freerouting (best of N tries, default 4) + GND pours
   python3 tools-pcb.py finish [passes]  -> close what Freerouting left open (exit 1 if anything still is)
   python3 tools-pcb.py production       -> production/: Gerber zip, BOM and CPL for JLCPCB
+  python3 tools-pcb.py models           -> download the JLCPCB 3D models into 3d/ and set them on the board
 
 A variant of ../hour-meter-board-2layer with its own outline, placement and a few circuit changes
 (see README.md). The build, route and finish scripts are the main board's, called with this
@@ -18,10 +19,12 @@ board's LAYOUT. Compared with the 100 x 90 mm boards:
   * milled slots separate the isolated vehicle inputs (top-left corner) from the rest.
 """
 import importlib.util
+import json
 import math
 import os
 import subprocess
 import sys
+import urllib.request
 
 import pcbnew
 
@@ -56,6 +59,7 @@ PLACEMENT = {
     "J301": (105.95, 116.5, 270, "F"),   # ALT / PULSE / VEH_GND (isolated)
     "J701": (105.95, 135.0, 270, "F"),   # RS485 A / B / GND
     "J101": (105.95, 151.0, 270, "F"),   # VIN 9-36 V
+    "TP101": (106.0, 159.5, 0, "F"),     # VIN solder pads, for wiring without the JST plug
     # --- vehicle inputs (isolated corner): two chains of 3 x 1k, M7, zener, LED bleeder ---
     "R301": (114.5, 101.8, 0, "F"), "R302": (119.5, 101.8, 0, "F"),
     "R303": (114.5, 104.8, 0, "F"), "R304": (120.0, 104.8, 0, "F"),
@@ -114,12 +118,12 @@ PLACEMENT = {
     "C102": (115.0, 171.0, 180, "F"), "C103": (125.0, 164.2, 0, "F"),
     "U101": (130.4, 171.0, 0, "F"),
     "D105": (140.7, 168.5, 90, "F"),
-    "L101": (150.0, 172.6, 0, "F"),
+    "L101": (149.4, 172.6, 0, "F"),
     "C104": (148.5, 162.0, 0, "F"), "C105": (142.6, 163.0, 90, "F"),
     "R103": (124.0, 178.4, 0, "F"), "R104": (127.5, 178.4, 0, "F"),   # FB divider, under the U101 pins
     "R105": (117.5, 163.6, 0, "F"), "D106": (120.5, 163.6, 0, "F"),   # power LED
     # --- ports: connectors bottom right, their passives under PSU-B ---
-    "J801": (164.8, 176.2, 0, "F"), "J803": (176.4, 156.5, 90, "F"),
+    "J801": (165.0, 167.9, 0, "F"), "J803": (176.4, 156.5, 90, "F"),
     "J802": (154.6, 154.0, 0, "F"), "J804": (160.4, 154.4, 0, "F"),
     "U801": (167.0, 152.0, 0, "F"), "C801": (170.6, 152.0, 90, "F"), "R802": (167.0, 154.6, 0, "F"),
     "U802": (167.0, 158.0, 0, "F"), "C802": (170.6, 158.0, 90, "F"),
@@ -162,11 +166,71 @@ def place(pcb=PCB):
         route.add_rule_area(board, rect, f"BARRIER_{i + 1}", tracks=True)
     edge_keepouts(board)
     tidy_silkscreen(board)
+    set_models(board)
     build.add_order_mark(board, "B", ORDER_MARK_AT)
     title = board.GetTitleBlock()
     title.SetTitle("Hour Meter main board, compact + LM2596 (80 x 80 mm, 2 layers)")
     board.SetTitleBlock(title)
     return board
+
+
+# 3D models from JLCPCB's part library (EasyEDA), for parts whose KiCad 10 model is missing or generic:
+# LCSC -> (offset x, y, z in mm, z rotation in degrees), lined up on the KiCad footprint's pads. The STEP files
+# are downloaded into 3d/ (git-ignored) by `models`; source: JLCEDA/EasyEDA official library, https://easyeda.com
+JLC_MODELS = {
+    "C165948": ((0.0, -0.879, 0.0), 180),     # J201 USB-C, HRO TYPE-C-31-M-12
+    "C318884": ((0.0, 0.0, 0.05), 0),         # SW201, SW202 TS-1187A
+    "C2979167": ((10.588, 0.0, 0.6), 180),    # BT401 CR2032 holder
+    "C19078719": ((0.0, 0.0, 0.0), 0),        # F101 1812 PTC
+    "C9400": ((0.0, 0.0, 0.0), 0),            # L101 SMDRI127-330MT
+    "C160315": ((0.0, -4.025, 2.95), 0),      # J101 JST B2P-VH
+    "C160316": ((3.959, -1.1, 0.2), 0),       # J301, J701 JST B3P-VH
+    "C160317": ((0.0, 0.0, 0.0), 0),          # J801 JST B4P-VH
+}
+# KiCad 10 renamed or lacks these library models
+LIB_MODELS = {"U601": "Package_DFN_QFN.3dshapes/QFN-24_3x3mm_P0.4mm.step",
+              "U501": "Package_DIP.3dshapes/DIP-8_W7.62mm.step"}   # soldered in, no socket
+MODEL_DIR = os.path.join(HERE, "3d")
+
+
+def fetch_models():
+    """Download each JLC_MODELS STEP file that is not in 3d/ yet (EasyEDA part data -> model uuid -> STEP)."""
+    os.makedirs(MODEL_DIR, exist_ok=True)
+    for lcsc in JLC_MODELS:
+        path = os.path.join(MODEL_DIR, f"{lcsc}.step")
+        if os.path.exists(path):
+            continue
+        req = lambda url: urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "tools-pcb.py"}), timeout=60).read()
+        shapes = json.loads(req(f"https://easyeda.com/api/products/{lcsc}/components?version=6.4.19.5"))[
+            "result"]["packageDetail"]["dataStr"]["shape"]
+        uuid = next(json.loads(s.split("~", 1)[1])["attrs"]["uuid"] for s in shapes if s.startswith("SVGNODE"))
+        step = req(f"https://modules.easyeda.com/qAxj6KHrDKw4blvCG8QJPs7Y/{uuid}")
+        if not step.startswith(b"ISO-10303-21"):
+            raise SystemExit(f"{lcsc}: EasyEDA did not return a STEP file")
+        with open(path, "wb") as f:
+            f.write(step)
+        print("downloaded", path)
+
+
+def set_models(board):
+    """Point the footprints at the JLCPCB models (by LCSC field) and the renamed KiCad library models."""
+    fps = board.Footprints()
+    for fp in (fps[i] for i in range(len(fps))):
+        lcsc = {f.GetName(): f.GetText() for f in fp.GetFields()}.get("LCSC", "")
+        ref = fp.GetReference()
+        if lcsc in JLC_MODELS:
+            (x, y, z), rz = JLC_MODELS[lcsc]
+            name, offset, rotation = f"${{KIPRJMOD}}/3d/{lcsc}.step", pcbnew.VECTOR3D(x, y, z), pcbnew.VECTOR3D(0, 0, rz)
+        elif ref in LIB_MODELS:
+            name, offset, rotation = f"${{KICAD10_3DMODEL_DIR}}/{LIB_MODELS[ref]}", pcbnew.VECTOR3D(0, 0, 0), pcbnew.VECTOR3D(0, 0, 0)
+        else:
+            continue
+        models = fp.Models()
+        while len(models):
+            models.pop()
+        model = pcbnew.FP_3DMODEL()
+        model.m_Filename, model.m_Offset, model.m_Rotation = name, offset, rotation
+        models.append(model)
 
 
 def edge_keepouts(board, width=0.45):
@@ -183,7 +247,7 @@ def edge_keepouts(board, width=0.45):
 
 # reference text moved clear of its neighbours on this dense board: ref -> (x, y[, angle])
 REF_POSITIONS = {"U701": (126.5, 134.9), "SW202": (176.0, 144.6), "J802": (154.6, 161.7), "J804": (160.4, 161.9),
-                 "J801": (168.6, 166.0), "J701": (106.0, 144.25, 0), "L101": (150.0, 172.6)}
+                 "J801": (165.0, 174.6), "J701": (106.0, 144.25, 0), "L101": (149.4, 172.6)}
 
 
 def tidy_silkscreen(board):
@@ -274,8 +338,8 @@ def magnetometer_report(board):
     by_ref = {fps[i].GetReference(): fps[i] for i in range(len(fps))}
     centre = by_ref["U602"].GetPosition()
     lines = []
-    for ref, why in (("BT401", "coin cell (steel)"), ("J101", "screw terminal"), ("J301", "screw terminal"),
-                     ("J701", "screw terminal"), ("J201", "USB-C shell"), ("L101", "buck inductor"), ("U101", "LM2596"),
+    for ref, why in (("BT401", "coin cell (steel)"), ("J101", "JST VH"), ("J301", "JST VH"),
+                     ("J701", "JST VH"), ("J201", "USB-C shell"), ("L101", "buck inductor"), ("U101", "LM2596"),
                      ("U201", "ESP32 shield")):
         # the ESP32 courtyard includes the antenna keep-out wings; measure to the module's pads instead
         box = build.pads_box(by_ref[ref]) if ref == "U201" else build.courtyard_box(by_ref[ref])
@@ -300,6 +364,12 @@ if __name__ == "__main__":
         route.main(4 if count is None else count, PCB)
     elif mode == "finish":
         finish.main(3 if count is None else count, PCB)
+    elif mode == "models":
+        fetch_models()
+        board = pcbnew.LoadBoard(PCB)
+        set_models(board)
+        pcbnew.SaveBoard(PCB, board)
+        print("saved", PCB)
     elif mode == "production":
         subprocess.run([sys.executable, os.path.join(MAIN, "tools-production.py"), PCB], check=True)
     else:
