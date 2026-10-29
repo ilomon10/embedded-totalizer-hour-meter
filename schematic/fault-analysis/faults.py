@@ -51,13 +51,11 @@ MODELS = """
 .model SS54 D(Is=1e-5 N=1.1 Rs=0.03 BV=50 IBV=1m Cjo=300p)
 * 1N4148W (D102, VIN_SENSE)
 .model D4148 D(Is=2.5e-9 N=1.75 Rs=0.6 BV=100 IBV=5u)
-* Indicator LEDs (Micro-Fit D801-D803), fitted to LCSC's VF at 20 mA with a generic slope: InGaN about 0.31 V per decade,
-* AlInGaP about 0.14 V per decade. LTST-S270TGKT green 3.2 V; LTST-S270TBKT blue 2.8-3.8 V; LTST-S270KSKT yellow 2.0 V
+* Indicator LEDs (Micro-Fit D801-D803, all LTST-S270TGKT green): LCSC's VF of 3.2 V at 20 mA with a generic InGaN slope
+* (about 0.31 V per decade); a part at 2.8 V or 3.8 V shows the spread of InGaN parts
 .model LEDG D(Is=4.5e-12 N=5.22 Rs=10)
-.model LEDB D(Is=2.1e-12 N=5.22 Rs=10)
-.model LEDBLO D(Is=8.7e-11 N=5.22 Rs=10)
-.model LEDBHI D(Is=5.2e-14 N=5.22 Rs=10)
-.model LEDY D(Is=9.6e-16 N=2.32 Rs=8)
+.model LEDGLO D(Is=8.7e-11 N=5.22 Rs=10)
+.model LEDGHI D(Is=5.2e-14 N=5.22 Rs=10)
 """
 
 
@@ -595,11 +593,9 @@ DLED ak 0 {model}
 
 def leds(results):
     """Micro-Fit D801-D803: GPIO18/19/5 (3.3 V behind about 33 ohm) -> 330R (R808-R810) -> side-view LED -> GND."""
-    for label, model, mcd in (("D801 P1, green LTST-S270TGKT (VF 3.2 V)", "LEDG", 450),
-                              ("D802 P2, yellow LTST-S270KSKT (VF 2.0 V)", "LEDY", 80),
-                              ("D803 USER, blue LTST-S270TBKT (VF 3.3 V)", "LEDB", 180),
-                              ("D803 USER, blue at its 2.8 V VF limit", "LEDBLO", 180),
-                              ("D803 USER, blue at its 3.8 V VF limit", "LEDBHI", 180)):
+    for label, model, mcd in (("D801-D803, green LTST-S270TGKT (VF 3.2 V)", "LEDG", 450),
+                              ("D801-D803, a green part with 2.8 V VF", "LEDGLO", 450),
+                              ("D801-D803, a green part with 3.8 V VF", "LEDGHI", 450)):
         m = run(f"led_{model.lower()}", LED_DRIVE.format(model=model), "op\nprint i(vled) v(a)\n")
         i = m.get("i(vled)", 0)
         results.append((f"LED drive: {label}", "PASS" if 0.5e-3 < i < 20e-3 else "CHECK",

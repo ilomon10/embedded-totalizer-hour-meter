@@ -4806,10 +4806,10 @@
     (effects (font (size 1.5 1.5)) (justify left top))
     (uuid "69f07e31-3430-44b0-b0a9-f2f7010efeeb")
   )
-  (text "INDICATOR LEDS: side-view Lite-On LTST-S270 (1.6 x 1.2 mm) on the\nright board edge, lighting out through the case wall.\nActive high: GPIO = 1 -> LED on, 2-4 mA through 330R.\nD801 P1 green (GPIO18), D802 P2 yellow (GPIO19): process.\nD803 USER blue (GPIO5): free for the program. GPIO5 is a strapping\npin (SDIO slave timing only, unused); it may flicker at boot."
+  (text "INDICATOR LEDS: side-view Lite-On LTST-S270TGKT, green (1.6 x 1.2 mm),\non the right board edge, lighting out through the case wall. One colour:\nits JLCPCB footprint and model face the edge like the KiCad footprint.\nActive high: GPIO = 1 -> LED on, about 1.7 mA through 330R.\nD801 P1 (GPIO18), D802 P2 (GPIO19): process.\nD803 USER (GPIO5): free for the program. GPIO5 is a strapping\npin (SDIO slave timing only, unused); it may flicker at boot."
     (at 25.4 177.8 0)
     (effects (font (size 1.5 1.5)) (justify left top))
-    (uuid "7bab1f46-96e0-4f8e-be2e-7062097e394f")
+    (uuid "c81bff85-5a31-4ab2-b9b9-134dc59705a7")
   )
 	(symbol
 		(lib_id "power:GND")
@@ -8565,7 +8565,7 @@
 				)
 			)
 		)
-		(property "Value" "P2 (yellow)"
+		(property "Value" "P2 (green)"
 			(at 167.64 184.15 0)
 			(effects
 				(font
@@ -8591,7 +8591,7 @@
 				)
 			)
 		)
-		(property "Description" "Side-view LED, yellow, 1.6 x 1.2 mm (Lite-On LTST-S270); lights out of the right board edge"
+		(property "Description" "Side-view LED, green, 1.6 x 1.2 mm (Lite-On LTST-S270); lights out of the right board edge"
 			(at 146.05 184.15 0)
 			(hide yes)
 			(effects
@@ -8609,7 +8609,7 @@
 			)
 		)
 	
-		(property "LCSC" "C133119"
+		(property "LCSC" "C364567"
 			(at 146.05 184.15 0)
 			(hide yes)
 			(effects
@@ -8618,7 +8618,7 @@
 				)
 			)
 		)
-		(property "MPN" "LTST-S270KSKT"
+		(property "MPN" "LTST-S270TGKT"
 			(at 146.05 184.15 0)
 			(hide yes)
 			(effects
@@ -8643,7 +8643,7 @@
 				)
 			)
 		)
-		(property "Value" "USER (blue)"
+		(property "Value" "USER (green)"
 			(at 167.64 190.5 0)
 			(effects
 				(font
@@ -8669,7 +8669,7 @@
 				)
 			)
 		)
-		(property "Description" "Side-view LED, blue, 1.6 x 1.2 mm (Lite-On LTST-S270); lights out of the right board edge"
+		(property "Description" "Side-view LED, green, 1.6 x 1.2 mm (Lite-On LTST-S270); lights out of the right board edge"
 			(at 146.05 190.5 0)
 			(hide yes)
 			(effects
@@ -8687,7 +8687,7 @@
 			)
 		)
 	
-		(property "LCSC" "C125115"
+		(property "LCSC" "C364567"
 			(at 146.05 190.5 0)
 			(hide yes)
 			(effects
@@ -8696,7 +8696,7 @@
 				)
 			)
 		)
-		(property "MPN" "LTST-S270TBKT"
+		(property "MPN" "LTST-S270TGKT"
 			(at 146.05 190.5 0)
 			(hide yes)
 			(effects

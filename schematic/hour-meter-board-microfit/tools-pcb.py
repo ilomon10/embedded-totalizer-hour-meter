@@ -469,14 +469,26 @@ def match_board(pcb=PCB):
 
 def update_parts(pcb=PCB, rip=()):
     """Bring the routed board in line with the schematic without re-routing it: parts that left the schematic are
-    removed, new parts are placed from PLACEMENT and get their nets, and the tracks of the `rip` nets are taken up.
-    `finish` then routes every open connection."""
+    removed, parts that stay take the schematic's value and fields, new parts are placed from PLACEMENT and get
+    their nets, and the tracks of the `rip` nets are taken up. `finish` then routes every open connection."""
     comps, nets = build.export_netlist(SCH)
     board = pcbnew.LoadBoard(pcb)
     have = {fp.GetReference(): fp for fp in build.footprints_of(board)}
     for ref in sorted(set(have) - set(comps)):
         finish.remove(board, have[ref])
         print("removed", ref)
+    for ref in sorted(set(have) & set(comps)):   # a changed part number, e.g. another LED colour
+        fp, comp = have[ref], comps[ref]
+        description = fp.GetField(pcbnew.FIELD_T_DESCRIPTION)
+        if fp.GetValue() == comp["value"] and description.GetText() == comp["description"] and \
+                all(fp.GetFieldText(name) == text for name, text in comp["extra"].items()):
+            continue
+        fp.SetValue(comp["value"])
+        description.SetText(comp["description"])
+        for name, text in comp["extra"].items():
+            fp.SetField(name, text)
+            fp.GetField(name).SetVisible(False)
+        print("updated", ref)
     added = {}
     for ref in sorted(set(comps) - set(have)):   # as build.add_footprints_and_nets does it
         comp = comps[ref]

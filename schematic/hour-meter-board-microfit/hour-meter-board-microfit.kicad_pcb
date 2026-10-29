@@ -15055,7 +15055,7 @@
 				)
 			)
 		)
-		(property "Value" "USER (blue)"
+		(property "Value" "USER (green)"
 			(at 0 1.6 270)
 			(layer "F.Fab")
 			(uuid "fd3bfd5e-6150-4114-acac-db6efc4b4be9")
@@ -15079,7 +15079,7 @@
 				)
 			)
 		)
-		(property "Description" "Side-view LED, blue, 1.6 x 1.2 mm (Lite-On LTST-S270); lights out of the right board edge"
+		(property "Description" "Side-view LED, green, 1.6 x 1.2 mm (Lite-On LTST-S270); lights out of the right board edge"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -15092,7 +15092,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C125115"
+		(property "LCSC" "C364567"
 			(at 0 0 270)
 			(layer "F.SilkS")
 			(hide yes)
@@ -15104,7 +15104,7 @@
 				)
 			)
 		)
-		(property "MPN" "LTST-S270TBKT"
+		(property "MPN" "LTST-S270TGKT"
 			(at 0 0 270)
 			(layer "F.SilkS")
 			(hide yes)
@@ -24865,7 +24865,7 @@
 				)
 			)
 		)
-		(property "Value" "P2 (yellow)"
+		(property "Value" "P2 (green)"
 			(at 0 1.6 270)
 			(layer "F.Fab")
 			(uuid "2e7aa4cb-7d8a-4a0e-9e61-1bbda0f443bf")
@@ -24889,7 +24889,7 @@
 				)
 			)
 		)
-		(property "Description" "Side-view LED, yellow, 1.6 x 1.2 mm (Lite-On LTST-S270); lights out of the right board edge"
+		(property "Description" "Side-view LED, green, 1.6 x 1.2 mm (Lite-On LTST-S270); lights out of the right board edge"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -24902,7 +24902,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C133119"
+		(property "LCSC" "C364567"
 			(at 0 0 270)
 			(layer "F.SilkS")
 			(hide yes)
@@ -24914,7 +24914,7 @@
 				)
 			)
 		)
-		(property "MPN" "LTST-S270KSKT"
+		(property "MPN" "LTST-S270TGKT"
 			(at 0 0 270)
 			(layer "F.SilkS")
 			(hide yes)

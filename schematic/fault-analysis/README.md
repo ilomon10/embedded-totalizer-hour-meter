@@ -22,7 +22,7 @@ Which results apply to which board:
   - **Part limits:** every other part within its power, current and absolute-maximum ratings.
 - **Fuses:** F101 on the LM2596 boards trips once its I²t reaches its slowest trip (150 ms at 8 A). The TVS and the regulator are judged up to that moment. F801–F803 are worked out the same way (80 ms at 8 A).
 - **Harness shorts:** DOUT1 is open drain, so while it is off its load pulls pin 10 up to the supply. A short to pin 10 therefore sees the supply through the load: a relay coil (85 Ω on 12 V, 280 Ω on 24 V) or a 0.5 A load. The board's +5V load is taken as 50 mA (the AMS1117 with the ESP32 awake); the less the board draws, the further a back-feed lifts +5V. The ESP32 GPIO is 3.3 V behind 33 Ω (its default drive strength).
-- **LEDs:** fitted to LCSC's forward voltage at 20 mA, with a generic slope for InGaN (green, blue) and AlInGaP (yellow). Brightness is the 20 mA figure scaled by current.
+- **LEDs:** fitted to LCSC's forward voltage at 20 mA, with a generic InGaN slope. Brightness is the 20 mA figure scaled by current.
 - **Not simulated:**
   - **PTC trip:** the fuse's thermal trip is calculated from its datasheet (marked *calculated*).
   - **ESD and burst:** not covered; they are handled by the parts' own IEC ratings.
@@ -77,9 +77,7 @@ The 4-layer board, the 2-layer copy and PSU-B share these circuits. The compact 
 | Proposed fix: SMBJ36CA on VIN_RAW, ahead of D103; D103 a 100 V SS510 (PSU-B's order) | Pass | Pulse 1: 9–11 A and 0.2 J into the TVS (it survives about 0.9 J). The diode stays out of avalanche, and VIN_LM dips only to 10 V (12 V) or 24 V (24 V). The 35 V load dump is unchanged |
 | VIN_SENSE divider to GPIO34 (D102, 100k / 5.6k) | Pass | 0.45 V at 9 V, 1.50 V at 28.8 V, 3.04 V at 58 V (ESP32 maximum 3.6 V) |
 | **Indicator LEDs (Micro-Fit D801–D803: GPIO → 330 Ω → LED)** | | |
-| D801 P1, green LTST-S270TGKT | Pass | 1.7 mA, about 38 mcd |
-| D802 P2, yellow LTST-S270KSKT | Pass | 4.2 mA, about 17 mcd |
-| D803 USER, blue LTST-S270TBKT | Pass | 1.5 mA, about 13 mcd. Across its 2.8–3.8 V forward-voltage spread: 0.5–2.6 mA (5–24 mcd), so a high-voltage part looks dim behind a light pipe |
+| D801–D803, all green LTST-S270TGKT | Pass | 1.7 mA, about 38 mcd. A part anywhere in the 2.8–3.8 V spread of InGaN LEDs gets 0.5–2.6 mA (12–59 mcd) |
 
 ## Micro-Fit harness (J1)
 
@@ -162,4 +160,4 @@ Two kinds of harness fault are covered:
 - BSP75N clamp, current limit and avalanche energy: [Diodes BSP75N datasheet](https://www.diodes.com/assets/Datasheets/BSP75N.pdf); BAV99 forward voltage and leakage: [onsemi BAV99L](https://www.onsemi.com/pdf/datasheet/bav99lt1-d.pdf); ADS1115 input-current rating: [TI ADS1115](https://www.ti.com/lit/ds/symlink/ads1115.pdf)
 - LM2596 input limits and current limit (40 V operating, 45 V absolute, 3.6–6.9 A): [TI LM2596](https://www.ti.com/lit/ds/symlink/lm2596.pdf), as for the board's UMW part ([LCSC C347423](https://www.lcsc.com/product-detail/C347423.html))
 - LM2596-stage parts, from their LCSC listings: SMAJ30CA [C110043](https://www.lcsc.com/product-detail/C110043.html), SS54 [C22452](https://www.lcsc.com/product-detail/C22452.html), F101 1812L050/60GR [C19078719](https://www.lcsc.com/product-detail/C19078719.html), F801 SMD1206P020TF [C20984](https://www.lcsc.com/product-detail/C20984.html), SRV05-4 [C85364](https://www.lcsc.com/product-detail/C85364.html)
-- Indicator LEDs: LTST-S270TGKT [C364567](https://www.lcsc.com/product-detail/C364567.html), LTST-S270KSKT [C133119](https://www.lcsc.com/product-detail/C133119.html), LTST-S270TBKT [C125115](https://www.lcsc.com/product-detail/C125115.html)
+- Indicator LEDs: LTST-S270TGKT [C364567](https://www.lcsc.com/product-detail/C364567.html)
