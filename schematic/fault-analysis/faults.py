@@ -44,6 +44,20 @@ MODELS = """
 .model LED817 D(Is=1e-13 N=1.7 Rs=2)
 * BAV99 (I/O variant D901): about 0.62 V @ 1 mA, 0.75 V @ 10 mA (onsemi max 0.715 / 0.855 V)
 .model BAV99 D(Is=2.4e-9 N=1.85 Rs=2 BV=100 IBV=1u Cjo=1.5p)
+* SMAJ30CA (LM2596 boards D104): VBR 33.3-36.8 V @ 1 mA, VC 48.4 V @ 8.3 A; a typical (35 V) and a lowest-breakdown part
+.model TVS30 D(Is=1e-12 N=1 Rs=0.7 BV=34.3 IBV=1m Cjo=400p)
+.model TVS30L D(Is=1e-12 N=1 Rs=0.7 BV=32.8 IBV=1m Cjo=400p)
+* SS54 (LM2596 boards D103): 40 V Schottky, 0.55 V @ 5 A max; no avalanche rating, breakdown taken as 50 V
+.model SS54 D(Is=1e-5 N=1.1 Rs=0.03 BV=50 IBV=1m Cjo=300p)
+* 1N4148W (D102, VIN_SENSE)
+.model D4148 D(Is=2.5e-9 N=1.75 Rs=0.6 BV=100 IBV=5u)
+* Indicator LEDs (Micro-Fit D801-D803), fitted to LCSC's VF at 20 mA with a generic slope: InGaN about 0.31 V per decade,
+* AlInGaP about 0.14 V per decade. LTST-S270TGKT green 3.2 V; LTST-S270TBKT blue 2.8-3.8 V; LTST-S270KSKT yellow 2.0 V
+.model LEDG D(Is=4.5e-12 N=5.22 Rs=10)
+.model LEDB D(Is=2.1e-12 N=5.22 Rs=10)
+.model LEDBLO D(Is=8.7e-11 N=5.22 Rs=10)
+.model LEDBHI D(Is=5.2e-14 N=5.22 Rs=10)
+.model LEDY D(Is=9.6e-16 N=2.32 Rs=8)
 """
 
 
@@ -77,10 +91,10 @@ def waveforms(name):
     return {n: rows[:, i] for i, n in enumerate(names)}
 
 
-def tvs_rating_j(duration_s):
-    """SMBJ: 600 W for a 10/1000 us pulse (about 0.85 J). Its pulse-power curve falls about as t^-1/2,
+def tvs_rating_j(duration_s, ppk=600):
+    """SMBJ: 600 W for a 10/1000 us pulse (about 0.85 J; SMAJ: 400 W). Its pulse-power curve falls about as t^-1/2,
     so the energy it survives grows about as sqrt(t); beyond ~10 ms this is an extrapolation."""
-    return 0.85 * math.sqrt(max(duration_s, 1e-3) / 1e-3)
+    return 0.85 * ppk / 600 * math.sqrt(max(duration_s, 1e-3) / 1e-3)
 
 
 # --- Supply path: J101 -> F101 PTC -> VIN_RAW -> J102 -> PSU-B D1 TVS, D2 -> C1..C4 -> TPS54360B ----
@@ -381,6 +395,217 @@ RLOAD v5 0 25
                         f"SRV05-4 takes {i:.1f} A and lifts +5V to {v5:.1f} V (12 A for 20 us is its pulse rating)"))
 
 
+# --- LM2596 boards (compact-lm2596, -io, microfit): F101 PTC -> VIN_RAW -> D103 SS54 -> VIN_LM -> D104, C102 -> LM2596S ---
+SUPPLY_LM = """
+VPTC gen_r ptc_a 0
+* F101 1812L050/60GR (0.15 ohm minimum); its trip is worked out from i(vptc) afterwards
+RPTC ptc_a vin_raw 0.25
+VD103 vin_raw d103a 0
+D103 d103a vin_lm {d103}
+D102 vin_raw sense_d D4148
+R101 sense_d sense 100k
+R102 sense 0 5.6k
+C101 sense 0 100n
+VTVS {tvs_node} tvs_top 0
+D104a tvs_mid tvs_top {tvs}
+D104b tvs_mid 0 {tvs}
+C102 vin_lm c102esr 220u
+RC102 c102esr 0 0.1
+C103 vin_lm 0 100n
+* LM2596S + board as a constant-power load (about 1 W in), fading out below its 4.5 V minimum input
+BLOAD vin_lm 0 I = 1.0 / max(V(vin_lm), 6) * 0.5 * (1 + tanh((V(vin_lm) - 4.5) / 0.3))
+"""
+PTC_TRIP_I2T = 8 ** 2 * 0.15   # F101: 150 ms maximum time to trip at 8 A, taken as a constant I^2 t (A^2 s); 60 V maximum
+LM_BUILT = dict(d103="SS54", tvs_node="vin_lm", tvs="TVS30", ppk=400)
+LM_BUILT_LO = dict(LM_BUILT, tvs="TVS30L")
+# Proposed fix, PSU-B's order: the TVS (SMBJ36CA) on VIN_RAW ahead of a 100 V diode (SS510), so pulse 1 never reaches the diode
+LM_FIX = dict(d103="SS510", tvs_node="vin_raw", tvs="TVS36", ppk=600)
+
+
+def si(x, unit):
+    return f"{x:.3g} {unit}" if abs(x) >= 1 else f"{x * 1e3:.0f} m{unit}"
+
+
+def integral(y, t):
+    return float(np.sum(np.diff(t) * (y[1:] + y[:-1]) / 2))
+
+
+def lm2596_case(name, gen_expr, ri, tstop, tstep, stage):
+    """One supply event. F101 opens once its I^2 t reaches PTC_TRIP_I2T (its slowest trip); the stresses are taken up to then."""
+    run(name, f"BGEN gen 0 V = {gen_expr}\nRI gen gen_r {ri}\n" + SUPPLY_LM.format(**stage),
+        f"tran {tstep} {tstop}\nwrdata DATA v(gen) v(vin_raw) v(vin_lm) v(sense) i(vtvs) i(vptc) i(vd103)\n")
+    w = waveforms(name)
+    t = w["time"]
+    i2t = np.concatenate(([0.0], np.cumsum(np.diff(t) * w["i(vptc)"][1:] ** 2)))
+    n = max(int(np.argmax(i2t > PTC_TRIP_I2T)), 2) if i2t[-1] > PTC_TRIP_I2T else len(t)
+    after = w["v(gen)"][n:]
+    t, w = t[:n], {k: v[:n] for k, v in w.items()}
+    conducting = t[np.abs(w["i(vtvs)"]) > 0.05]
+    i_rev = np.maximum(-w["i(vd103)"], 0)          # D103 conducting backwards: the SS54 in avalanche
+    return {
+        "trip": t[-1] if len(after) else None,
+        "held": float(np.max(np.abs(after))) if len(after) else 0.0,
+        "duration": float(conducting[-1] - conducting[0]) if len(conducting) > 1 else 0.0,
+        "i_tvs": float(np.max(np.abs(w["i(vtvs)"]))),
+        "e_tvs": integral(np.abs(w[f"v({stage['tvs_node']})"] * w["i(vtvs)"]), t),
+        "vin_max": float(np.max(w["v(vin_lm)"])),
+        "vin_min": float(np.min(w["v(vin_lm)"])),
+        "i_av": float(np.max(i_rev)),
+        "e_av": integral((w["v(vin_lm)"] - w["v(vin_raw)"]) * i_rev, t),
+    }
+
+
+def lm2596_scenarios(results):
+    ld12, p1_12, p1_24 = load_dump(13.5, 101, 35, 0.5, 0.4), iso_pulse(13.5, -150, 2e-3, 1e-6, battery_off=True), \
+        iso_pulse(27, -600, 1e-3, 3e-6, battery_off=True)
+    cases = [
+        ("12 V system, clamped load dump (Test B, 35 V), typical SMAJ30CA", "lm_ld12b", ld12, 0.5, 0.6, 2e-5, LM_BUILT),
+        ("12 V system, clamped load dump (Test B, 35 V), lowest-breakdown SMAJ30CA", "lm_ld12b_lo", ld12, 0.5, 0.6, 2e-5, LM_BUILT_LO),
+        ("24 V system, clamped load dump (Test B, 58 V, Ri 1 ohm)", "lm_ld24b", load_dump(27, 202, 58, 1, 0.35), 1, 0.5, 2e-5, LM_BUILT),
+        ("24 V system, clamped load dump (Test B, 58 V, Ri 8 ohm)", "lm_ld24b8", load_dump(27, 202, 58, 8, 0.35), 8, 0.5, 2e-5, LM_BUILT),
+        ("ISO 7637-2 pulse 1, 12 V (-150 V, 10 ohm, 2 ms)", "lm_p1_12", p1_12, 10, 6e-3, 1e-7, LM_BUILT),
+        ("ISO 7637-2 pulse 1, 24 V (-600 V, 50 ohm, 1 ms)", "lm_p1_24", p1_24, 50, 4e-3, 1e-7, LM_BUILT),
+        ("ISO 7637-2 pulse 2a, 12/24 V (+112 V, 2 ohm, 50 us)", "lm_p2a", iso_pulse(27, 112, 50e-6, 1e-6), 2, 4e-4, 2e-8, LM_BUILT),
+        ("Reverse battery, -28 V", "lm_rev28", "-28 * min(time/1m, 1)", 0.05, 5e-3, 1e-6, LM_BUILT),
+        ("proposed fix, 12 V clamped load dump (Test B, 35 V)", "lmfix_ld12b", ld12, 0.5, 0.6, 2e-5, LM_FIX),
+        ("proposed fix, ISO 7637-2 pulse 1, 12 V (-150 V, 10 ohm, 2 ms)", "lmfix_p1_12", p1_12, 10, 6e-3, 1e-7, LM_FIX),
+        ("proposed fix, ISO 7637-2 pulse 1, 24 V (-600 V, 50 ohm, 1 ms)", "lmfix_p1_24", p1_24, 50, 4e-3, 1e-7, LM_FIX),
+    ]
+    for label, name, expr, ri, tstop, tstep, stage in cases:
+        s = lm2596_case(name, expr, ri, tstop, tstep, stage)
+        rating = tvs_rating_j(s["duration"], ppk=stage["ppk"]) if s["duration"] else float("inf")
+        ok_tvs = s["e_tvs"] < 0.5 * rating               # 50 % margin on the extrapolated rating
+        ok_vin = -0.3 < s["vin_min"] and s["vin_max"] < 45  # LM2596S: 40 V operating, 45 V absolute maximum
+        ok_ptc = s["held"] < 60                            # F101 holds the rest of the event once it has tripped
+        verdict = "PASS" if ok_tvs and ok_vin and ok_ptc else "FAIL"
+        if verdict == "PASS" and s["e_av"] > 1e-3:
+            verdict = "CHECK"                              # the SS54 has no avalanche rating
+        trip = f"F101 trips after {s['trip'] * 1e3:.0f} ms and holds {s['held']:.0f} V (rated 60 V); " if s["trip"] else ""
+        tvs = (f"TVS peak {s['i_tvs']:.1f} A, {s['e_tvs']:.3g} J over {s['duration'] * 1e3:.3g} ms (survives about {rating:.2g} J)"
+               if s["duration"] else "TVS off")
+        diode = (f"{stage['d103']} driven backwards: {s['i_av']:.1f} A peak, {s['e_av'] * 1e3:.0f} mJ of avalanche (not rated)"
+                 if s["e_av"] > 1e-3 else f"{stage['d103']} blocks")
+        vmin, vmax = (0.0 if abs(v) < 0.05 else v for v in (s["vin_min"], s["vin_max"]))
+        results.append((f"LM2596 boards: {label}", verdict, f"{trip}{tvs}; VIN_LM {vmin:.1f}..{vmax:.1f} V; {diode}"))
+
+
+def lm2596_dc(results):
+    """Steady overvoltage on the LM2596 boards: the SMAJ30CA's leakage and conduction, and the VIN_SENSE divider (GPIO34)."""
+    for tvs, part in (("TVS30", "typical SMAJ30CA"), ("TVS30L", "lowest-breakdown SMAJ30CA")):
+        name = f"lm_dc_{tvs.lower()}"
+        run(name, "VSRC gen 0 0\nRI gen gen_r 0.05\n" + SUPPLY_LM.format(**dict(LM_BUILT, tvs=tvs)),
+            "dc vsrc 0 40 0.05\nlet p_tvs = v(vin_lm) * i(vtvs)\nwrdata DATA i(vtvs) p_tvs v(sense) v(vin_lm)\n")
+        w = waveforms(name)
+        x = "v-sweep" if "v-sweep" in w else "time"
+        for vin, label in ((24, "12 V jump start (24 V)"), (28.8, "24 V system charging (28.8 V)"), (32, "24 V system maximum (32 V)"),
+                           (36, "24 V jump start (36 V)")):
+            i, p = (abs(float(np.interp(vin, w[x], w[k]))) for k in ("i(vtvs)", "p_tvs"))
+            vlm = float(np.interp(vin, w[x], w["v(vin_lm)"]))
+            tvs_state = (f"TVS takes {i * 1e3:.0f} mA, {p:.2g} W steady (an SMA part sheds about 1 W; F101, 0.5 A hold and 1 A trip, "
+                         f"does not stop it)") if i > 1e-4 else "TVS off (leakage only)"
+            results.append((f"LM2596 boards: {label}, {part}", "PASS" if p < 0.5 else "FAIL",
+                            f"{tvs_state}; VIN_LM {vlm:.1f} V (LM2596S: 40 V)"))
+    sense = ", ".join(f"{v:g} V -> {float(np.interp(v, w[x], w['v(sense)'])):.2f} V" for v in (9, 14.4, 28.8, 36))
+    results.append(("VIN_SENSE divider (D102, 100k / 5.6k) to GPIO34", "PASS", f"{sense}; 58 V (load dump) -> "
+                    f"{(58 - 0.6) * 5.6 / 105.6:.2f} V, under the ESP32's 3.6 V maximum"))
+
+
+# --- Micro-Fit board, J1: pin 11 (+5 V out) and pin 3 (UART TX) next to vehicle-voltage pins ---------------------------
+RAIL5V = """
+* +5V: LM2596 output (5.29 V) through D101 SS34; C205 10 uF; SRV05-4 rail clamp (VP-VN). The AMS1117 draws about 50 mA,
+* the board's lightest load with the ESP32 awake: the less the board draws, the further a back-feed lifts +5V
+VPSU psu 0 5.29
+D101 psu v5 SS34
+C205 v5 0 10u
+BBOARD v5 0 I = 0.05 * tanh(V(v5) / 0.5)
+VZ v5 vz 0
+DZ 0 vz SRVZ
+* J1 pin 11: F801 SMD1206P020TF, 0.35-0.9 ohm before it trips
+VF801 v5 f801a 0
+RF801 f801a pin11 0.6
+* J1 pin 3: R801 100R from GPIO17 (UART2 TX, idle high), SRV05-4 IO1 steering diodes to +5V and GND
+VSD pin3 sd 0
+DS sd v5 SRVD
+DSN 0 pin3 SRVD
+R801 pin3 gpio 100
+* ESP32 GPIO17 driving high: 3.3 V behind about 33 ohm (default drive strength)
+VG gpio_s 0 3.3
+VGPIO gpio_s gpio_o 0
+ROUT gpio_o gpio 33
+"""
+F801_I2T = 8 ** 2 * 0.08     # SMD1206P020TF: 80 ms maximum time to trip at 8 A (A^2 s); trips above 0.46 A; 24 V, 10 A maximum
+
+
+def microfit_pins(results):
+    """DOUT1 (pin 10) is open drain: while it is off, its load (a relay coil or a lamp) pulls it up to the supply.
+    Pin 10 sits beside pin 11 (+5 V out) and across from pin 3 (UART TX)."""
+    cases = [
+        ("J1-11 (+5 V out) wired to 14.4 V", "mf_p11_14", "VSRC src 0 14.4\nRW src pin11 0.1\n", 14.4),
+        ("J1-11 (+5 V out) wired to 28.8 V", "mf_p11_28", "VSRC src 0 28.8\nRW src pin11 0.1\n", 28.8),
+        ("J1-10/11 shorted, DOUT1 off, 12 V relay coil (85 ohm)", "mf_d11_12", "VSRC src 0 14.4\nRL src pin11 85\n", 14.4),
+        ("J1-10/11 shorted, DOUT1 off, 24 V relay coil (280 ohm)", "mf_d11_24", "VSRC src 0 28.8\nRL src pin11 280\n", 28.8),
+        ("J1-10/11 shorted, DOUT1 off, 0.5 A load on 24 V (58 ohm)", "mf_d11_05", "VSRC src 0 28.8\nRL src pin11 58\n", 28.8),
+        ("J1-3/10 shorted, DOUT1 off, 24 V relay coil (280 ohm)", "mf_d3_24", "VSRC src 0 28.8\nRL src pin3 280\n", 28.8),
+        ("J1-3/10 shorted, DOUT1 off, 0.5 A load on 24 V (58 ohm)", "mf_d3_05", "VSRC src 0 28.8\nRL src pin3 58\n", 28.8),
+        ("J1-3 (UART TX) shorted to J1-2 (GND)", "mf_p3_gnd", "RSH pin3 0 0.01\n", 0),
+    ]
+    for label, name, fault, vsrc in cases:
+        m = run(name, RAIL5V + fault, "op\nprint v(v5) v(pin3) v(gpio) i(vf801) i(vz) i(vsd) i(vgpio)\n")
+        v5, i_f801, i_gpio = m.get("v(v5)", 0), -m.get("i(vf801)", 0), -m.get("i(vgpio)", 0)
+        p_srv = v5 * m.get("i(vz)", 0) + (m.get("v(pin3)", 0) - v5) * m.get("i(vsd)", 0)
+        problems = []
+        if v5 > 7:
+            problems.append("+5V above the SN74AHCT1G125's 7 V absolute maximum")
+        if p_srv > 0.3:
+            problems.append("SRV05-4 over about 0.3 W (SOT-23-6)")
+        if m.get("v(gpio)", 0) > 3.6:
+            problems.append("GPIO17 above the ESP32's VDD + 0.3 V")
+        detail = f"+5V at {v5:.2f} V{' (SN74AHCT1G125: 5.5 V operating, 7 V absolute)' if 5.5 < v5 <= 7 else ''}, SRV05-4 {si(p_srv, 'W')}"
+        if "pin11" in fault:
+            detail += f", F801 {si(i_f801, 'A')}"
+            if i_f801 > 0.46:
+                t_trip = F801_I2T / i_f801 ** 2
+                detail += (f" (rated 10 A): it trips within {t_trip * 1e3:.0f} ms, the SRV05-4 taking about {p_srv * t_trip:.2g} J, "
+                           f"then holds {vsrc - 5:.1f} V (rated 24 V)")
+            else:
+                detail += " (trips above 0.46 A, so it stays closed)"
+        if "pin3" in fault:
+            detail += f", GPIO17 {'takes' if i_gpio > 0 else 'drives'} {abs(i_gpio) * 1e3:.1f} mA at {m.get('v(gpio)', 0):.2f} V"
+        verdict = "FAIL" if problems else "PASS*" if v5 > 5.5 else "PASS"
+        results.append((f"Micro-Fit: {label}", verdict, detail + (": " + "; ".join(problems) if problems else "")))
+    lo, hi = 0.7, 1.5   # BSP75N current limit
+    results.append(("Micro-Fit: J1-10/11 shorted, DOUT1 on", "PASS",
+                    f"the BSP75N limits at {lo}-{hi} A from +5V; F801 trips within {F801_I2T / hi ** 2:.1f}-{F801_I2T / lo ** 2:.0f} s "
+                    f"and the LM2596 (3 A) carries it meanwhile (calculated)"))
+    results.append(("Micro-Fit: J1-11 (+5 V out) shorted to GND", "PASS",
+                    f"the LM2596 limits at 3.6-6.9 A; F801 trips within {F801_I2T / 6.9 ** 2 * 1e3:.0f}-{F801_I2T / 3.6 ** 2 * 1e3:.0f} ms "
+                    f"while +5V sags (the ESP32 may reset), then holds about {0.6 / 5.0 * 1e3:.0f} mA (calculated)"))
+    results.append(("Micro-Fit: J1-9 (AIN1) wired to 28.8 V with the 4-20 mA shunt R904 fitted", "FAIL",
+                    f"R904 (120R 1206, 0.25 W) takes {28.8 ** 2 / 120:.1f} W (calculated); without R904, AIN1 survives +/-60 V"))
+
+
+LED_DRIVE = """
+VG gpio 0 3.3
+RO gpio o 33
+R8 o a 330
+VLED a ak 0
+DLED ak 0 {model}
+"""
+
+
+def leds(results):
+    """Micro-Fit D801-D803: GPIO18/19/5 (3.3 V behind about 33 ohm) -> 330R (R808-R810) -> side-view LED -> GND."""
+    for label, model, mcd in (("D801 P1, green LTST-S270TGKT (VF 3.2 V)", "LEDG", 450),
+                              ("D802 P2, yellow LTST-S270KSKT (VF 2.0 V)", "LEDY", 80),
+                              ("D803 USER, blue LTST-S270TBKT (VF 3.3 V)", "LEDB", 180),
+                              ("D803 USER, blue at its 2.8 V VF limit", "LEDBLO", 180),
+                              ("D803 USER, blue at its 3.8 V VF limit", "LEDBHI", 180)):
+        m = run(f"led_{model.lower()}", LED_DRIVE.format(model=model), "op\nprint i(vled) v(a)\n")
+        i = m.get("i(vled)", 0)
+        results.append((f"LED drive: {label}", "PASS" if 0.5e-3 < i < 20e-3 else "CHECK",
+                        f"{i * 1e3:.2f} mA at {m.get('v(a)', 0):.2f} V; about {mcd * i / 20e-3:.0f} mcd ({mcd} mcd at 20 mA, scaled by current)"))
+
+
 def plot(results):
     os.makedirs(PLOTS, exist_ok=True)
     fig, axes = plt.subplots(1, 2, figsize=(11, 3.8))
@@ -414,6 +639,30 @@ def plot(results):
     fig.tight_layout()
     fig.savefig(os.path.join(PLOTS, "opto-input.png"), dpi=110)
 
+    # LM2596 boards, 12 V pulse 1: voltages on top, the reverse-polarity diode's current below (one scale per panel)
+    fig, axes = plt.subplots(2, 2, figsize=(11, 5.6), sharex=True, sharey="row", gridspec_kw={"height_ratios": [3, 2]})
+    for col, (name, title, diode) in enumerate((("lm_p1_12", "As built: SMAJ30CA behind D103 (SS54, 40 V)", "SS54"),
+                                                ("lmfix_p1_12", "Proposed: SMBJ36CA ahead of D103 (SS510, 100 V)", "SS510"))):
+        w = waveforms(name)
+        t = (w["time"] - 1e-4) * 1e3
+        top, bottom = axes[0][col], axes[1][col]
+        top.plot(t, w["v(gen)"], color="#999", lw=1, label="generator (open circuit)")
+        top.plot(t, w["v(vin_raw)"], color="#d1242f", lw=1.5, label="VIN_RAW (after F101)")
+        top.plot(t, w["v(vin_lm)"], color="#1f6feb", lw=1.5, label="VIN_LM (LM2596S input)")
+        top.axhline(0, color="#ccc", lw=0.8)
+        top.set_ylim(-160, 30)
+        top.set_title(title, fontsize=10)
+        bottom.plot(t, w["i(vd103)"], color="#1f6feb", lw=1.5, label=f"D103 {diode} current (negative: backwards)")
+        bottom.axhline(0, color="#ccc", lw=0.8)
+        bottom.set_xlabel("ms after the pulse starts")
+        top.legend(loc="lower right", fontsize=7)
+        bottom.legend(loc="lower right", fontsize=7)
+    axes[0][0].set_ylabel("V")
+    axes[1][0].set_ylabel("A")
+    fig.suptitle("ISO 7637-2 pulse 1 on a 12 V supply (-150 V, 10 ohm, 2 ms), LM2596 input stage", fontsize=10)
+    fig.tight_layout()
+    fig.savefig(os.path.join(PLOTS, "lm2596-pulse1.png"), dpi=110)
+
 
 def main():
     results = []
@@ -425,6 +674,10 @@ def main():
     rs485(results)
     rs485_compact(results)
     port_lines(results)
+    lm2596_scenarios(results)
+    lm2596_dc(results)
+    microfit_pins(results)
+    leds(results)
     plot(results)
     width = max(len(r[0]) for r in results)
     for label, verdict, detail in results:
