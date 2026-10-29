@@ -255,7 +255,8 @@
 			(symbol "C_0_1"
 				(polyline
 					(pts
-						(xy -2.032 0.762) (xy 2.032 0.762)
+						(xy -2.032 0.762)
+						(xy 2.032 0.762)
 					)
 					(stroke
 						(width 0.508)
@@ -267,7 +268,8 @@
 				)
 				(polyline
 					(pts
-						(xy -2.032 -0.762) (xy 2.032 -0.762)
+						(xy -2.032 -0.762)
+						(xy 2.032 -0.762)
 					)
 					(stroke
 						(width 0.508)
@@ -781,7 +783,8 @@
 			(symbol "+3V3_0_1"
 				(polyline
 					(pts
-						(xy -0.762 1.27) (xy 0 2.54)
+						(xy -0.762 1.27)
+						(xy 0 2.54)
 					)
 					(stroke
 						(width 0)
@@ -793,7 +796,8 @@
 				)
 				(polyline
 					(pts
-						(xy 0 2.54) (xy 0.762 1.27)
+						(xy 0 2.54)
+						(xy 0.762 1.27)
 					)
 					(stroke
 						(width 0)
@@ -805,7 +809,8 @@
 				)
 				(polyline
 					(pts
-						(xy 0 0) (xy 0 2.54)
+						(xy 0 0)
+						(xy 0 2.54)
 					)
 					(stroke
 						(width 0)
@@ -920,7 +925,12 @@
 			(symbol "GND_0_1"
 				(polyline
 					(pts
-						(xy 0 0) (xy 0 -1.27) (xy 1.27 -1.27) (xy 0 -2.54) (xy -1.27 -1.27) (xy 0 -1.27)
+						(xy 0 0)
+						(xy 0 -1.27)
+						(xy 1.27 -1.27)
+						(xy 0 -2.54)
+						(xy -1.27 -1.27)
+						(xy 0 -1.27)
 					)
 					(stroke
 						(width 0)
@@ -953,17 +963,186 @@
 			)
 			(embedded_fonts no)
 		)
-	)
-	(text "EEPROM (replaces AT24C256 module)\nU501 is a swappable chip in a DIP-8 socket (only the socket is assembled): the user inserts an AT24C256 DIP-8,\ne.g. LCSC C434602 AT24C256N or C411624 24LC256-I/P.\nI2C address 0x50 (A0 = A1 = A2 = GND). The firmware layout is fixed at 32 KB (EepromLayout.h), so fit a 24C256 or 24C512.\nWP: R501 10k pulls EE_WP low (writes enabled); a jumper on J501 ties WP to +3V3 and write-protects the chip.\nNo I2C pull-ups here (they are on esp32-core)."
-		(exclude_from_sim no)
-		(at 25.4 25.4 0)
-		(effects
-			(font
-				(size 1.5 1.5)
+		(symbol "Jumper:SolderJumper_2_Open"
+			(pin_numbers
+				(hide yes)
 			)
-			(justify left top)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom no)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "JP"
+				(at 0 2.032 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "SolderJumper_2_Open"
+				(at 0 -2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 -7.62 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Solder Jumper, 2-pole, open"
+				(at 0 -5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "solder jumper SPST"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "SolderJumper*Open*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "SolderJumper_2_Open_0_1"
+				(polyline
+					(pts
+						(xy -0.254 1.016)
+						(xy -0.254 -1.016)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -0.254 -1.016)
+					(mid -1.2656 0)
+					(end -0.254 1.016)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(arc
+					(start 0.254 1.016)
+					(mid 1.2656 0)
+					(end 0.254 -1.016)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.254 1.016)
+						(xy 0.254 -1.016)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "SolderJumper_2_Open_1_1"
+				(pin passive line
+					(at -5.08 0 0)
+					(length 3.81)
+					(name "A"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 5.08 0 180)
+					(length 3.81)
+					(name "B"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
 		)
-		(uuid "dadfeb3f-c03f-4803-acfd-31f4b1329be2")
 	)
 	(junction
 		(at 162.56 111.76)
@@ -991,7 +1170,8 @@
 	)
 	(wire
 		(pts
-			(xy 139.7 99.06) (xy 116.84 99.06)
+			(xy 139.7 99.06)
+			(xy 116.84 99.06)
 		)
 		(stroke
 			(width 0)
@@ -1001,7 +1181,8 @@
 	)
 	(wire
 		(pts
-			(xy 129.54 106.68) (xy 124.46 106.68)
+			(xy 129.54 106.68)
+			(xy 124.46 106.68)
 		)
 		(stroke
 			(width 0)
@@ -1011,7 +1192,8 @@
 	)
 	(wire
 		(pts
-			(xy 162.56 111.76) (xy 177.8 111.76)
+			(xy 162.56 111.76)
+			(xy 177.8 111.76)
 		)
 		(stroke
 			(width 0)
@@ -1021,17 +1203,8 @@
 	)
 	(wire
 		(pts
-			(xy 175.26 109.22) (xy 175.26 106.68)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "55073447-0de1-408e-9e9c-2b90ce0726a0")
-	)
-	(wire
-		(pts
-			(xy 139.7 99.06) (xy 139.7 96.52)
+			(xy 139.7 99.06)
+			(xy 139.7 96.52)
 		)
 		(stroke
 			(width 0)
@@ -1041,17 +1214,8 @@
 	)
 	(wire
 		(pts
-			(xy 177.8 109.22) (xy 175.26 109.22)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "82b640ce-1444-47c3-baa6-c7794d275c52")
-	)
-	(wire
-		(pts
-			(xy 149.86 111.76) (xy 162.56 111.76)
+			(xy 149.86 111.76)
+			(xy 162.56 111.76)
 		)
 		(stroke
 			(width 0)
@@ -1061,7 +1225,8 @@
 	)
 	(wire
 		(pts
-			(xy 129.54 109.22) (xy 124.46 109.22)
+			(xy 129.54 109.22)
+			(xy 124.46 109.22)
 		)
 		(stroke
 			(width 0)
@@ -1071,7 +1236,8 @@
 	)
 	(wire
 		(pts
-			(xy 124.46 111.76) (xy 124.46 116.84)
+			(xy 124.46 111.76)
+			(xy 124.46 116.84)
 		)
 		(stroke
 			(width 0)
@@ -1081,7 +1247,8 @@
 	)
 	(wire
 		(pts
-			(xy 129.54 111.76) (xy 124.46 111.76)
+			(xy 129.54 111.76)
+			(xy 124.46 111.76)
 		)
 		(stroke
 			(width 0)
@@ -1091,7 +1258,8 @@
 	)
 	(wire
 		(pts
-			(xy 139.7 101.6) (xy 139.7 99.06)
+			(xy 139.7 101.6)
+			(xy 139.7 99.06)
 		)
 		(stroke
 			(width 0)
@@ -1101,7 +1269,8 @@
 	)
 	(wire
 		(pts
-			(xy 124.46 106.68) (xy 124.46 109.22)
+			(xy 124.46 106.68)
+			(xy 124.46 109.22)
 		)
 		(stroke
 			(width 0)
@@ -1111,13 +1280,21 @@
 	)
 	(wire
 		(pts
-			(xy 124.46 109.22) (xy 124.46 111.76)
+			(xy 124.46 109.22)
+			(xy 124.46 111.76)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "f4c3a53b-d0dd-4dbf-ae8f-f3b5aa71adfc")
+	)
+	(wire
+		(pts
+			(xy 187.96 111.76)
+			(xy 187.96 106.68)
+		)
+		(uuid "4099ba25-e736-414c-a869-5dae46242c5f")
 	)
 	(label "EE_WP"
 		(at 165.1 111.76 0)
@@ -1151,117 +1328,18 @@
 		)
 		(uuid "63894df1-2285-431b-885f-fc25fd3b72f5")
 	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x02")
-		(at 182.88 111.76 0)
-		(mirror x)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "249b9920-991d-4e64-8efb-b296a2f24d46")
-		(property "Reference" "J501"
-			(at 182.88 114.3 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "WP"
-			(at 182.88 106.68 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
-			(at 182.88 111.76 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 182.88 111.76 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"
-			(at 182.88 111.76 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C53055672"
-			(at 182.88 111.76 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "254PZ-1x2P-V"
-			(at 182.88 111.76 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "f6d07010-0943-458d-97a3-af7a3420e6f2")
-		)
-		(pin "2"
-			(uuid "ad8286c6-1a78-4926-9c71-2a754580376c")
-		)
-		(instances
-			(project "hour-meter-board-microfit"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/623e21bd-4470-413b-8f4f-acd1ade828e3"
-					(reference "J501")
-					(unit 1)
-				)
-			)
-		)
-	)
+  (text "EEPROM (replaces AT24C256 module)\nU501 AT24C256C-SSHL-T (SOIC-8, LCSC C6482) is assembled by JLCPCB.\nI2C address 0x50 (A0 = A1 = A2 = GND). The firmware layout is fixed at 32 KB (EepromLayout.h), so fit a 24C256 or 24C512.\nWP: R501 10k pulls EE_WP low (writes enabled); bridging solder jumper JP501 ties WP to +3V3 and write-protects the chip.\nNo I2C pull-ups here (they are on esp32-core)."
+    (at 25.4 25.4 0)
+    (effects (font (size 1.5 1.5)) (justify left top))
+    (uuid "15eb228e-39b3-46dd-9dbb-4f205fc234a5")
+  )
 	(symbol
 		(lib_id "power:GND")
 		(at 116.84 106.68 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "2aac491d-a084-47a0-855b-9228b9e0b301")
 		(property "Reference" "#PWR502"
@@ -1318,6 +1396,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "83c65726-6d82-4850-8f14-dde5d4a6bbda")
 		)
@@ -1334,11 +1414,9 @@
 		(lib_id "Device:C")
 		(at 116.84 102.87 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "400f88ca-201d-430c-8e6b-cf4e9d71335e")
 		(property "Reference" "C501"
@@ -1418,6 +1496,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "686d5670-a00c-46d9-b8fb-dc38422c6c90")
 		)
@@ -1437,11 +1517,9 @@
 		(lib_id "Device:R")
 		(at 162.56 115.57 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "48df9fe5-fd94-4751-bb16-cb5ebb1c201a")
 		(property "Reference" "R501"
@@ -1519,6 +1597,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "0ab5d33b-a44a-462a-b7de-e46cdb268935")
 		)
@@ -1538,11 +1618,9 @@
 		(lib_id "Memory_EEPROM:24LC256")
 		(at 139.7 109.22 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "4bfd5642-73ce-4892-8b23-c369075a33ea")
 		(property "Reference" "U501"
@@ -1555,7 +1633,7 @@
 				)
 			)
 		)
-		(property "Value" "AT24C256 DIP-8 (socketed)"
+		(property "Value" "AT24C256C-SSHL-T"
 			(at 140.97 102.87 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1566,7 +1644,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_DIP:DIP-8_W7.62mm_Socket"
+		(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"
 			(at 139.7 109.22 0)
 			(hide yes)
 			(show_name no)
@@ -1599,7 +1677,7 @@
 				)
 			)
 		)
-		(property "Fitted" "AT24C256 DIP-8 inserted by the user (e.g. LCSC C434602 AT24C256N or C411624 24LC256-I/P)"
+		(property "Fitted" "Assembled by JLCPCB (SOIC-8, LCSC C6482)"
 			(at 139.7 109.22 0)
 			(hide yes)
 			(show_name no)
@@ -1610,7 +1688,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C2874007"
+		(property "LCSC" "C6482"
 			(at 139.7 109.22 0)
 			(hide yes)
 			(show_name no)
@@ -1621,7 +1699,7 @@
 				)
 			)
 		)
-		(property "MPN" "IC254V-12-08-0743"
+		(property "MPN" "AT24C256C-SSHL-T"
 			(at 139.7 109.22 0)
 			(hide yes)
 			(show_name no)
@@ -1632,6 +1710,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "535a0c62-2898-4a83-8f45-c4fc4fccfb95")
 		)
@@ -1669,11 +1749,9 @@
 		(lib_id "power:GND")
 		(at 124.46 116.84 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "4f2bcfc4-4191-4034-bd49-5fa267359d74")
 		(property "Reference" "#PWR503"
@@ -1730,6 +1808,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "fe4ffe98-dd59-4a4f-9dd4-8b36a9d46ac7")
 		)
@@ -1744,90 +1824,11 @@
 	)
 	(symbol
 		(lib_id "power:+3V3")
-		(at 175.26 106.68 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "50368bfe-4973-4368-a0d3-ea0a18c0296c")
-		(property "Reference" "#PWR506"
-			(at 175.26 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "+3V3"
-			(at 175.26 103.124 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 175.26 106.68 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 175.26 106.68 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+3V3\""
-			(at 175.26 106.68 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "ca562756-4e8f-4bf5-906e-a6ca9cb500e8")
-		)
-		(instances
-			(project "hour-meter-board-microfit"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/623e21bd-4470-413b-8f4f-acd1ade828e3"
-					(reference "#PWR506")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:+3V3")
 		(at 139.7 96.52 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "737d137b-35d3-4cdc-a8f3-e52c4e6ad6a3")
 		(property "Reference" "#PWR501"
@@ -1884,6 +1885,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "e01e80e9-4c7f-4a6e-aae6-104fb2bd15c1")
 		)
@@ -1900,11 +1903,9 @@
 		(lib_id "power:GND")
 		(at 139.7 116.84 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "a40b0e0b-bf07-446b-9d81-f75639bcd49e")
 		(property "Reference" "#PWR504"
@@ -1961,6 +1962,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "7cdc5b22-34e1-4bc3-8f26-5bdb90916269")
 		)
@@ -1977,11 +1980,9 @@
 		(lib_id "power:GND")
 		(at 162.56 119.38 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "ecb60bdb-3529-4ef3-86a6-8744b749fdec")
 		(property "Reference" "#PWR505"
@@ -2038,6 +2039,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "d47ca994-6842-46e4-b472-da71da5ae6a3")
 		)
@@ -2045,6 +2048,127 @@
 			(project "hour-meter-board-microfit"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/623e21bd-4470-413b-8f4f-acd1ade828e3"
 					(reference "#PWR505")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Jumper:SolderJumper_2_Open")
+		(at 182.88 111.76 0)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "a09c147a-845f-4743-b4a5-c1ca8714f76e")
+		(property "Reference" "JP501"
+			(at 182.88 109.728 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "WP"
+			(at 182.88 114.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"
+			(at 182.88 111.76 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 182.88 111.76 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Solder Jumper, 2-pole, open"
+			(at 182.88 111.76 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/623e21bd-4470-413b-8f4f-acd1ade828e3"
+					(reference "JP501")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 187.96 106.68 0)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1b3f58e4-98e7-44d1-9f66-2dd1b16a18ab")
+		(property "Reference" "#PWR506"
+			(at 187.96 110.49 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 187.96 103.124 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 187.96 106.68 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 187.96 106.68 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3V3\""
+			(at 187.96 106.68 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/623e21bd-4470-413b-8f4f-acd1ade828e3"
+					(reference "#PWR506")
 					(unit 1)
 				)
 			)

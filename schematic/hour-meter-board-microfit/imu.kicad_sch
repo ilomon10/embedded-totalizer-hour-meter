@@ -1240,17 +1240,6 @@
 			(embedded_fonts no)
 		)
 	)
-	(text "IMU (replaces MPU9250 GY-9250 module)\nMPU-9250 = MPU-6500 die + AK8963 magnetometer and is out of stock at JLCPCB, so the two functions are now separate chips:\nU601 MPU-6500 accel/gyro at I2C 0x69 (AD0 = 3V3; 0x68 is the DS3231). Firmware Mpu9250.cpp already accepts WHO_AM_I 0x70.\nU602 LIS3MDL magnetometer at I2C 0x1E (SA1 = 3V3); needs a new small firmware driver (it replaces the AK8963 at 0x0C).\nBoth chips in I2C mode (CS = 3V3). No LDO: both run from the board 3V3. No I2C pull-ups here (one 4.7k pair on esp32-core).\nMPU-6500: VDD 100nF, VDDIO 10nF, REGOUT 100nF; FSYNC and RESV pin 20 to GND; RESV pin 19 and NC pins left open.\nPCB: place both chips with the same orientation; keep the LIS3MDL at least 20 mm from the PSU header,\nthe CR2032 holder and the screw terminals."
-		(exclude_from_sim no)
-		(at 25.4 25.4 0)
-		(effects
-			(font
-				(size 1.5 1.5)
-			)
-			(justify left top)
-		)
-		(uuid "c6cc0a65-144a-46f5-b290-da84e5de9d04")
-	)
 	(junction
 		(at 99.06 73.66)
 		(diameter 0)
@@ -1718,6 +1707,11 @@
 		)
 		(uuid "78df6e61-a2ae-4f46-93a4-debfac545304")
 	)
+  (text "IMU (replaces MPU9250 GY-9250 module)\nMPU-9250 = MPU-6500 die + AK8963 magnetometer and is out of stock at JLCPCB, so the two functions are now separate chips:\nU601 MPU-6500 accel/gyro at I2C 0x69 (AD0 = 3V3; 0x68 is the DS3231). Firmware Mpu9250.cpp already accepts WHO_AM_I 0x70.\nU602 LIS3MDL magnetometer at I2C 0x1E (SA1 = 3V3); needs a new small firmware driver (it replaces the AK8963 at 0x0C).\nBoth chips in I2C mode (CS = 3V3). No LDO: both run from the board 3V3. No I2C pull-ups here (one 4.7k pair on esp32-core).\nMPU-6500: VDD 100nF, VDDIO 10nF, REGOUT 100nF; FSYNC and RESV pin 20 to GND; RESV pin 19 and NC pins left open.\nPCB: place both chips with the same orientation; keep the LIS3MDL at least 20 mm from the LM2596 stage (L101, U101),\nthe CR2032 holder and the J1 harness header."
+    (at 25.4 25.4 0)
+    (effects (font (size 1.5 1.5)) (justify left top))
+    (uuid "24f66d7f-433c-4ba8-a568-18e9245c1209")
+  )
 	(symbol
 		(lib_id "Device:C")
 		(at 127 110.49 0)

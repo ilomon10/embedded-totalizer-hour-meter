@@ -582,7 +582,7 @@
     "netclass_patterns": [
       {
         "netclass": "Vehicle",
-        "pattern": "Net-(J101-Pin_1)"
+        "pattern": "/VIN_IN"
       },
       {
         "netclass": "Vehicle",
@@ -590,11 +590,11 @@
       },
       {
         "netclass": "Vehicle",
-        "pattern": "/Opto inputs (817 module 2ch)/DIN1_RAW"
+        "pattern": "/DIN1_RAW"
       },
       {
         "netclass": "Vehicle",
-        "pattern": "/Opto inputs (817 module 2ch)/DIN2_RAW"
+        "pattern": "/DIN2_RAW"
       },
       {
         "netclass": "Vehicle",
@@ -622,7 +622,7 @@
       },
       {
         "netclass": "Default",
-        "pattern": "/Opto inputs (817 module 2ch)/VEH_GND"
+        "pattern": "/VEH_GND"
       },
       {
         "netclass": "Power",
@@ -642,7 +642,7 @@
       },
       {
         "netclass": "Power",
-        "pattern": "/Ports (UART, GPS, Qwiic, expansion)/UART_5V"
+        "pattern": "/UART_5V"
       },
       {
         "netclass": "Plane",
@@ -662,7 +662,7 @@
       },
       {
         "netclass": "Vehicle",
-        "pattern": "/IO (AIN1, DOUT1)/AIN1_RAW"
+        "pattern": "/AIN1_RAW"
       },
       {
         "netclass": "Vehicle",
@@ -670,11 +670,7 @@
       },
       {
         "netclass": "Vehicle",
-        "pattern": "/IO (AIN1, DOUT1)/DOUT1"
-      },
-      {
-        "netclass": "Power",
-        "pattern": "/IO (AIN1, DOUT1)/+5V_OUT"
+        "pattern": "/DOUT1"
       }
     ]
   },

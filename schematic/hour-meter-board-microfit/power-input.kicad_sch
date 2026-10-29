@@ -104,7 +104,8 @@
 				)
 				(polyline
 					(pts
-						(xy -0.5334 0.3302) (xy 0.3302 -0.508)
+						(xy -0.5334 0.3302)
+						(xy 0.3302 -0.508)
 					)
 					(stroke
 						(width 0.1524)
@@ -116,7 +117,8 @@
 				)
 				(polyline
 					(pts
-						(xy -0.5334 -2.2098) (xy 0.3302 -3.048)
+						(xy -0.5334 -2.2098)
+						(xy 0.3302 -3.048)
 					)
 					(stroke
 						(width 0.1524)
@@ -128,7 +130,8 @@
 				)
 				(polyline
 					(pts
-						(xy -0.3556 0.508) (xy 0.508 -0.3302)
+						(xy -0.3556 0.508)
+						(xy 0.508 -0.3302)
 					)
 					(stroke
 						(width 0.1524)
@@ -140,7 +143,8 @@
 				)
 				(polyline
 					(pts
-						(xy -0.3556 -2.032) (xy 0.508 -2.8702)
+						(xy -0.3556 -2.032)
+						(xy 0.508 -2.8702)
 					)
 					(stroke
 						(width 0.1524)
@@ -700,7 +704,8 @@
 			(symbol "C_0_1"
 				(polyline
 					(pts
-						(xy -2.032 0.762) (xy 2.032 0.762)
+						(xy -2.032 0.762)
+						(xy 2.032 0.762)
 					)
 					(stroke
 						(width 0.508)
@@ -712,7 +717,8 @@
 				)
 				(polyline
 					(pts
-						(xy -2.032 -0.762) (xy 2.032 -0.762)
+						(xy -2.032 -0.762)
+						(xy 2.032 -0.762)
 					)
 					(stroke
 						(width 0.508)
@@ -866,7 +872,8 @@
 				)
 				(polyline
 					(pts
-						(xy -1.778 2.286) (xy -0.762 2.286)
+						(xy -1.778 2.286)
+						(xy -0.762 2.286)
 					)
 					(stroke
 						(width 0)
@@ -878,7 +885,8 @@
 				)
 				(polyline
 					(pts
-						(xy -1.27 2.794) (xy -1.27 1.778)
+						(xy -1.27 2.794)
+						(xy -1.27 1.778)
 					)
 					(stroke
 						(width 0)
@@ -1031,7 +1039,12 @@
 			(symbol "D_Schottky_0_1"
 				(polyline
 					(pts
-						(xy -1.905 0.635) (xy -1.905 1.27) (xy -1.27 1.27) (xy -1.27 -1.27) (xy -0.635 -1.27) (xy -0.635 -0.635)
+						(xy -1.905 0.635)
+						(xy -1.905 1.27)
+						(xy -1.27 1.27)
+						(xy -1.27 -1.27)
+						(xy -0.635 -1.27)
+						(xy -0.635 -0.635)
 					)
 					(stroke
 						(width 0.254)
@@ -1043,7 +1056,10 @@
 				)
 				(polyline
 					(pts
-						(xy 1.27 1.27) (xy 1.27 -1.27) (xy -1.27 0) (xy 1.27 1.27)
+						(xy 1.27 1.27)
+						(xy 1.27 -1.27)
+						(xy -1.27 0)
+						(xy 1.27 1.27)
 					)
 					(stroke
 						(width 0.254)
@@ -1055,7 +1071,8 @@
 				)
 				(polyline
 					(pts
-						(xy 1.27 0) (xy -1.27 0)
+						(xy 1.27 0)
+						(xy -1.27 0)
 					)
 					(stroke
 						(width 0)
@@ -1197,7 +1214,11 @@
 			(symbol "D_TVS_0_1"
 				(polyline
 					(pts
-						(xy -2.54 1.27) (xy -2.54 -1.27) (xy 2.54 1.27) (xy 2.54 -1.27) (xy -2.54 1.27)
+						(xy -2.54 1.27)
+						(xy -2.54 -1.27)
+						(xy 2.54 1.27)
+						(xy 2.54 -1.27)
+						(xy -2.54 1.27)
 					)
 					(stroke
 						(width 0.254)
@@ -1209,7 +1230,10 @@
 				)
 				(polyline
 					(pts
-						(xy 0.508 1.27) (xy 0 1.27) (xy 0 -1.27) (xy -0.508 -1.27)
+						(xy 0.508 1.27)
+						(xy 0 1.27)
+						(xy 0 -1.27)
+						(xy -0.508 -1.27)
 					)
 					(stroke
 						(width 0.254)
@@ -1221,7 +1245,8 @@
 				)
 				(polyline
 					(pts
-						(xy 1.27 0) (xy -1.27 0)
+						(xy 1.27 0)
+						(xy -1.27 0)
 					)
 					(stroke
 						(width 0)
@@ -1552,7 +1577,11 @@
 			(symbol "LED_0_1"
 				(polyline
 					(pts
-						(xy -3.048 -0.762) (xy -4.572 -2.286) (xy -3.81 -2.286) (xy -4.572 -2.286) (xy -4.572 -1.524)
+						(xy -3.048 -0.762)
+						(xy -4.572 -2.286)
+						(xy -3.81 -2.286)
+						(xy -4.572 -2.286)
+						(xy -4.572 -1.524)
 					)
 					(stroke
 						(width 0)
@@ -1564,7 +1593,11 @@
 				)
 				(polyline
 					(pts
-						(xy -1.778 -0.762) (xy -3.302 -2.286) (xy -2.54 -2.286) (xy -3.302 -2.286) (xy -3.302 -1.524)
+						(xy -1.778 -0.762)
+						(xy -3.302 -2.286)
+						(xy -2.54 -2.286)
+						(xy -3.302 -2.286)
+						(xy -3.302 -1.524)
 					)
 					(stroke
 						(width 0)
@@ -1576,7 +1609,8 @@
 				)
 				(polyline
 					(pts
-						(xy -1.27 0) (xy 1.27 0)
+						(xy -1.27 0)
+						(xy 1.27 0)
 					)
 					(stroke
 						(width 0)
@@ -1588,7 +1622,8 @@
 				)
 				(polyline
 					(pts
-						(xy -1.27 -1.27) (xy -1.27 1.27)
+						(xy -1.27 -1.27)
+						(xy -1.27 1.27)
 					)
 					(stroke
 						(width 0.254)
@@ -1600,7 +1635,10 @@
 				)
 				(polyline
 					(pts
-						(xy 1.27 -1.27) (xy 1.27 1.27) (xy -1.27 0) (xy 1.27 -1.27)
+						(xy 1.27 -1.27)
+						(xy 1.27 1.27)
+						(xy -1.27 0)
+						(xy 1.27 -1.27)
 					)
 					(stroke
 						(width 0.254)
@@ -1742,7 +1780,10 @@
 			(symbol "Polyfuse_0_1"
 				(polyline
 					(pts
-						(xy -1.524 2.54) (xy -1.524 1.524) (xy 1.524 -1.524) (xy 1.524 -2.54)
+						(xy -1.524 2.54)
+						(xy -1.524 1.524)
+						(xy 1.524 -1.524)
+						(xy 1.524 -2.54)
 					)
 					(stroke
 						(width 0)
@@ -1765,7 +1806,8 @@
 				)
 				(polyline
 					(pts
-						(xy 0 2.54) (xy 0 -2.54)
+						(xy 0 2.54)
+						(xy 0 -2.54)
 					)
 					(stroke
 						(width 0)
@@ -2068,7 +2110,8 @@
 			(symbol "1N4148W_0_1"
 				(polyline
 					(pts
-						(xy -1.27 1.27) (xy -1.27 -1.27)
+						(xy -1.27 1.27)
+						(xy -1.27 -1.27)
 					)
 					(stroke
 						(width 0.254)
@@ -2080,7 +2123,10 @@
 				)
 				(polyline
 					(pts
-						(xy 1.27 1.27) (xy 1.27 -1.27) (xy -1.27 0) (xy 1.27 1.27)
+						(xy 1.27 1.27)
+						(xy 1.27 -1.27)
+						(xy -1.27 0)
+						(xy 1.27 1.27)
 					)
 					(stroke
 						(width 0.254)
@@ -2092,7 +2138,8 @@
 				)
 				(polyline
 					(pts
-						(xy 1.27 0) (xy -1.27 0)
+						(xy 1.27 0)
+						(xy -1.27 0)
 					)
 					(stroke
 						(width 0)
@@ -2516,7 +2563,8 @@
 			(symbol "+5V_0_1"
 				(polyline
 					(pts
-						(xy -0.762 1.27) (xy 0 2.54)
+						(xy -0.762 1.27)
+						(xy 0 2.54)
 					)
 					(stroke
 						(width 0)
@@ -2528,7 +2576,8 @@
 				)
 				(polyline
 					(pts
-						(xy 0 2.54) (xy 0.762 1.27)
+						(xy 0 2.54)
+						(xy 0.762 1.27)
 					)
 					(stroke
 						(width 0)
@@ -2540,7 +2589,8 @@
 				)
 				(polyline
 					(pts
-						(xy 0 0) (xy 0 2.54)
+						(xy 0 0)
+						(xy 0 2.54)
 					)
 					(stroke
 						(width 0)
@@ -2655,7 +2705,12 @@
 			(symbol "GND_0_1"
 				(polyline
 					(pts
-						(xy 0 0) (xy 0 -1.27) (xy 1.27 -1.27) (xy 0 -2.54) (xy -1.27 -1.27) (xy 0 -1.27)
+						(xy 0 0)
+						(xy 0 -1.27)
+						(xy 1.27 -1.27)
+						(xy 0 -2.54)
+						(xy -1.27 -1.27)
+						(xy 0 -1.27)
 					)
 					(stroke
 						(width 0)
@@ -2790,7 +2845,12 @@
 			(symbol "PWR_FLAG_0_1"
 				(polyline
 					(pts
-						(xy 0 0) (xy 0 1.27) (xy -1.016 1.905) (xy 0 2.54) (xy 1.016 1.905) (xy 0 1.27)
+						(xy 0 0)
+						(xy 0 1.27)
+						(xy -1.016 1.905)
+						(xy 0 2.54)
+						(xy 1.016 1.905)
+						(xy 0 1.27)
 					)
 					(stroke
 						(width 0)
@@ -2804,34 +2864,11 @@
 			(embedded_fonts no)
 		)
 	)
-	(text "POWER INPUT\nVehicle supply 9-30 V on J101 (JST VH) or on the TP101 solder pads: same net, use one of them.\nF101 PTC -> D103 reverse block -> D104 TVS (SMAJ30CA) -> U101 LM2596S-ADJ, 5.29 V on +5V_PSU (R103/R104 = 3.3k/1k).\n+5V_PSU -> D101 SS34 -> +5V. USB VBUS is OR-ed into +5V on the esp32-core sheet.\nVIN_SENSE = VIN x 5.6/105.6 (GPIO34, ADC1_CH6). H102-H105 = board corner holes."
-		(exclude_from_sim no)
-		(at 25 25 0)
-		(effects
-			(font
-				(size 1.5 1.5)
-			)
-			(justify left top)
-		)
-		(uuid "a3d2eb0b-3179-4624-9778-23512ae8bb20")
-	)
 	(junction
 		(at 90.17 77.47)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "2c620d3e-02f1-43f6-ac15-b058b28ec192")
-	)
-	(junction
-		(at 39.37 72.39)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "30c29f09-9a0d-4a77-b6d1-333bee23c48a")
-	)
-	(junction
-		(at 36.83 62.23)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "4cb5758d-873b-4670-9916-d3116a0e6af6")
 	)
 	(junction
 		(at 95.25 100.33)
@@ -2850,12 +2887,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "59fe6181-2e2e-4373-84fb-9e34d04769aa")
-	)
-	(junction
-		(at 39.37 59.69)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "6664bc38-2bef-4ffe-a424-132054adf840")
 	)
 	(junction
 		(at 105.41 100.33)
@@ -2895,7 +2926,8 @@
 	)
 	(wire
 		(pts
-			(xy 55.88 100.33) (xy 53.34 100.33)
+			(xy 55.88 100.33)
+			(xy 53.34 100.33)
 		)
 		(stroke
 			(width 0)
@@ -2905,7 +2937,8 @@
 	)
 	(wire
 		(pts
-			(xy 39.37 72.39) (xy 39.37 74.93)
+			(xy 39.37 72.39)
+			(xy 39.37 74.93)
 		)
 		(stroke
 			(width 0)
@@ -2915,17 +2948,8 @@
 	)
 	(wire
 		(pts
-			(xy 36.83 62.23) (xy 39.37 62.23)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1030c285-ad6b-411b-a6f3-88b5b6389d7f")
-	)
-	(wire
-		(pts
-			(xy 120.65 82.55) (xy 120.65 87.63)
+			(xy 120.65 82.55)
+			(xy 120.65 87.63)
 		)
 		(stroke
 			(width 0)
@@ -2935,7 +2959,8 @@
 	)
 	(wire
 		(pts
-			(xy 146.05 77.47) (xy 148.59 77.47)
+			(xy 146.05 77.47)
+			(xy 148.59 77.47)
 		)
 		(stroke
 			(width 0)
@@ -2945,7 +2970,8 @@
 	)
 	(wire
 		(pts
-			(xy 163.83 59.69) (xy 175.26 59.69)
+			(xy 163.83 59.69)
+			(xy 175.26 59.69)
 		)
 		(stroke
 			(width 0)
@@ -2955,7 +2981,8 @@
 	)
 	(wire
 		(pts
-			(xy 146.05 82.55) (xy 153.67 82.55)
+			(xy 146.05 82.55)
+			(xy 153.67 82.55)
 		)
 		(stroke
 			(width 0)
@@ -2965,17 +2992,8 @@
 	)
 	(wire
 		(pts
-			(xy 39.37 49.53) (xy 39.37 59.69)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4f0cd9df-a669-4970-b33f-8654fcf0223f")
-	)
-	(wire
-		(pts
-			(xy 105.41 100.33) (xy 105.41 106.68)
+			(xy 105.41 100.33)
+			(xy 105.41 106.68)
 		)
 		(stroke
 			(width 0)
@@ -2985,7 +3003,8 @@
 	)
 	(wire
 		(pts
-			(xy 63.5 100.33) (xy 73.66 100.33)
+			(xy 63.5 100.33)
+			(xy 73.66 100.33)
 		)
 		(stroke
 			(width 0)
@@ -2995,7 +3014,8 @@
 	)
 	(wire
 		(pts
-			(xy 205.74 86.36) (xy 205.74 88.9)
+			(xy 205.74 86.36)
+			(xy 205.74 88.9)
 		)
 		(stroke
 			(width 0)
@@ -3005,7 +3025,8 @@
 	)
 	(wire
 		(pts
-			(xy 194.31 86.36) (xy 194.31 91.44)
+			(xy 194.31 86.36)
+			(xy 194.31 91.44)
 		)
 		(stroke
 			(width 0)
@@ -3015,7 +3036,8 @@
 	)
 	(wire
 		(pts
-			(xy 153.67 77.47) (xy 160.02 77.47)
+			(xy 153.67 77.47)
+			(xy 160.02 77.47)
 		)
 		(stroke
 			(width 0)
@@ -3025,7 +3047,8 @@
 	)
 	(wire
 		(pts
-			(xy 83.82 77.47) (xy 120.65 77.47)
+			(xy 83.82 77.47)
+			(xy 120.65 77.47)
 		)
 		(stroke
 			(width 0)
@@ -3035,7 +3058,8 @@
 	)
 	(wire
 		(pts
-			(xy 36.83 72.39) (xy 39.37 72.39)
+			(xy 36.83 72.39)
+			(xy 39.37 72.39)
 		)
 		(stroke
 			(width 0)
@@ -3045,7 +3069,8 @@
 	)
 	(wire
 		(pts
-			(xy 39.37 59.69) (xy 45.72 59.69)
+			(xy 39.37 59.69)
+			(xy 45.72 59.69)
 		)
 		(stroke
 			(width 0)
@@ -3055,7 +3080,8 @@
 	)
 	(wire
 		(pts
-			(xy 184.15 77.47) (xy 184.15 81.28)
+			(xy 184.15 77.47)
+			(xy 184.15 81.28)
 		)
 		(stroke
 			(width 0)
@@ -3065,7 +3091,8 @@
 	)
 	(wire
 		(pts
-			(xy 76.2 77.47) (xy 73.66 77.47)
+			(xy 76.2 77.47)
+			(xy 73.66 77.47)
 		)
 		(stroke
 			(width 0)
@@ -3075,7 +3102,8 @@
 	)
 	(wire
 		(pts
-			(xy 194.31 77.47) (xy 194.31 78.74)
+			(xy 194.31 77.47)
+			(xy 194.31 78.74)
 		)
 		(stroke
 			(width 0)
@@ -3085,17 +3113,8 @@
 	)
 	(wire
 		(pts
-			(xy 36.83 53.34) (xy 36.83 62.23)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8ba999bb-2272-4b10-a367-416119603c8d")
-	)
-	(wire
-		(pts
-			(xy 81.28 100.33) (xy 113.03 100.33)
+			(xy 81.28 100.33)
+			(xy 113.03 100.33)
 		)
 		(stroke
 			(width 0)
@@ -3105,7 +3124,8 @@
 	)
 	(wire
 		(pts
-			(xy 153.67 82.55) (xy 153.67 77.47)
+			(xy 153.67 82.55)
+			(xy 153.67 77.47)
 		)
 		(stroke
 			(width 0)
@@ -3115,7 +3135,8 @@
 	)
 	(wire
 		(pts
-			(xy 95.25 77.47) (xy 95.25 81.28)
+			(xy 95.25 77.47)
+			(xy 95.25 81.28)
 		)
 		(stroke
 			(width 0)
@@ -3125,7 +3146,8 @@
 	)
 	(wire
 		(pts
-			(xy 53.34 59.69) (xy 55.88 59.69)
+			(xy 53.34 59.69)
+			(xy 55.88 59.69)
 		)
 		(stroke
 			(width 0)
@@ -3135,7 +3157,8 @@
 	)
 	(wire
 		(pts
-			(xy 167.64 77.47) (xy 205.74 77.47)
+			(xy 167.64 77.47)
+			(xy 205.74 77.47)
 		)
 		(stroke
 			(width 0)
@@ -3145,7 +3168,8 @@
 	)
 	(wire
 		(pts
-			(xy 30.48 59.69) (xy 39.37 59.69)
+			(xy 30.48 59.69)
+			(xy 39.37 59.69)
 		)
 		(stroke
 			(width 0)
@@ -3155,17 +3179,8 @@
 	)
 	(wire
 		(pts
-			(xy 29.21 53.34) (xy 36.83 53.34)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "b920f399-6a70-4be2-8c7f-e58956f6b3c3")
-	)
-	(wire
-		(pts
-			(xy 111.76 77.47) (xy 111.76 81.28)
+			(xy 111.76 77.47)
+			(xy 111.76 81.28)
 		)
 		(stroke
 			(width 0)
@@ -3175,7 +3190,8 @@
 	)
 	(wire
 		(pts
-			(xy 95.25 100.33) (xy 95.25 106.68)
+			(xy 95.25 100.33)
+			(xy 95.25 106.68)
 		)
 		(stroke
 			(width 0)
@@ -3185,7 +3201,8 @@
 	)
 	(wire
 		(pts
-			(xy 156.21 59.69) (xy 153.67 59.69)
+			(xy 156.21 59.69)
+			(xy 153.67 59.69)
 		)
 		(stroke
 			(width 0)
@@ -3195,7 +3212,8 @@
 	)
 	(wire
 		(pts
-			(xy 104.14 77.47) (xy 104.14 81.28)
+			(xy 104.14 77.47)
+			(xy 104.14 81.28)
 		)
 		(stroke
 			(width 0)
@@ -3205,7 +3223,8 @@
 	)
 	(wire
 		(pts
-			(xy 205.74 77.47) (xy 205.74 78.74)
+			(xy 205.74 77.47)
+			(xy 205.74 78.74)
 		)
 		(stroke
 			(width 0)
@@ -3215,7 +3234,8 @@
 	)
 	(wire
 		(pts
-			(xy 176.53 77.47) (xy 176.53 81.28)
+			(xy 176.53 77.47)
+			(xy 176.53 81.28)
 		)
 		(stroke
 			(width 0)
@@ -3225,7 +3245,8 @@
 	)
 	(wire
 		(pts
-			(xy 153.67 82.55) (xy 153.67 83.82)
+			(xy 153.67 82.55)
+			(xy 153.67 83.82)
 		)
 		(stroke
 			(width 0)
@@ -3235,17 +3256,8 @@
 	)
 	(wire
 		(pts
-			(xy 29.21 49.53) (xy 39.37 49.53)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e75b3ad9-1aa5-4f02-b738-3de90387197a")
-	)
-	(wire
-		(pts
-			(xy 90.17 73.66) (xy 90.17 77.47)
+			(xy 90.17 73.66)
+			(xy 90.17 77.47)
 		)
 		(stroke
 			(width 0)
@@ -3255,33 +3267,14 @@
 	)
 	(wire
 		(pts
-			(xy 175.26 59.69) (xy 175.26 54.61)
+			(xy 175.26 59.69)
+			(xy 175.26 54.61)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "e9b298a3-12d3-4849-acf9-2a9168632f19")
-	)
-	(wire
-		(pts
-			(xy 30.48 62.23) (xy 36.83 62.23)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "eb3f0886-ff4d-45cf-bb5a-e96cd83d83d4")
-	)
-	(wire
-		(pts
-			(xy 39.37 62.23) (xy 39.37 72.39)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "fb84d2f0-f74b-47d5-8244-e9fb9812bd5d")
 	)
 	(label "LM_SW"
 		(at 148.59 82.55 0)
@@ -3384,15 +3377,29 @@
 		)
 		(uuid "16a8908a-c1c2-44f9-b75c-03c5b1238db0")
 	)
+	(hierarchical_label "VIN_IN"
+		(shape passive)
+		(at 30.48 59.69 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "eec0c18c-f0ee-40c2-9842-1ef0b5feecca")
+	)
+  (text "POWER INPUT\nVehicle supply 9-30 V on J1 pin 8 (VIN_IN, Harness sheet); the return is the J1 GND pins 1 and 2.\nF101 PTC -> D103 reverse block -> D104 TVS (SMAJ30CA) -> U101 LM2596S-ADJ, 5.29 V on +5V_PSU (R103/R104 = 3.3k/1k).\n+5V_PSU -> D101 SS34 -> +5V. USB VBUS is OR-ed into +5V on the esp32-core sheet.\nVIN_SENSE = VIN x 5.6/105.6 (GPIO34, ADC1_CH6). H102-H105 = board corner holes."
+    (at 25 25 0)
+    (effects (font (size 1.5 1.5)) (justify left top))
+    (uuid "ea2c38cf-ed67-4ac3-b0a6-3b1ca6dc279e")
+  )
 	(symbol
 		(lib_id "Device:D_Schottky")
 		(at 153.67 87.63 270)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "00ffcc78-300b-46d0-be6a-ff0cdc237f4a")
 		(property "Reference" "D105"
@@ -3470,6 +3477,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "049872e4-f4f4-4191-9e2b-3d01e86dcd25")
 		)
@@ -3489,11 +3498,9 @@
 		(lib_id "Device:D_Schottky")
 		(at 160.02 59.69 180)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "0474f505-6fde-45cd-89ac-925f58eb0354")
 		(property "Reference" "D101"
@@ -3571,6 +3578,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "a103760a-d47b-4376-b214-48038f3d28a2")
 		)
@@ -3590,11 +3599,9 @@
 		(lib_id "power:GND")
 		(at 104.14 88.9 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "0d3e93b5-4392-4da2-8d23-90cae5d37b03")
 		(property "Reference" "#PWR03"
@@ -3651,6 +3658,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "3395b493-0c2a-41ba-843a-62274607872b")
 		)
@@ -3667,11 +3676,9 @@
 		(lib_id "power:GND")
 		(at 176.53 88.9 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "199f64b9-5d80-498d-9e8f-d73fad3139d8")
 		(property "Reference" "#PWR011"
@@ -3728,6 +3735,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "76646491-e8c2-4bfb-95f1-1e8787bbf045")
 		)
@@ -3744,11 +3753,9 @@
 		(lib_id "Device:R")
 		(at 77.47 100.33 90)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "1c7ca8c7-6700-40f8-bcb5-33f2ac785a46")
 		(property "Reference" "R101"
@@ -3826,6 +3833,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "d56be622-6019-4f0a-87cc-2caf1149efd1")
 		)
@@ -3845,11 +3854,9 @@
 		(lib_id "power:GND")
 		(at 205.74 96.52 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "215ae2d1-f7b6-4cc0-a62a-5562aff5940e")
 		(property "Reference" "#PWR014"
@@ -3906,6 +3913,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "9844e41c-09f5-4743-9776-51240bd48d15")
 		)
@@ -3922,11 +3931,9 @@
 		(lib_id "Device:R")
 		(at 194.31 95.25 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "21dc0bd9-ca98-4707-8bea-38b497fba943")
 		(property "Reference" "R104"
@@ -4004,6 +4011,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "9e4f1c71-cb0e-448d-b3e3-d48df6237edf")
 		)
@@ -4023,11 +4032,9 @@
 		(lib_id "power:PWR_FLAG")
 		(at 36.83 72.39 90)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "2370a25a-ce5f-41fd-a47c-2ba132993220")
 		(property "Reference" "#FLG102"
@@ -4084,6 +4091,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "36a00b96-2285-4a0f-87c2-1eb3b610428d")
 		)
@@ -4097,116 +4106,12 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector:Screw_Terminal_01x02")
-		(at 25.4 59.69 0)
-		(mirror y)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "29fdf86d-742b-4cd6-b6fe-51812bdb7852")
-		(property "Reference" "J101"
-			(at 25.4 57.15 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "VIN 9-30V"
-			(at 25.4 64.77 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Connector_JST:JST_VH_B2P-VH_1x02_P3.96mm_Vertical"
-			(at 25.4 59.69 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 25.4 59.69 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"
-			(at 25.4 59.69 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C160315"
-			(at 25.4 59.69 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "B2P-VH(LF)(SN)"
-			(at 25.4 59.69 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "87333548-e7f0-4495-9db4-258592fa33a0")
-		)
-		(pin "2"
-			(uuid "f8f803a7-6f4d-4571-a33a-2f2f84295561")
-		)
-		(instances
-			(project "hour-meter-board-microfit"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/7d36e08f-90ac-4d15-b354-173e665395cb"
-					(reference "J101")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:GND")
 		(at 153.67 91.44 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "2d235fbd-8c42-468f-b547-1c9485c4eb6a")
 		(property "Reference" "#PWR010"
@@ -4263,6 +4168,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "f8d72883-b50a-436d-a5fd-5cf8624c06e3")
 		)
@@ -4279,11 +4186,9 @@
 		(lib_id "Mechanical:MountingHole")
 		(at 119.38 149.86 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "2f83cb04-f1c5-4e90-a8ba-e2f7d214d2a6")
 		(property "Reference" "H105"
@@ -4339,6 +4244,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(instances
 			(project "hour-meter-board-microfit"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/7d36e08f-90ac-4d15-b354-173e665395cb"
@@ -4352,11 +4259,9 @@
 		(lib_id "Device:D_TVS")
 		(at 95.25 85.09 90)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "36073218-3bf4-4f39-9d74-0b02728219b0")
 		(property "Reference" "D104"
@@ -4434,6 +4339,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "a4fbd051-a2bc-44b1-805e-f21722cad6f1")
 		)
@@ -4453,11 +4360,9 @@
 		(lib_id "Mechanical:MountingHole")
 		(at 80.01 149.86 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "3d2ce129-d8d9-43cf-8fd3-d93b7fb17467")
 		(property "Reference" "H103"
@@ -4513,6 +4418,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(instances
 			(project "hour-meter-board-microfit"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/7d36e08f-90ac-4d15-b354-173e665395cb"
@@ -4526,11 +4433,9 @@
 		(lib_id "Mechanical:MountingHole")
 		(at 100.33 149.86 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "3e3fcda1-e5b4-4473-adab-0a07184d80dd")
 		(property "Reference" "H104"
@@ -4586,6 +4491,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(instances
 			(project "hour-meter-board-microfit"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/7d36e08f-90ac-4d15-b354-173e665395cb"
@@ -4599,11 +4506,9 @@
 		(lib_id "power:GND")
 		(at 95.25 88.9 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "3f1b33aa-0940-48e6-a977-77bf6a09f90e")
 		(property "Reference" "#PWR02"
@@ -4660,6 +4565,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "6cd521db-3a94-4551-b45e-680b344b3cd6")
 		)
@@ -4676,11 +4583,9 @@
 		(lib_id "Device:R")
 		(at 95.25 110.49 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "40f61b8f-c196-4e97-9489-b38fe2bc6086")
 		(property "Reference" "R102"
@@ -4758,6 +4663,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "1defeef6-8188-4a49-92e0-4540addb7551")
 		)
@@ -4777,11 +4684,9 @@
 		(lib_id "Mechanical:MountingHole")
 		(at 59.69 149.86 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "414ac6ad-3850-4f80-9235-c41410d4d5c7")
 		(property "Reference" "H102"
@@ -4837,6 +4742,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(instances
 			(project "hour-meter-board-microfit"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/7d36e08f-90ac-4d15-b354-173e665395cb"
@@ -4850,11 +4757,9 @@
 		(lib_id "Device:C")
 		(at 105.41 110.49 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "4c5a8e74-b2c5-491f-96bb-b1b187e526e7")
 		(property "Reference" "C101"
@@ -4934,6 +4839,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "215246fe-8549-4503-84be-53b01a0ad45f")
 		)
@@ -4953,11 +4860,9 @@
 		(lib_id "power:+5V")
 		(at 168.91 59.69 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "50fbd963-ef6e-4f42-95b7-2db774f0cfd9")
 		(property "Reference" "#PWR04"
@@ -5014,6 +4919,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "500e808a-4dbd-4c37-8cd8-7cfeab872b53")
 		)
@@ -5030,11 +4937,9 @@
 		(lib_id "Device:Polyfuse")
 		(at 49.53 59.69 90)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "51ffd2b9-921c-43d3-ac0e-48c59542af6d")
 		(property "Reference" "F101"
@@ -5112,6 +5017,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "92a9ad34-d6b0-4ab4-ac83-e527328743d8")
 		)
@@ -5131,11 +5038,9 @@
 		(lib_id "Device:C_Polarized")
 		(at 104.14 85.09 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "54e19f7b-2059-47c0-8b93-53656ebd0a73")
 		(property "Reference" "C102"
@@ -5215,6 +5120,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "6ad1fb67-8c91-47dd-a136-116f6d28b833")
 		)
@@ -5234,11 +5141,9 @@
 		(lib_id "power:PWR_FLAG")
 		(at 175.26 54.61 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "576a7088-afb0-4320-9a38-c73b4d1bad19")
 		(property "Reference" "#FLG101"
@@ -5295,6 +5200,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "4e18e1e2-62f1-4413-a031-4b9c4b727fc0")
 		)
@@ -5311,11 +5218,9 @@
 		(lib_id "power:PWR_FLAG")
 		(at 90.17 73.66 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "5cb8880b-ed29-4e91-a76b-08970016b3a1")
 		(property "Reference" "#FLG103"
@@ -5372,6 +5277,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "e210db19-f0a3-4184-b87f-91f8fa2f62bc")
 		)
@@ -5388,11 +5295,9 @@
 		(lib_id "power:GND")
 		(at 184.15 88.9 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "6537bb8f-ae73-4d7b-8502-45e656200283")
 		(property "Reference" "#PWR012"
@@ -5449,6 +5354,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "82fab149-fb70-45a1-9719-d29c5ccdb4d8")
 		)
@@ -5465,11 +5372,9 @@
 		(lib_id "Device:L")
 		(at 163.83 77.47 90)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "66adf255-67e8-4312-a379-0c30644c4ab9")
 		(property "Reference" "L101"
@@ -5547,6 +5452,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "dfebe9e5-0592-4111-9aaf-8db121bac685")
 		)
@@ -5566,11 +5473,9 @@
 		(lib_id "power:GND")
 		(at 95.25 114.3 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "71df01db-33fa-4222-be17-58b64d733ee5")
 		(property "Reference" "#PWR05"
@@ -5627,6 +5532,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "673e1f49-a5f6-4be1-9550-2ac7be6ac16a")
 		)
@@ -5643,11 +5550,9 @@
 		(lib_id "Regulator_Switching:LM2596S-ADJ")
 		(at 133.35 80.01 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "830083eb-a598-44dc-9420-6fc9dbb0ab96")
 		(property "Reference" "U101"
@@ -5727,6 +5632,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "3"
 			(uuid "57d8b535-b925-4741-b958-a8963ae1ebe4")
 		)
@@ -5755,11 +5662,9 @@
 		(lib_id "Device:C")
 		(at 184.15 85.09 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "8b0421d1-8077-4ac5-b074-8f271264714a")
 		(property "Reference" "C105"
@@ -5839,6 +5744,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "516a922d-34eb-4504-b786-341a34e19b49")
 		)
@@ -5858,11 +5765,9 @@
 		(lib_id "power:GND")
 		(at 194.31 99.06 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "96380290-ba8d-4d11-a313-ec11b752fedb")
 		(property "Reference" "#PWR013"
@@ -5919,6 +5824,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "cc4cb4e8-edc8-4aba-9df4-f17bef89a0de")
 		)
@@ -5935,11 +5842,9 @@
 		(lib_id "Device:D_Schottky")
 		(at 80.01 77.47 180)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "9a295ac1-7a2a-4801-9545-8000c9d46fcf")
 		(property "Reference" "D103"
@@ -6017,6 +5922,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "e4a2eeb0-ab10-46f5-a545-19a3ebc8e0f8")
 		)
@@ -6033,90 +5940,12 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector:TestPoint")
-		(at 29.21 53.34 90)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "aa9b4798-0d54-4f5a-80e2-bdc7dec55b79")
-		(property "Reference" "TP102"
-			(at 16.51 53.086 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 22.86 53.34 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_3.0x3.0mm"
-			(at 29.21 48.26 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 29.21 48.26 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "test point"
-			(at 29.21 53.34 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "3d0a9a52-0d0d-4a12-8b49-096d4d4d7705")
-		)
-		(instances
-			(project "hour-meter-board-microfit"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/7d36e08f-90ac-4d15-b354-173e665395cb"
-					(reference "TP102")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:GND")
 		(at 133.35 87.63 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "ae3acd74-55ee-4dc1-ba70-02ead0cc3ec7")
 		(property "Reference" "#PWR09"
@@ -6173,6 +6002,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "06f2fa5c-bd0b-4699-9593-53230a869483")
 		)
@@ -6189,11 +6020,9 @@
 		(lib_id "power:GND")
 		(at 105.41 114.3 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "be8df96f-e192-4123-912e-413a8d396aad")
 		(property "Reference" "#PWR06"
@@ -6250,6 +6079,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "96af3850-c521-4ed7-aac7-65656fd9b746")
 		)
@@ -6266,11 +6097,9 @@
 		(lib_id "power:GND")
 		(at 39.37 74.93 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "c3eb07c5-2b1b-429f-966f-5b421426a510")
 		(property "Reference" "#PWR01"
@@ -6327,6 +6156,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "960ccfea-8c6d-4624-b234-50a7f9acb637")
 		)
@@ -6343,11 +6174,9 @@
 		(lib_id "Device:C_Polarized")
 		(at 176.53 85.09 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "c862f459-327b-474d-bb2f-6c620100c8a7")
 		(property "Reference" "C104"
@@ -6427,6 +6256,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "e0ee9a89-aeac-4400-99d9-53f05a8c1d87")
 		)
@@ -6446,11 +6277,9 @@
 		(lib_id "Device:R")
 		(at 205.74 82.55 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "cd4b3014-95e6-4fa4-8cfe-121280ca6552")
 		(property "Reference" "R105"
@@ -6528,6 +6357,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "e67de58d-6f33-43a7-bf6e-86e1b82d4420")
 		)
@@ -6547,11 +6378,9 @@
 		(lib_id "Device:C")
 		(at 111.76 85.09 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "d53557b0-9117-4ada-b592-576bad47b6b5")
 		(property "Reference" "C103"
@@ -6631,6 +6460,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "ed659d99-d904-41a1-a153-3da96f5a99f0")
 		)
@@ -6650,11 +6481,9 @@
 		(lib_id "power:GND")
 		(at 120.65 87.63 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "d8a33391-0c7c-48e0-9723-2c19bb3d9c11")
 		(property "Reference" "#PWR08"
@@ -6711,6 +6540,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "d110d3d9-a7fc-4b4c-a6ea-668d7defd30e")
 		)
@@ -6727,11 +6558,9 @@
 		(lib_id "Device:LED")
 		(at 205.74 92.71 90)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "e0585eb3-37b6-4578-91b3-c53e5ff2b408")
 		(property "Reference" "D106"
@@ -6809,6 +6638,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "fb3074dc-36b4-465e-bb84-0c9e662cda65")
 		)
@@ -6828,11 +6659,9 @@
 		(lib_id "Diode:1N4148W")
 		(at 59.69 100.33 180)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "e3d9d69c-8621-43de-856c-83a8da0f0269")
 		(property "Reference" "D102"
@@ -6910,6 +6739,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "6162b535-f186-47f5-8fee-0b4b84b3081b")
 		)
@@ -6929,11 +6760,9 @@
 		(lib_id "power:GND")
 		(at 111.76 88.9 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "e3ebbebc-3bff-4dbd-9db6-0d7f4188a652")
 		(property "Reference" "#PWR07"
@@ -6990,6 +6819,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "959c4fc9-6ea0-426e-a013-a41f818da79c")
 		)
@@ -7006,11 +6837,9 @@
 		(lib_id "Device:R")
 		(at 194.31 82.55 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "e5c074ee-9529-4bb8-a057-818aa94eea27")
 		(property "Reference" "R103"
@@ -7088,6 +6917,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "0488a054-cf0d-4c09-b7af-e8b8d995326b")
 		)
@@ -7098,82 +6929,6 @@
 			(project "hour-meter-board-microfit"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/7d36e08f-90ac-4d15-b354-173e665395cb"
 					(reference "R103")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:TestPoint")
-		(at 29.21 49.53 90)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "f2fd0ea5-504e-4e2a-ad3f-fdf0fe192696")
-		(property "Reference" "TP101"
-			(at 16.51 49.53 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "VIN"
-			(at 23.114 49.53 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_3.0x3.0mm"
-			(at 29.21 44.45 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 29.21 44.45 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "test point"
-			(at 29.21 49.53 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "1d4c1220-7d1a-468c-ae12-1e081749cfca")
-		)
-		(instances
-			(project "hour-meter-board-microfit"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/7d36e08f-90ac-4d15-b354-173e665395cb"
-					(reference "TP101")
 					(unit 1)
 				)
 			)

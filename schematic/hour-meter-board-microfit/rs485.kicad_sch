@@ -104,7 +104,8 @@
 				)
 				(polyline
 					(pts
-						(xy -0.5334 2.8702) (xy 0.3302 2.032)
+						(xy -0.5334 2.8702)
+						(xy 0.3302 2.032)
 					)
 					(stroke
 						(width 0.1524)
@@ -116,7 +117,8 @@
 				)
 				(polyline
 					(pts
-						(xy -0.5334 0.3302) (xy 0.3302 -0.508)
+						(xy -0.5334 0.3302)
+						(xy 0.3302 -0.508)
 					)
 					(stroke
 						(width 0.1524)
@@ -128,7 +130,8 @@
 				)
 				(polyline
 					(pts
-						(xy -0.5334 -2.2098) (xy 0.3302 -3.048)
+						(xy -0.5334 -2.2098)
+						(xy 0.3302 -3.048)
 					)
 					(stroke
 						(width 0.1524)
@@ -140,7 +143,8 @@
 				)
 				(polyline
 					(pts
-						(xy -0.3556 3.048) (xy 0.508 2.2098)
+						(xy -0.3556 3.048)
+						(xy 0.508 2.2098)
 					)
 					(stroke
 						(width 0.1524)
@@ -152,7 +156,8 @@
 				)
 				(polyline
 					(pts
-						(xy -0.3556 0.508) (xy 0.508 -0.3302)
+						(xy -0.3556 0.508)
+						(xy 0.508 -0.3302)
 					)
 					(stroke
 						(width 0.1524)
@@ -164,7 +169,8 @@
 				)
 				(polyline
 					(pts
-						(xy -0.3556 -2.032) (xy 0.508 -2.8702)
+						(xy -0.3556 -2.032)
+						(xy 0.508 -2.8702)
 					)
 					(stroke
 						(width 0.1524)
@@ -730,7 +736,8 @@
 			(symbol "C_0_1"
 				(polyline
 					(pts
-						(xy -2.032 0.762) (xy 2.032 0.762)
+						(xy -2.032 0.762)
+						(xy 2.032 0.762)
 					)
 					(stroke
 						(width 0.508)
@@ -742,7 +749,8 @@
 				)
 				(polyline
 					(pts
-						(xy -2.032 -0.762) (xy 2.032 -0.762)
+						(xy -2.032 -0.762)
+						(xy 2.032 -0.762)
 					)
 					(stroke
 						(width 0.508)
@@ -884,7 +892,11 @@
 			(symbol "D_TVS_0_1"
 				(polyline
 					(pts
-						(xy -2.54 1.27) (xy -2.54 -1.27) (xy 2.54 1.27) (xy 2.54 -1.27) (xy -2.54 1.27)
+						(xy -2.54 1.27)
+						(xy -2.54 -1.27)
+						(xy 2.54 1.27)
+						(xy 2.54 -1.27)
+						(xy -2.54 1.27)
 					)
 					(stroke
 						(width 0.254)
@@ -896,7 +908,10 @@
 				)
 				(polyline
 					(pts
-						(xy 0.508 1.27) (xy 0 1.27) (xy 0 -1.27) (xy -0.508 -1.27)
+						(xy 0.508 1.27)
+						(xy 0 1.27)
+						(xy 0 -1.27)
+						(xy -0.508 -1.27)
 					)
 					(stroke
 						(width 0.254)
@@ -908,7 +923,8 @@
 				)
 				(polyline
 					(pts
-						(xy 1.27 0) (xy -1.27 0)
+						(xy 1.27 0)
+						(xy -1.27 0)
 					)
 					(stroke
 						(width 0)
@@ -1187,7 +1203,8 @@
 			(symbol "SM712_SOT23_0_0"
 				(polyline
 					(pts
-						(xy 0 -1.27) (xy 0 0)
+						(xy 0 -1.27)
+						(xy 0 0)
 					)
 					(stroke
 						(width 0)
@@ -1201,7 +1218,8 @@
 			(symbol "SM712_SOT23_0_1"
 				(polyline
 					(pts
-						(xy -6.35 0) (xy 6.35 0)
+						(xy -6.35 0)
+						(xy 6.35 0)
 					)
 					(stroke
 						(width 0)
@@ -1213,7 +1231,11 @@
 				)
 				(polyline
 					(pts
-						(xy -6.35 -1.27) (xy -1.27 1.27) (xy -1.27 -1.27) (xy -6.35 1.27) (xy -6.35 -1.27)
+						(xy -6.35 -1.27)
+						(xy -1.27 1.27)
+						(xy -1.27 -1.27)
+						(xy -6.35 1.27)
+						(xy -6.35 -1.27)
 					)
 					(stroke
 						(width 0.2032)
@@ -1225,7 +1247,10 @@
 				)
 				(polyline
 					(pts
-						(xy -3.302 1.27) (xy -3.81 1.27) (xy -3.81 -1.27) (xy -4.318 -1.27)
+						(xy -3.302 1.27)
+						(xy -3.81 1.27)
+						(xy -3.81 -1.27)
+						(xy -4.318 -1.27)
 					)
 					(stroke
 						(width 0.2032)
@@ -1248,7 +1273,11 @@
 				)
 				(polyline
 					(pts
-						(xy 1.27 -1.27) (xy 1.27 1.27) (xy 6.35 -1.27) (xy 6.35 1.27) (xy 1.27 -1.27)
+						(xy 1.27 -1.27)
+						(xy 1.27 1.27)
+						(xy 6.35 -1.27)
+						(xy 6.35 1.27)
+						(xy 1.27 -1.27)
 					)
 					(stroke
 						(width 0.2032)
@@ -1260,7 +1289,10 @@
 				)
 				(polyline
 					(pts
-						(xy 4.318 1.27) (xy 3.81 1.27) (xy 3.81 -1.27) (xy 3.302 -1.27)
+						(xy 4.318 1.27)
+						(xy 3.81 1.27)
+						(xy 3.81 -1.27)
+						(xy 3.302 -1.27)
 					)
 					(stroke
 						(width 0.2032)
@@ -1427,7 +1459,8 @@
 				)
 				(polyline
 					(pts
-						(xy -4.191 2.54) (xy -1.27 2.54)
+						(xy -4.191 2.54)
+						(xy -1.27 2.54)
 					)
 					(stroke
 						(width 0.254)
@@ -1439,7 +1472,9 @@
 				)
 				(polyline
 					(pts
-						(xy -4.191 0) (xy -0.889 0) (xy -0.889 -2.286)
+						(xy -4.191 0)
+						(xy -0.889 0)
+						(xy -0.889 -2.286)
 					)
 					(stroke
 						(width 0.254)
@@ -1451,7 +1486,9 @@
 				)
 				(polyline
 					(pts
-						(xy -3.175 5.08) (xy -4.191 5.08) (xy -4.064 5.08)
+						(xy -3.175 5.08)
+						(xy -4.191 5.08)
+						(xy -4.064 5.08)
 					)
 					(stroke
 						(width 0.254)
@@ -1463,7 +1500,8 @@
 				)
 				(polyline
 					(pts
-						(xy -2.54 -5.08) (xy -4.191 -5.08)
+						(xy -2.54 -5.08)
+						(xy -4.191 -5.08)
 					)
 					(stroke
 						(width 0.254)
@@ -1475,7 +1513,11 @@
 				)
 				(polyline
 					(pts
-						(xy -2.413 -5.08) (xy -2.413 -1.27) (xy 2.667 -4.826) (xy -2.413 -8.89) (xy -2.413 -5.08)
+						(xy -2.413 -5.08)
+						(xy -2.413 -1.27)
+						(xy 2.667 -4.826)
+						(xy -2.413 -8.89)
+						(xy -2.413 -5.08)
 					)
 					(stroke
 						(width 0.254)
@@ -1487,7 +1529,8 @@
 				)
 				(polyline
 					(pts
-						(xy -0.635 -7.62) (xy 5.08 -7.62)
+						(xy -0.635 -7.62)
+						(xy 5.08 -7.62)
 					)
 					(stroke
 						(width 0.254)
@@ -1510,7 +1553,8 @@
 				)
 				(polyline
 					(pts
-						(xy 0.889 -2.54) (xy 3.81 -2.54)
+						(xy 0.889 -2.54)
+						(xy 3.81 -2.54)
 					)
 					(stroke
 						(width 0.254)
@@ -1522,7 +1566,8 @@
 				)
 				(polyline
 					(pts
-						(xy 2.032 7.62) (xy 5.715 7.62)
+						(xy 2.032 7.62)
+						(xy 5.715 7.62)
 					)
 					(stroke
 						(width 0.254)
@@ -1534,7 +1579,8 @@
 				)
 				(polyline
 					(pts
-						(xy 3.048 2.54) (xy 5.715 2.54)
+						(xy 3.048 2.54)
+						(xy 5.715 2.54)
 					)
 					(stroke
 						(width 0.254)
@@ -1557,7 +1603,8 @@
 				)
 				(polyline
 					(pts
-						(xy 3.81 -2.54) (xy 3.81 2.54)
+						(xy 3.81 -2.54)
+						(xy 3.81 2.54)
 					)
 					(stroke
 						(width 0.254)
@@ -1569,7 +1616,8 @@
 				)
 				(polyline
 					(pts
-						(xy 5.08 -7.62) (xy 5.08 7.62)
+						(xy 5.08 -7.62)
+						(xy 5.08 7.62)
 					)
 					(stroke
 						(width 0.254)
@@ -1594,7 +1642,11 @@
 				)
 				(polyline
 					(pts
-						(xy 2.032 4.826) (xy 2.032 8.636) (xy -3.048 5.08) (xy 2.032 1.016) (xy 2.032 4.826)
+						(xy 2.032 4.826)
+						(xy 2.032 8.636)
+						(xy -3.048 5.08)
+						(xy 2.032 1.016)
+						(xy 2.032 4.826)
 					)
 					(stroke
 						(width 0.254)
@@ -1855,7 +1907,8 @@
 			(symbol "+3V3_0_1"
 				(polyline
 					(pts
-						(xy -0.762 1.27) (xy 0 2.54)
+						(xy -0.762 1.27)
+						(xy 0 2.54)
 					)
 					(stroke
 						(width 0)
@@ -1867,7 +1920,8 @@
 				)
 				(polyline
 					(pts
-						(xy 0 2.54) (xy 0.762 1.27)
+						(xy 0 2.54)
+						(xy 0.762 1.27)
 					)
 					(stroke
 						(width 0)
@@ -1879,7 +1933,8 @@
 				)
 				(polyline
 					(pts
-						(xy 0 0) (xy 0 2.54)
+						(xy 0 0)
+						(xy 0 2.54)
 					)
 					(stroke
 						(width 0)
@@ -1994,7 +2049,12 @@
 			(symbol "GND_0_1"
 				(polyline
 					(pts
-						(xy 0 0) (xy 0 -1.27) (xy 1.27 -1.27) (xy 0 -2.54) (xy -1.27 -1.27) (xy 0 -1.27)
+						(xy 0 0)
+						(xy 0 -1.27)
+						(xy 1.27 -1.27)
+						(xy 0 -2.54)
+						(xy -1.27 -1.27)
+						(xy 0 -1.27)
 					)
 					(stroke
 						(width 0)
@@ -2027,17 +2087,186 @@
 			)
 			(embedded_fonts no)
 		)
-	)
-	(text "RS485 (replaces MAX485 module), fault-protected\nU701 THVD2410DR 3.3 V half-duplex transceiver on UART1: GPIO4 = TX (D), GPIO35 = RX (R),\nGPIO25 = DE + /RE (ESP-IDF UART RS485 half-duplex mode). A and B are rated +/-70 V and work over +/-25 V\ncommon mode, so a bus wire shorted to the 12 V or 24 V supply does no damage.\nR701 / R702 hold RX / TX high (R floats while transmitting); R703 holds DE low (receive) while the MCU is in reset.\nD701 / D702 SMAJ33CA clamp A and B to GND: 33 V standoff (above a 24 V system's 28.8 V), 53 V clamp (below 70 V).\nJ702 TERM: fit a shunt (120R across A-B) only on the two nodes at the ends of the bus.\nJ703 BIAS: fit both shunts, across 1-2 and 3-4 (A to 3V3 and B to GND via 330R), on exactly one node:\nidle A-B = 3.3 V x 60/(330+330+60) = 0.28 V with both ends terminated (receiver threshold 0.2 V).\nJumpers off = no termination and no bias. With J702/J703 fitted, a supply short burns R704-R706 (U701 survives)."
-		(exclude_from_sim no)
-		(at 25.4 25.4 0)
-		(effects
-			(font
-				(size 1.5 1.5)
+		(symbol "Jumper:SolderJumper_2_Open"
+			(pin_numbers
+				(hide yes)
 			)
-			(justify left top)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom no)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "JP"
+				(at 0 2.032 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "SolderJumper_2_Open"
+				(at 0 -2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 -7.62 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Solder Jumper, 2-pole, open"
+				(at 0 -5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "solder jumper SPST"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "SolderJumper*Open*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "SolderJumper_2_Open_0_1"
+				(polyline
+					(pts
+						(xy -0.254 1.016)
+						(xy -0.254 -1.016)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -0.254 -1.016)
+					(mid -1.2656 0)
+					(end -0.254 1.016)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(arc
+					(start 0.254 1.016)
+					(mid 1.2656 0)
+					(end 0.254 -1.016)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.254 1.016)
+						(xy 0.254 -1.016)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "SolderJumper_2_Open_1_1"
+				(pin passive line
+					(at -5.08 0 0)
+					(length 3.81)
+					(name "A"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 5.08 0 180)
+					(length 3.81)
+					(name "B"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
 		)
-		(uuid "dcf36c07-7a63-499d-92a5-90f5e9e37df7")
 	)
 	(junction
 		(at 86.36 99.06)
@@ -2071,7 +2300,8 @@
 	)
 	(wire
 		(pts
-			(xy 170.18 116.84) (xy 147.32 116.84)
+			(xy 170.18 116.84)
+			(xy 147.32 116.84)
 		)
 		(stroke
 			(width 0)
@@ -2081,7 +2311,8 @@
 	)
 	(wire
 		(pts
-			(xy 116.84 101.6) (xy 124.46 101.6)
+			(xy 116.84 101.6)
+			(xy 124.46 101.6)
 		)
 		(stroke
 			(width 0)
@@ -2091,7 +2322,8 @@
 	)
 	(wire
 		(pts
-			(xy 147.32 88.9) (xy 142.24 88.9)
+			(xy 147.32 88.9)
+			(xy 142.24 88.9)
 		)
 		(stroke
 			(width 0)
@@ -2101,7 +2333,8 @@
 	)
 	(wire
 		(pts
-			(xy 210.82 91.44) (xy 200.66 91.44)
+			(xy 210.82 91.44)
+			(xy 200.66 91.44)
 		)
 		(stroke
 			(width 0)
@@ -2111,7 +2344,8 @@
 	)
 	(wire
 		(pts
-			(xy 152.4 114.3) (xy 147.32 114.3)
+			(xy 152.4 114.3)
+			(xy 147.32 114.3)
 		)
 		(stroke
 			(width 0)
@@ -2121,7 +2355,8 @@
 	)
 	(wire
 		(pts
-			(xy 106.68 88.9) (xy 106.68 81.28)
+			(xy 106.68 88.9)
+			(xy 106.68 81.28)
 		)
 		(stroke
 			(width 0)
@@ -2131,7 +2366,8 @@
 	)
 	(wire
 		(pts
-			(xy 160.02 114.3) (xy 170.18 114.3)
+			(xy 160.02 114.3)
+			(xy 170.18 114.3)
 		)
 		(stroke
 			(width 0)
@@ -2141,7 +2377,8 @@
 	)
 	(wire
 		(pts
-			(xy 71.12 121.92) (xy 63.5 121.92)
+			(xy 71.12 121.92)
+			(xy 63.5 121.92)
 		)
 		(stroke
 			(width 0)
@@ -2151,7 +2388,8 @@
 	)
 	(wire
 		(pts
-			(xy 106.68 81.28) (xy 106.68 78.74)
+			(xy 106.68 81.28)
+			(xy 106.68 78.74)
 		)
 		(stroke
 			(width 0)
@@ -2161,7 +2399,8 @@
 	)
 	(wire
 		(pts
-			(xy 106.68 81.28) (xy 93.98 81.28)
+			(xy 106.68 81.28)
+			(xy 93.98 81.28)
 		)
 		(stroke
 			(width 0)
@@ -2171,17 +2410,8 @@
 	)
 	(wire
 		(pts
-			(xy 248.92 116.84) (xy 248.92 119.38)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4fafc924-8b7d-4e8e-9db7-d299c2b6728f")
-	)
-	(wire
-		(pts
-			(xy 96.52 104.14) (xy 93.98 104.14)
+			(xy 96.52 104.14)
+			(xy 93.98 104.14)
 		)
 		(stroke
 			(width 0)
@@ -2191,7 +2421,8 @@
 	)
 	(wire
 		(pts
-			(xy 193.04 91.44) (xy 187.96 91.44)
+			(xy 193.04 91.44)
+			(xy 187.96 91.44)
 		)
 		(stroke
 			(width 0)
@@ -2201,7 +2432,8 @@
 	)
 	(wire
 		(pts
-			(xy 96.52 101.6) (xy 93.98 101.6)
+			(xy 96.52 101.6)
+			(xy 93.98 101.6)
 		)
 		(stroke
 			(width 0)
@@ -2211,7 +2443,8 @@
 	)
 	(wire
 		(pts
-			(xy 86.36 99.06) (xy 63.5 99.06)
+			(xy 86.36 99.06)
+			(xy 63.5 99.06)
 		)
 		(stroke
 			(width 0)
@@ -2221,7 +2454,8 @@
 	)
 	(wire
 		(pts
-			(xy 91.44 121.92) (xy 71.12 121.92)
+			(xy 91.44 121.92)
+			(xy 71.12 121.92)
 		)
 		(stroke
 			(width 0)
@@ -2231,7 +2465,8 @@
 	)
 	(wire
 		(pts
-			(xy 96.52 99.06) (xy 86.36 99.06)
+			(xy 96.52 99.06)
+			(xy 86.36 99.06)
 		)
 		(stroke
 			(width 0)
@@ -2241,7 +2476,8 @@
 	)
 	(wire
 		(pts
-			(xy 91.44 109.22) (xy 91.44 121.92)
+			(xy 91.44 109.22)
+			(xy 91.44 121.92)
 		)
 		(stroke
 			(width 0)
@@ -2251,7 +2487,8 @@
 	)
 	(wire
 		(pts
-			(xy 210.82 88.9) (xy 210.82 86.36)
+			(xy 210.82 88.9)
+			(xy 210.82 86.36)
 		)
 		(stroke
 			(width 0)
@@ -2261,7 +2498,8 @@
 	)
 	(wire
 		(pts
-			(xy 116.84 96.52) (xy 124.46 96.52)
+			(xy 116.84 96.52)
+			(xy 124.46 96.52)
 		)
 		(stroke
 			(width 0)
@@ -2271,17 +2509,8 @@
 	)
 	(wire
 		(pts
-			(xy 223.52 91.44) (xy 223.52 93.98)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "83b5caa0-d03a-4032-bcab-486cf78fd0ea")
-	)
-	(wire
-		(pts
-			(xy 96.52 109.22) (xy 91.44 109.22)
+			(xy 96.52 109.22)
+			(xy 91.44 109.22)
 		)
 		(stroke
 			(width 0)
@@ -2291,7 +2520,8 @@
 	)
 	(wire
 		(pts
-			(xy 93.98 104.14) (xy 78.74 104.14)
+			(xy 93.98 104.14)
+			(xy 78.74 104.14)
 		)
 		(stroke
 			(width 0)
@@ -2301,7 +2531,8 @@
 	)
 	(wire
 		(pts
-			(xy 93.98 101.6) (xy 93.98 104.14)
+			(xy 93.98 101.6)
+			(xy 93.98 104.14)
 		)
 		(stroke
 			(width 0)
@@ -2311,7 +2542,8 @@
 	)
 	(wire
 		(pts
-			(xy 251.46 114.3) (xy 246.38 114.3)
+			(xy 251.46 114.3)
+			(xy 246.38 114.3)
 		)
 		(stroke
 			(width 0)
@@ -2321,7 +2553,8 @@
 	)
 	(wire
 		(pts
-			(xy 251.46 111.76) (xy 246.38 111.76)
+			(xy 251.46 111.76)
+			(xy 246.38 111.76)
 		)
 		(stroke
 			(width 0)
@@ -2331,7 +2564,8 @@
 	)
 	(wire
 		(pts
-			(xy 165.1 88.9) (xy 170.18 88.9)
+			(xy 165.1 88.9)
+			(xy 170.18 88.9)
 		)
 		(stroke
 			(width 0)
@@ -2341,7 +2575,8 @@
 	)
 	(wire
 		(pts
-			(xy 241.3 88.9) (xy 246.38 88.9)
+			(xy 241.3 88.9)
+			(xy 246.38 88.9)
 		)
 		(stroke
 			(width 0)
@@ -2351,17 +2586,8 @@
 	)
 	(wire
 		(pts
-			(xy 251.46 116.84) (xy 248.92 116.84)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c99062a9-6523-444e-a2e3-9fc65ed6a9e9")
-	)
-	(wire
-		(pts
-			(xy 223.52 88.9) (xy 233.68 88.9)
+			(xy 223.52 88.9)
+			(xy 233.68 88.9)
 		)
 		(stroke
 			(width 0)
@@ -2371,13 +2597,63 @@
 	)
 	(wire
 		(pts
-			(xy 78.74 104.14) (xy 63.5 104.14)
+			(xy 78.74 104.14)
+			(xy 63.5 104.14)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "eab9a439-9d1c-4665-9242-4c73518eb0df")
+	)
+	(wire
+		(pts
+			(xy 180.34 114.3)
+			(xy 180.34 116.84)
+		)
+		(uuid "396b3876-48a6-435b-9bd0-7c1ffa79915c")
+	)
+	(wire
+		(pts
+			(xy 180.34 116.84)
+			(xy 170.18 116.84)
+		)
+		(uuid "ba931889-faf2-4e76-9630-dac23a355d51")
+	)
+	(wire
+		(pts
+			(xy 210.82 88.9)
+			(xy 212.09 88.9)
+		)
+		(uuid "affbc88c-f74b-45d4-affb-faaf48fe2212")
+	)
+	(wire
+		(pts
+			(xy 222.25 88.9)
+			(xy 223.52 88.9)
+		)
+		(uuid "7edd2377-c479-49a7-a0d3-fa42bd98ff86")
+	)
+	(wire
+		(pts
+			(xy 210.82 91.44)
+			(xy 210.82 93.98)
+		)
+		(uuid "230de52a-667e-436e-9ff5-64ee999c3079")
+	)
+	(wire
+		(pts
+			(xy 210.82 93.98)
+			(xy 212.09 93.98)
+		)
+		(uuid "89a18694-89ab-4511-b67d-2ce8855f9858")
+	)
+	(wire
+		(pts
+			(xy 222.25 93.98)
+			(xy 223.52 93.98)
+		)
+		(uuid "4615a553-324c-4284-8459-6ea7d4a23962")
 	)
 	(label "RS485_B"
 		(at 170.18 88.9 0)
@@ -2542,122 +2818,40 @@
 		)
 		(uuid "91967a45-ea33-4542-81a5-cb9f2ede43e6")
 	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_02x02_Odd_Even")
-		(at 215.9 88.9 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "01a6e7fe-fa22-4e49-83f4-30b25074414f")
-		(property "Reference" "J703"
-			(at 217.17 86.36 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
+	(hierarchical_label "RS485_A"
+		(shape passive)
+		(at 251.46 111.76 0)
+		(effects
+			(font
+				(size 1.27 1.27)
 			)
+			(justify left)
 		)
-		(property "Value" "BIAS"
-			(at 217.17 93.98 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_2x02_P2.54mm_Vertical"
-			(at 215.9 88.9 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 215.9 88.9 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Generic connector, double row, 02x02, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)"
-			(at 215.9 88.9 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C66690"
-			(at 215.9 88.9 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "2.54-2*2PPin"
-			(at 215.9 88.9 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "3"
-			(uuid "6c58d463-272b-48cb-a0d7-ecae553e1d23")
-		)
-		(pin "4"
-			(uuid "893e465d-4cb0-4829-bef7-f2b9e983a615")
-		)
-		(pin "1"
-			(uuid "add01dbe-99bb-47a4-aac3-52e8a1273a95")
-		)
-		(pin "2"
-			(uuid "9fc60c71-d227-4e30-9aa5-e09001b7d2fa")
-		)
-		(instances
-			(project "hour-meter-board-microfit"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "J703")
-					(unit 1)
-				)
-			)
-		)
+		(uuid "0f1b8273-95bd-4751-9b4b-3519a9e4c9c9")
 	)
+	(hierarchical_label "RS485_B"
+		(shape passive)
+		(at 251.46 114.3 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "98d1a414-a821-41d1-8539-63bc4086d28a")
+	)
+  (text "RS485 (replaces MAX485 module), fault-protected\nU701 THVD2410DR 3.3 V half-duplex transceiver on UART1: GPIO4 = TX (D), GPIO35 = RX (R),\nGPIO25 = DE + /RE (ESP-IDF UART RS485 half-duplex mode). A and B are rated +/-70 V and work over +/-25 V\ncommon mode, so a bus wire shorted to the 12 V or 24 V supply does no damage. A = J1 pin 5, B = J1 pin 12 (Harness sheet).\nR701 / R702 hold RX / TX high (R floats while transmitting); R703 holds DE low (receive) while the MCU is in reset.\nD701 / D702 SMAJ33CA clamp A and B to GND: 33 V standoff (above a 24 V system's 28.8 V), 53 V clamp (below 70 V).\nJP702 TERM: bridge the solder jumper (120R across A-B) only on the two nodes at the ends of the bus.\nJP703 + JP704 BIAS: bridge both (A to 3V3 and B to GND via 330R) on exactly one node:\nidle A-B = 3.3 V x 60/(330+330+60) = 0.28 V with both ends terminated (receiver threshold 0.2 V).\nJumpers open = no termination and no bias. With JP702-JP704 bridged, a supply short burns R704-R706 (U701 survives)."
+    (at 25.4 25.4 0)
+    (effects (font (size 1.5 1.5)) (justify left top))
+    (uuid "a49cc350-2fde-4927-a9ae-e7a8dfc17704")
+  )
 	(symbol
 		(lib_id "power:+3V3")
 		(at 86.36 91.44 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "08be6af9-ead2-479b-9f9e-24fabb7d9cc7")
 		(property "Reference" "#PWR701"
@@ -2714,6 +2908,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "17a71a8a-8d2b-433f-8194-0a83b962b7fc")
 		)
@@ -2730,11 +2926,9 @@
 		(lib_id "Device:D_TVS")
 		(at 147.32 92.71 270)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "11dafd8e-93b8-4318-864b-7be4980e2c9c")
 		(property "Reference" "D701"
@@ -2812,6 +3006,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "c97c187e-15f1-43f0-be05-37b2bd578508")
 		)
@@ -2831,11 +3027,9 @@
 		(lib_id "Device:R")
 		(at 196.85 91.44 90)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "124976bc-012c-4c1e-ba2e-bf4ada17a586")
 		(property "Reference" "R706"
@@ -2913,6 +3107,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "5a39f3ba-160b-49b2-974c-e417d4707a2d")
 		)
@@ -2932,11 +3128,9 @@
 		(lib_id "power:+3V3")
 		(at 210.82 86.36 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "2424b87e-3004-42c6-8d53-3efb5dd14816")
 		(property "Reference" "#PWR708"
@@ -2993,6 +3187,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "5e81a742-e1ce-43fd-af6d-e8b163c469b5")
 		)
@@ -3006,115 +3202,12 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector_Generic:Conn_01x02")
-		(at 175.26 114.3 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "3fd1d69b-7157-494a-be42-bb2272596e9e")
-		(property "Reference" "J702"
-			(at 175.26 111.76 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "TERM"
-			(at 175.26 119.38 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
-			(at 175.26 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 175.26 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"
-			(at 175.26 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C53055672"
-			(at 175.26 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "254PZ-1x2P-V"
-			(at 175.26 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "2"
-			(uuid "d59584a3-6634-487b-9bf6-0172f79fb10e")
-		)
-		(pin "1"
-			(uuid "080c4132-4c8e-4aa0-8068-7b9db14b927b")
-		)
-		(instances
-			(project "hour-meter-board-microfit"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "J702")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:R")
 		(at 86.36 95.25 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "44e3b6ab-08e3-4ea2-96a2-dcef6732cdbf")
 		(property "Reference" "R701"
@@ -3192,6 +3285,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "9af487a1-6005-47bf-bd94-3b3d06f82ffb")
 		)
@@ -3211,11 +3306,9 @@
 		(lib_id "Interface_UART:SP3485EN")
 		(at 106.68 104.14 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "6bae12bc-a7ed-4dfa-ad7f-b86d2f71fea4")
 		(property "Reference" "U701"
@@ -3295,6 +3388,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "3a18ff6c-3543-44c8-8770-457aadea8008")
 		)
@@ -3332,11 +3427,9 @@
 		(lib_id "power:+3V3")
 		(at 71.12 114.3 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "7f7108d8-6785-4876-930f-138454db303a")
 		(property "Reference" "#PWR702"
@@ -3393,6 +3486,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "631f939c-9720-4696-b7b2-f5de15bada1c")
 		)
@@ -3409,11 +3504,9 @@
 		(lib_id "power:GND")
 		(at 147.32 96.52 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "8d9c2e9c-9dca-4622-8b8f-4e3a45c20f7a")
 		(property "Reference" "#PWR707"
@@ -3470,6 +3563,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "572cb80e-65b4-4843-9fcc-226bfd1c1952")
 		)
@@ -3483,118 +3578,12 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector:Screw_Terminal_01x03")
-		(at 256.54 114.3 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "96596841-087d-4d70-87ed-6aca9e1244de")
-		(property "Reference" "J701"
-			(at 256.54 109.22 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "RS485"
-			(at 256.54 119.38 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Connector_JST:JST_VH_B3P-VH_1x03_P3.96mm_Vertical"
-			(at 256.54 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 256.54 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"
-			(at 256.54 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C160316"
-			(at 256.54 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "B3P-VH(LF)(SN)"
-			(at 256.54 114.3 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "f22c2582-a152-422e-b325-d2a0617bc3bd")
-		)
-		(pin "2"
-			(uuid "61f1eab5-94b6-4b20-b066-c28421bca4bb")
-		)
-		(pin "3"
-			(uuid "240c6700-89fe-42c1-9348-ade358f9d1a7")
-		)
-		(instances
-			(project "hour-meter-board-microfit"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "J701")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:GND")
 		(at 93.98 88.9 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "9fb9bf63-2259-43da-9516-53a0c340da95")
 		(property "Reference" "#PWR705"
@@ -3651,6 +3640,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "76232cdc-d3af-479b-8a7a-2717219077bf")
 		)
@@ -3667,11 +3658,9 @@
 		(lib_id "Device:R")
 		(at 78.74 107.95 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "ab71a8f7-1cf6-4ef0-acf0-fc7d0c740fe0")
 		(property "Reference" "R703"
@@ -3749,6 +3738,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "bc2754b6-dcc2-40ec-8615-492abf1fe599")
 		)
@@ -3768,11 +3759,9 @@
 		(lib_id "power:GND")
 		(at 106.68 119.38 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "ba0a3347-56a2-4489-a11e-f030afca2e6b")
 		(property "Reference" "#PWR706"
@@ -3829,6 +3818,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "f4905e80-8ed3-4ac1-b943-0defc47cf517")
 		)
@@ -3845,11 +3836,9 @@
 		(lib_id "power:GND")
 		(at 78.74 111.76 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "bbfe425d-eee2-4b48-b439-791851e3666c")
 		(property "Reference" "#PWR703"
@@ -3906,6 +3895,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "90e2d970-b570-4bcc-933a-1de90a5fde6a")
 		)
@@ -3922,11 +3913,9 @@
 		(lib_id "power:+3V3")
 		(at 106.68 78.74 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "bcefa53b-abee-4a95-b2f3-20080cd849b5")
 		(property "Reference" "#PWR704"
@@ -3983,6 +3972,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "b36d6b45-b85f-4734-bab7-a2e3e399d010")
 		)
@@ -3999,11 +3990,9 @@
 		(lib_id "Device:R")
 		(at 237.49 88.9 90)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "c7485324-197a-4448-bc94-58bc5d2947ef")
 		(property "Reference" "R705"
@@ -4081,6 +4070,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "0f2190f2-ecfc-4872-b74f-3a1e65cf3ae3")
 		)
@@ -4100,11 +4091,9 @@
 		(lib_id "power:GND")
 		(at 223.52 93.98 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "c849f2c3-e1d8-481a-ad05-f37ae8658924")
 		(property "Reference" "#PWR709"
@@ -4161,6 +4150,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "7facc957-f152-478a-af01-5032160bbce9")
 		)
@@ -4177,11 +4168,9 @@
 		(lib_id "Device:R")
 		(at 71.12 118.11 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "c94ff9c9-a116-4d5d-b144-0d0afbc2a553")
 		(property "Reference" "R702"
@@ -4259,6 +4248,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "e9869842-1ef8-425d-a89c-07f0561126b1")
 		)
@@ -4278,11 +4269,9 @@
 		(lib_id "Device:D_TVS")
 		(at 165.1 92.71 270)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "ca584334-5ba5-4341-8a69-a4351bfdc714")
 		(property "Reference" "D702"
@@ -4360,6 +4349,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "0fc413fc-85fe-4fa7-9028-9e09395c5933")
 		)
@@ -4376,91 +4367,12 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 248.92 119.38 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "cf7ace39-9bcf-4c9c-873d-e7ffa934adb0")
-		(property "Reference" "#PWR710"
-			(at 248.92 125.73 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 248.92 123.19 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 248.92 119.38 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 248.92 119.38 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 248.92 119.38 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "48754e3f-62a8-4dba-9d8f-92537cf4fb06")
-		)
-		(instances
-			(project "hour-meter-board-microfit"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "#PWR710")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:R")
 		(at 156.21 114.3 90)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "dd81a107-f93f-4fa6-9df2-68f6ab74eb9c")
 		(property "Reference" "R704"
@@ -4538,6 +4450,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "e4eb375e-f4ef-4714-aea8-096fc8e8b63c")
 		)
@@ -4557,11 +4471,9 @@
 		(lib_id "power:GND")
 		(at 165.1 96.52 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "ed8c042f-a3fd-412c-9682-7a5d9d4292a4")
 		(property "Reference" "#PWR711"
@@ -4618,6 +4530,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "1"
 			(uuid "c6d47315-1e34-439d-9df8-121ef2869307")
 		)
@@ -4634,11 +4548,9 @@
 		(lib_id "Device:C")
 		(at 93.98 85.09 0)
 		(unit 1)
-		(body_style 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
 		(dnp no)
 		(uuid "f6ff7a11-a0d1-4cb4-8a44-367af7b76a37")
 		(property "Reference" "C701"
@@ -4718,6 +4630,8 @@
 				)
 			)
 		)
+		(body_style 1)
+		(in_pos_files yes)
 		(pin "2"
 			(uuid "b0d71afd-9cab-4117-9629-ed11535c5720")
 		)
@@ -4728,6 +4642,186 @@
 			(project "hour-meter-board-microfit"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
 					(reference "C701")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Jumper:SolderJumper_2_Open")
+		(at 175.26 114.3 0)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "a16ece2c-157c-4451-823b-285b0980840d")
+		(property "Reference" "JP702"
+			(at 175.26 112.268 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TERM 120R"
+			(at 175.26 110.236 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"
+			(at 175.26 114.3 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 175.26 114.3 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Solder Jumper, 2-pole, open"
+			(at 175.26 114.3 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "JP702")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Jumper:SolderJumper_2_Open")
+		(at 217.17 88.9 0)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "e7ff2a30-0f6a-41c5-a0a0-4278648a40e5")
+		(property "Reference" "JP703"
+			(at 217.17 84.836 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "BIAS A"
+			(at 217.17 86.868 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"
+			(at 217.17 88.9 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 217.17 88.9 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Solder Jumper, 2-pole, open"
+			(at 217.17 88.9 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "JP703")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Jumper:SolderJumper_2_Open")
+		(at 217.17 93.98 0)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "e2b455b8-e7f2-48dc-ac1e-8c67d4a4f377")
+		(property "Reference" "JP704"
+			(at 217.17 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "BIAS B"
+			(at 217.17 98.552 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"
+			(at 217.17 93.98 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 217.17 93.98 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Solder Jumper, 2-pole, open"
+			(at 217.17 93.98 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "JP704")
 					(unit 1)
 				)
 			)
