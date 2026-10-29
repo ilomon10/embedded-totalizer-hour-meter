@@ -1,0 +1,21 @@
+{
+  "default_passives": {
+    "bulk_cap": "10uF X5R 0603 (LCSC C19702)",
+    "decoupling_cap": "100nF X7R 0603 (LCSC C14663)",
+    "pull_up": "10k 0603 (LCSC C25804)"
+  },
+  "design_rules": [
+    "Every placed part has an LCSC field naming an in-stock JLCPCB part; verify the exported BOM with scripts/jlc-stock.ts before ordering.",
+    "The I2C bus has exactly one pull-up pair: 4.7k to +3V3 on the esp32-core sheet. Module sheets add no pull-ups.",
+    "Vehicle-side nets (VIN_RAW, DIN1_RAW, DIN2_RAW, VEH_GND, RS485_A, RS485_B) use the Vehicle netclass: 0.8 mm clearance and no copper pour in the vehicle area on either layer.",
+    "The I/O port nets AIN1_RAW, AIN1_MID and DOUT1 (J902) carry vehicle voltages but share GND: they use the Vehicle netclass (0.8 mm clearance) outside the isolated area.",
+    "Keep the LIS3MDL magnetometer at least 20 mm from the PSU header area, the CR2032 holder, the screw terminals and any inductor; place MPU-6500 and LIS3MDL with the same orientation.",
+    "Route USB D+/D- as a 90-ohm differential pair over unbroken GND.",
+    "Put the antenna end of the ESP32 module at the board edge with a copper keep-out on both layers under and around the antenna."
+  ],
+  "fab_constraints": {
+    "layer_count": 2
+  },
+  "naming_conventions": {},
+  "sourcing": {}
+}
