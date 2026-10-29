@@ -3579,6 +3579,220 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Device:LED"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "D"
+				(at 0 2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "LED"
+				(at 0 -2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Light emitting diode"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Sim.Pins" "1=K 2=A"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "LED diode"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "LED* LED_SMD:* LED_THT:*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "LED_0_1"
+				(polyline
+					(pts
+						(xy -3.048 -0.762)
+						(xy -4.572 -2.286)
+						(xy -3.81 -2.286)
+						(xy -4.572 -2.286)
+						(xy -4.572 -1.524)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.778 -0.762)
+						(xy -3.302 -2.286)
+						(xy -2.54 -2.286)
+						(xy -3.302 -2.286)
+						(xy -3.302 -1.524)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 0)
+						(xy 1.27 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 -1.27)
+						(xy -1.27 1.27)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 -1.27)
+						(xy 1.27 1.27)
+						(xy -1.27 0)
+						(xy 1.27 -1.27)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "LED_1_1"
+				(pin passive line
+					(at -3.81 0 0)
+					(length 2.54)
+					(name "K"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 3.81 0 180)
+					(length 2.54)
+					(name "A"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 	)
 	(junction
 		(at 76.2 83.82)
@@ -4111,31 +4325,10 @@
 	)
 	(wire
 		(pts
-			(xy 208.28 138.43)
-			(xy 220.98 138.43)
-		)
-		(uuid "ce5e511d-bbd9-4c31-838d-9cabbdc4c904")
-	)
-	(wire
-		(pts
 			(xy 208.28 142.24)
 			(xy 220.98 142.24)
 		)
 		(uuid "68df54f2-4ce1-4b52-babb-29747386498f")
-	)
-	(wire
-		(pts
-			(xy 208.28 146.05)
-			(xy 220.98 146.05)
-		)
-		(uuid "8ee1deb0-9c65-4cdd-addc-ad6de0de5f04")
-	)
-	(wire
-		(pts
-			(xy 208.28 149.86)
-			(xy 220.98 149.86)
-		)
-		(uuid "1df38c04-a9ca-43b7-a479-0faddf03e14e")
 	)
 	(wire
 		(pts
@@ -4157,6 +4350,79 @@
 			(xy 38.1 171.45)
 		)
 		(uuid "e39bbffd-3136-4560-accc-b72934050735")
+	)
+	(wire
+		(pts
+			(xy 129.54 177.8)
+			(xy 132.08 177.8)
+		)
+		(uuid "1c0277ca-f385-42b7-8754-179722766ea2")
+	)
+	(wire
+		(pts
+			(xy 139.7 177.8)
+			(xy 142.24 177.8)
+		)
+		(uuid "8c789a08-1007-4c3c-a288-90286992afda")
+	)
+	(wire
+		(pts
+			(xy 149.86 177.8)
+			(xy 152.4 177.8)
+		)
+		(uuid "713b6c13-1ef5-408d-a91d-0fdff8c1749c")
+	)
+	(wire
+		(pts
+			(xy 129.54 184.15)
+			(xy 132.08 184.15)
+		)
+		(uuid "f35906c4-49dd-48b2-ab70-440a8a369751")
+	)
+	(wire
+		(pts
+			(xy 139.7 184.15)
+			(xy 142.24 184.15)
+		)
+		(uuid "f609d0ba-a783-4860-a1da-a40fbe44e558")
+	)
+	(wire
+		(pts
+			(xy 149.86 184.15)
+			(xy 152.4 184.15)
+		)
+		(uuid "f4412d2e-4d6a-462d-b1ee-4ed6d9fb1ff3")
+	)
+	(wire
+		(pts
+			(xy 129.54 190.5)
+			(xy 132.08 190.5)
+		)
+		(uuid "776379a7-426a-44cb-a49f-1394a0580b3d")
+	)
+	(wire
+		(pts
+			(xy 139.7 190.5)
+			(xy 142.24 190.5)
+		)
+		(uuid "1eb01005-efaa-4aa2-8007-669bc509be93")
+	)
+	(wire
+		(pts
+			(xy 149.86 190.5)
+			(xy 152.4 190.5)
+		)
+		(uuid "778b4fc0-1ff1-4b7c-bb0b-5cbf9a3e6af1")
+	)
+	(text "PORTS\nUART sensor port on J1 (Harness sheet): pin 3 TX, pin 4 RX, pin 2 GND,\npin 11 = 5 V, 200 mA via F801 polyfuse (shared with AIN1 sensors).\nUART2 = GPIO17 TX (3.3 V out via R801 100R) / GPIO16 RX via U801 74LVC1G17\n(5 V-tolerant input, R802 keeps it idle-high). U802 SRV05-4 = ESD on the\nfour external UART/GPS lines. The port data lines are 3.3/5 V logic:\nthey survive ESD, not a wire to the vehicle supply."
+		(at 25.4 25.4 0)
+		(effects
+			(font
+				(size 1.5 1.5)
+			)
+			(justify left top)
+		)
+		(uuid "2a1a5df0-93e7-47d8-b228-d56e51d68598")
 	)
 	(label "GPS_RX_EXT"
 		(at 63.5 149.86 180)
@@ -4480,17 +4746,6 @@
 		)
 		(uuid "572a4161-b919-4e9b-93fe-c1563da8b658")
 	)
-	(hierarchical_label "EXP_IO5"
-		(shape bidirectional)
-		(at 208.28 138.43 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "9accce05-0ffd-4eba-8d6e-dbfc07fea691")
-	)
 	(hierarchical_label "EXP_IO15"
 		(shape bidirectional)
 		(at 208.28 142.24 180)
@@ -4501,28 +4756,6 @@
 			(justify right)
 		)
 		(uuid "2c10a8d8-e8cc-4617-9f45-7e925530cc10")
-	)
-	(hierarchical_label "EXP_IO18"
-		(shape bidirectional)
-		(at 208.28 146.05 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "a3be22df-1533-4094-b740-8cd0139d5bab")
-	)
-	(hierarchical_label "EXP_IO19"
-		(shape bidirectional)
-		(at 208.28 149.86 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "a6dcb11f-0c26-4050-948c-8c7f85a8401a")
 	)
 	(hierarchical_label "EXP_IO33"
 		(shape bidirectional)
@@ -4535,15 +4768,48 @@
 		)
 		(uuid "ebfbd146-a6db-4ab8-8676-8eb2a7a9c4f8")
 	)
-  (text "J802 GPS port: JST GH 6-pin, Pixhawk GPS pinout: 1 VCC, 2 TX (to GPS RX),\n3 RX (from GPS TX), 4 SCL, 5 SDA, 6 GND. 100R series on the UART (GPIO36 / GPIO32);\nSCL/SDA (GPS compass) share the board I2C bus. PPS (GPIO39) is the TP801 solder pad.\nR806 holds GPS_TXD high with no module (GPIO36 has no pull-up); R807 holds PPS low.\nGPS supply = 3V3 by default (JP801 1-2); cut 1-2 and bridge 2-3 for a 5 V module\n(Pixhawk GPS units), fused by F803 (200 mA). Qwiic J803 also takes u-blox I2C (0x42).\nSpare GPIOs on test pads: TP802 IO5, TP803 IO15, TP804 IO18, TP805 IO19, TP806 IO33,\nTP807 +3V3, TP808 GND. IO5 and IO15 are strapping pins: do not pull them low at boot."
+	(hierarchical_label "EXP_IO18"
+		(shape bidirectional)
+		(at 129.54 177.8 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "f23d302d-80db-4f87-b2d4-3da5f112f2b0")
+	)
+	(hierarchical_label "EXP_IO19"
+		(shape bidirectional)
+		(at 129.54 184.15 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "227d94ff-4c45-40f4-a901-7dbf52db19f5")
+	)
+	(hierarchical_label "EXP_IO5"
+		(shape bidirectional)
+		(at 129.54 190.5 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "83b01ab9-7a47-440c-aed5-8ee3debc8497")
+	)
+  (text "J802 GPS port: JST GH 6-pin, Pixhawk GPS pinout: 1 VCC, 2 TX (to GPS RX),\n3 RX (from GPS TX), 4 SCL, 5 SDA, 6 GND. 100R series on the UART (GPIO36 / GPIO32);\nSCL/SDA (GPS compass) share the board I2C bus. PPS (GPIO39) is the TP801 solder pad.\nR806 holds GPS_TXD high with no module (GPIO36 has no pull-up); R807 holds PPS low.\nGPS supply = 3V3 by default (JP801 1-2); cut 1-2 and bridge 2-3 for a 5 V module\n(Pixhawk GPS units), fused by F803 (200 mA). Qwiic J803 also takes u-blox I2C (0x42).\nSpare GPIOs on test pads: TP803 IO15, TP806 IO33, TP807 +3V3, TP808 GND.\nIO15 is a strapping pin: do not pull it low at boot."
     (at 147.32 25.4 0)
     (effects (font (size 1.5 1.5)) (justify left top))
-    (uuid "c173dfd3-3eb5-458b-9632-b7ef6bc38e65")
+    (uuid "69f07e31-3430-44b0-b0a9-f2f7010efeeb")
   )
-  (text "PORTS\nUART sensor port on J1 (Harness sheet): pin 3 TX, pin 4 RX, pin 2 GND,\npin 11 = 5 V, 200 mA via F801 polyfuse (shared with AIN1 sensors).\nUART2 = GPIO17 TX (3.3 V out via R801 100R) / GPIO16 RX via U801 74LVC1G17\n(5 V-tolerant input, R802 keeps it idle-high). U802 SRV05-4 = ESD on the\nfour external UART/GPS lines. The port data lines are 3.3/5 V logic:\nthey survive ESD, not a wire to the vehicle supply."
-    (at 25.4 25.4 0)
+  (text "INDICATOR LEDS: side-view Lite-On LTST-S270 (1.6 x 1.2 mm) on the\nright board edge, lighting out through the case wall.\nActive high: GPIO = 1 -> LED on, 2-4 mA through 330R.\nD801 P1 green (GPIO18), D802 P2 yellow (GPIO19): process.\nD803 USER blue (GPIO5): free for the program. GPIO5 is a strapping\npin (SDIO slave timing only, unused); it may flicker at boot."
+    (at 25.4 177.8 0)
     (effects (font (size 1.5 1.5)) (justify left top))
-    (uuid "2a1a5df0-93e7-47d8-b228-d56e51d68598")
+    (uuid "7bab1f46-96e0-4f8e-be2e-7062097e394f")
   )
 	(symbol
 		(lib_id "power:GND")
@@ -7668,67 +7934,6 @@
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
-		(at 220.98 138.43 270)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "0fa944c1-bd6a-4284-8e06-59ed84c2637f")
-		(property "Reference" "TP802"
-			(at 228.6 138.43 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "IO5"
-			(at 226.06 138.43 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm"
-			(at 220.98 138.43 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 220.98 138.43 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "test point"
-			(at 220.98 138.43 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-microfit"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
-					(reference "TP802")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:TestPoint")
 		(at 220.98 142.24 270)
 		(unit 1)
 		(in_bom yes)
@@ -7783,128 +7988,6 @@
 			(project "hour-meter-board-microfit"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
 					(reference "TP803")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:TestPoint")
-		(at 220.98 146.05 270)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "55857c36-bb49-4a85-80d4-e128a8437b85")
-		(property "Reference" "TP804"
-			(at 228.6 146.05 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "IO18"
-			(at 226.06 146.05 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm"
-			(at 220.98 146.05 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 220.98 146.05 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "test point"
-			(at 220.98 146.05 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-microfit"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
-					(reference "TP804")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:TestPoint")
-		(at 220.98 149.86 270)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "a3d9461f-b6a1-4d7a-a6d4-432e90d70fea")
-		(property "Reference" "TP805"
-			(at 228.6 149.86 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "IO19"
-			(at 226.06 149.86 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm"
-			(at 220.98 149.86 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 220.98 149.86 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "test point"
-			(at 220.98 149.86 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-microfit"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
-					(reference "TP805")
 					(unit 1)
 				)
 			)
@@ -8149,6 +8232,657 @@
 			(project "hour-meter-board-microfit"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
 					(reference "#PWR819")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 135.89 177.8 90)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "9996bd8e-1792-4451-8340-0094a30067ea")
+		(property "Reference" "R808"
+			(at 135.89 175.768 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "330R"
+			(at 135.89 177.8 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 135.89 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 135.89 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 135.89 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
+					(reference "R808")
+					(unit 1)
+				)
+			)
+		)
+	
+		(property "LCSC" "C23138"
+			(at 135.89 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0603WAF3300T5E"
+			(at 135.89 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		))
+	(symbol
+		(lib_id "Device:R")
+		(at 135.89 184.15 90)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "d066502c-fad1-4888-ab94-57d08ee7b576")
+		(property "Reference" "R809"
+			(at 135.89 182.118 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "330R"
+			(at 135.89 184.15 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 135.89 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 135.89 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 135.89 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
+					(reference "R809")
+					(unit 1)
+				)
+			)
+		)
+	
+		(property "LCSC" "C23138"
+			(at 135.89 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0603WAF3300T5E"
+			(at 135.89 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		))
+	(symbol
+		(lib_id "Device:R")
+		(at 135.89 190.5 90)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "dc132450-4efe-4ea2-9101-225c1863bfb5")
+		(property "Reference" "R810"
+			(at 135.89 188.468 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "330R"
+			(at 135.89 190.5 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 135.89 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 135.89 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 135.89 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
+					(reference "R810")
+					(unit 1)
+				)
+			)
+		)
+	
+		(property "LCSC" "C23138"
+			(at 135.89 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0603WAF3300T5E"
+			(at 135.89 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		))
+	(symbol
+		(lib_id "Device:LED")
+		(at 146.05 177.8 180)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "965e1c65-58a5-463b-b4b3-e3928b49e194")
+		(property "Reference" "D801"
+			(at 146.05 180.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "P1 (green)"
+			(at 167.64 177.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "LED_SMD:LED_Kingbright_APA1606_1.6x0.6mm_Horizontal"
+			(at 146.05 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 146.05 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Side-view LED, green, 1.6 x 1.2 mm (Lite-On LTST-S270); lights out of the right board edge"
+			(at 146.05 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
+					(reference "D801")
+					(unit 1)
+				)
+			)
+		)
+	
+		(property "LCSC" "C364567"
+			(at 146.05 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "LTST-S270TGKT"
+			(at 146.05 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		))
+	(symbol
+		(lib_id "Device:LED")
+		(at 146.05 184.15 180)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "326ae1d4-6130-4e96-8396-20ec6240ef85")
+		(property "Reference" "D802"
+			(at 146.05 186.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "P2 (yellow)"
+			(at 167.64 184.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "LED_SMD:LED_Kingbright_APA1606_1.6x0.6mm_Horizontal"
+			(at 146.05 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 146.05 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Side-view LED, yellow, 1.6 x 1.2 mm (Lite-On LTST-S270); lights out of the right board edge"
+			(at 146.05 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
+					(reference "D802")
+					(unit 1)
+				)
+			)
+		)
+	
+		(property "LCSC" "C133119"
+			(at 146.05 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "LTST-S270KSKT"
+			(at 146.05 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		))
+	(symbol
+		(lib_id "Device:LED")
+		(at 146.05 190.5 180)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1c4ba652-5af1-4705-a027-f2c0ccfc618e")
+		(property "Reference" "D803"
+			(at 146.05 193.04 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "USER (blue)"
+			(at 167.64 190.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "LED_SMD:LED_Kingbright_APA1606_1.6x0.6mm_Horizontal"
+			(at 146.05 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 146.05 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Side-view LED, blue, 1.6 x 1.2 mm (Lite-On LTST-S270); lights out of the right board edge"
+			(at 146.05 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
+					(reference "D803")
+					(unit 1)
+				)
+			)
+		)
+	
+		(property "LCSC" "C125115"
+			(at 146.05 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "LTST-S270TBKT"
+			(at 146.05 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		))
+	(symbol
+		(lib_id "power:GND")
+		(at 152.4 177.8 90)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1dc3949c-e5e8-45ff-b24e-7f58f6297351")
+		(property "Reference" "#PWR825"
+			(at 158.75 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 157.48 177.8 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 152.4 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 152.4 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 152.4 177.8 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
+					(reference "#PWR825")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 152.4 184.15 90)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "6ff0fe90-7dfb-416d-9218-dce95e46f5aa")
+		(property "Reference" "#PWR826"
+			(at 158.75 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 157.48 184.15 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 152.4 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 152.4 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 152.4 184.15 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
+					(reference "#PWR826")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 152.4 190.5 90)
+		(unit 1)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "2246e42d-2ad9-424a-a41d-ebd33de11c94")
+		(property "Reference" "#PWR827"
+			(at 158.75 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 157.48 190.5 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 152.4 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 152.4 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 152.4 190.5 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "hour-meter-board-microfit"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/e086c105-532c-435e-9693-a6b914df94a2"
+					(reference "#PWR827")
 					(unit 1)
 				)
 			)

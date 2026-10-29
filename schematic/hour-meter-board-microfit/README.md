@@ -4,6 +4,7 @@ The [I/O board](../hour-meter-board-compact-lm2596-io/README.md), re-laid out fo
 
 - **One harness connector, J1** (Micro-Fit 3.0, 2 × 7, right-angle), replaces the five JST VH headers J101, J301, J701, J801 and J902.
 - **Every port on the left edge:** J1, the GPS port (JST GH) and the Qwiic port (JST SH). USB-C and the buttons stay on the right edge.
+- **Three indicator LEDs** on the right edge: two process indicators and one free for the program, all side-view so they shine through the case wall ([Indicator LEDs](#indicator-leds)).
 - **No pin headers left:**
   - the GPS header is a JST GH 6-pin in the Pixhawk pinout;
   - the expansion header became test pads;
@@ -19,11 +20,11 @@ This folder started as a copy of the I/O board's; that board is unchanged.
 
 | | |
 |---|---|
-| Schematic | `hour-meter-board-microfit.kicad_sch` + 10 sheets. The new `harness.kicad_sch` holds J1. The power, opto, RS485, IO and ports sheets lost their connectors and reach J1 through sheet pins |
-| PCB | `hour-meter-board-microfit.kicad_pcb`: 80 × 80 mm, 2 layers, 143 parts, GND pour on both layers |
-| Script | `tools-pcb.py` with `check`, `place`, `reuse`, `route [tries]`, `finish [passes]`, `silk`, `production` or `models` |
+| Schematic | `hour-meter-board-microfit.kicad_sch` + 10 sheets. The new `harness.kicad_sch` holds J1. The power, opto, RS485, IO and ports sheets lost their connectors and reach J1 through sheet pins. The ports sheet also holds the indicator LEDs |
+| PCB | `hour-meter-board-microfit.kicad_pcb`: 80 × 80 mm, 2 layers, 146 parts, GND pour on both layers |
+| Script | `tools-pcb.py` with `check`, `place`, `reuse`, `route [tries]`, `finish [passes]`, `update`, `silk`, `production` or `models` |
 | Order files | `production/`: Gerber zip, BOM and CPL |
-| Firmware | As on the I/O board: AIN1 and DOUT1 still need firmware ([to do](../hour-meter-board-compact-lm2596-io/README.md#firmware-to-do)). No GPIO changed |
+| Firmware | As on the I/O board: AIN1 and DOUT1 still need firmware ([to do](../hour-meter-board-compact-lm2596-io/README.md#firmware-to-do)), and so do the indicator LEDs on GPIO18, GPIO19 and GPIO5. No other GPIO changed |
 
 **Checks at this revision (2026-10-29):**
 - **ERC:** 0 errors, 2 intended warnings (the IMU address straps).
@@ -38,8 +39,8 @@ This folder started as a copy of the I/O board's; that board is unchanged.
   | 33.2 mm | 33.6 mm | 51.4 mm | 22.0 mm | 23.9 mm |
 
 - **AIN1 front end:** 28.5 mm from the LM2596 switch node (`check` wants ≥ 8 mm).
-- **Order files:** the BOM has 68 lines and the CPL 125 parts. BT401 is the only part on the bottom. R904 (not fitted) is left out of both.
-- **Stock:** all parts are in JLCPCB stock for 10 boards (checked 2026-10-29): 33 basic, 2 preferred and 33 extended lines. The tightest are J1 (C277677, 462), the BSP75N (621) and the LIS3MDL (1411).
+- **Order files:** the BOM has 71 lines and the CPL 131 parts. BT401 is the only part on the bottom. R904 (not fitted) is left out of both.
+- **Stock:** all parts are in JLCPCB stock for 10 boards (checked 2026-10-29): 33 basic, 2 preferred and 36 extended lines. The tightest are J1 (C277677, 462), the BSP75N (621) and the LIS3MDL (1411).
 - **Fault simulations:** the circuits are unchanged, so the I/O board's [fault analysis](../fault-analysis/README.md) still applies.
 
 ## J1 harness connector
@@ -102,10 +103,25 @@ The same table is printed on the bottom silkscreen, behind J1.
 | TP801 | GPS PPS | 1 mm solder pad, below J803 | GPIO39 through R805. The 6-pin GH GPS cable has no PPS wire; solder one on if the module brings PPS out |
 | J803 | Qwiic | JST SH 4-pin SM04B-SRSS-TB (C160404), left edge | 1 GND, 2 3V3, 3 SDA, 4 SCL |
 | J201 | USB-C | right edge | power and the CH340C serial port, as before |
-| TP802–TP808 | spare GPIOs | 1 mm test pads in a row above C104 | IO5, IO15, IO18, IO19, IO33, +3V3, GND. IO5 and IO15 are strapping pins: don't pull them low at boot |
+| TP803, TP806–TP808 | spare GPIOs | 1 mm test pads in a row above C104 | IO15, IO33, +3V3, GND. IO15 is a strapping pin: don't pull it low at boot |
 
 - **GPS supply:** JP801 selects 3.3 V (as delivered, 1-2 bridged). Pixhawk-style GPS units need 5 V: cut 1-2 and bridge 2-3, fused by F803 (200 mA).
 - **GPS compass:** the GH port's SCL/SDA share the board's I2C bus, so a GPS unit's compass appears on it.
+
+## Indicator LEDs
+
+Three side-view LEDs sit on the right edge, between H103 and H105, with their lenses at the board edge. Their light leaves sideways through the case wall, beside USB-C.
+
+| LED | Label | Colour | GPIO | Use | Part (LCSC) |
+|---|---|---|---|---|---|
+| D801 | P1 | green | GPIO18 | process indicator | LTST-S270TGKT (C364567) |
+| D802 | P2 | yellow | GPIO19 | process indicator | LTST-S270KSKT (C133119) |
+| D803 | USR | blue | GPIO5 | free for the program | LTST-S270TBKT (C125115) |
+
+- **Drive:** active high (GPIO = 1: LED on), 2–4 mA each through 330 Ω.
+- **GPIO5** is a strapping pin, but only for the SDIO-slave timing, which this board doesn't use. The blue LED may flicker while the ESP32 boots.
+- **Unchanged:** the PWR and STATUS (GPIO2) LEDs on the top side stay as before.
+- **Firmware:** the three GPIOs were spare test pads; the firmware does not drive them yet.
 
 ## Solder jumpers
 
@@ -130,7 +146,7 @@ JP702–JP704 are stacked beside U701, and the legend under them names each one.
   - the ESP32 module, with its antenna past the top edge;
   - between the island and the module: the IMU;
   - then the EEPROM, the AIN1 divider + ADS1115, the RS485 pull-ups and the RTC;
-  - on the right edge: USB-C, the CH340C and the buttons.
+  - on the right edge: USB-C, the CH340C, the buttons and, below H103, the three indicator LEDs.
 - **Unchanged blocks:** the ESP32/USB block, the IMU and the LM2596 stage keep the I/O board's placement and routing (see `reuse` below).
 - **Coin cell:** BT401 is on the bottom side, in the bottom-right corner.
 
@@ -150,7 +166,7 @@ JP702–JP704 are stacked beside U701, and the legend under them names each one.
 - **Mounting:** M3 holes in three corners (H102, H104, H105) and on the right edge (H103, 48 mm below the top-right corner, which the antenna occupies).
 - **Cut-outs:**
   - left wall: about 25 × 10 mm for J1, with the GH and SH ports below it on the same wall;
-  - right wall: about 10 × 4 mm for USB-C.
+  - right wall: about 10 × 4 mm for USB-C, and three 2 mm holes (or light pipes) for the LEDs. The holes sit 59, 64 and 69 mm below the board's top edge, at the board's top surface: the LED lenses are 0.6 mm tall.
 - **Example cases:**
   - an ABS box the size of the Hammond 1591XXG (about 120 × 95 × 37 mm outside). Check its drawing for the inside size and the standoff positions.
   - a local IP65 ABS junction box of about 100 × 100 × 50 mm, with the board on its mounting plate.
@@ -188,6 +204,13 @@ python3 tools-pcb.py models       # JLCPCB 3D models into 3d/ (once per checkout
   - The committed routing came from the second rip-up pass after `reuse`: 0 open, 0 errors.
   - A `finish 3` run from the same start stopped at 20 open. If `finish` leaves connections open, run it again.
 - **Hand fix:** a dead-end GPS_VCC track at JP801 was deleted after routing.
+- **Small schematic changes:** `update` adds and removes parts on the routed board, and takes up the tracks of the nets in `UPDATE_RIP`. Then `finish` routes only what is open. How the indicator LEDs went in:
+  1. `update`. GPIO5/18/19 kept their routes to where their test pads were.
+  2. `finish 3` routed all of them but GPIO18.
+  3. One Freerouting pass that ripped up GPIO18 and I2C_SDA together. I2C_SDA had taken the right-edge strip while it was empty.
+  4. That pass also broke a VEH_GND link in the DIN island, which was copied back from the board before it.
+  5. `finish 0` and `silk`.
+- **The board file was moved in KiCad** by (18.20, −48.27) mm on 2026-10-29, and the bottom-silkscreen pinout was split into two columns. Both edits are kept: `add_pinout` now draws the two columns. `route`, `finish`, `update` and `silk` measure the move on U601 and shift the layout to match. `place` and `check` work in the script's own coordinates.
 - **Scratch scripts:** load the board from its real path. Loading a copy from `routing/` and saving it over the board writes default project settings into the `.kicad_pro`, and the net classes are lost.
 
 ## 3D models

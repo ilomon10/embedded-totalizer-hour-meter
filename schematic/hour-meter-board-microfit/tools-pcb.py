@@ -7,6 +7,7 @@ header (J1, 2 x 7), 80 x 80 mm, 2 copper layers.
   python3 tools-pcb.py reuse            -> copy the I/O board's routing of the unchanged blocks + GND pours
   python3 tools-pcb.py route [tries]    -> Freerouting (best of N tries, default 4) + GND pours
   python3 tools-pcb.py finish [passes]  -> close what Freerouting left open (exit 1 if anything still is)
+  python3 tools-pcb.py update           -> add / remove parts on the routed board after a schematic change
   python3 tools-pcb.py silk             -> re-apply the silkscreen labels and reference positions (no re-route)
   python3 tools-pcb.py production       -> production/: Gerber zip, BOM and CPL for JLCPCB
   python3 tools-pcb.py models           -> download the JLCPCB 3D models into 3d/ and set them on the board
@@ -138,9 +139,14 @@ PLACEMENT = {
     "R804": (107.9, 148.4, 90, "F"), "R805": (110.4, 148.4, 90, "F"), "R807": (112.8, 148.4, 90, "F"),
     "JP801": (108.4, 153.0, 90, "F"), "F803": (111.9, 153.0, 90, "F"),
     # --- spare GPIO test pads under the ESP32 block ---
-    "TP807": (143.0, 153.4, 0, "F"), "TP802": (145.2, 153.4, 0, "F"), "TP803": (147.4, 153.4, 0, "F"),
-    "TP804": (149.6, 153.4, 0, "F"), "TP805": (151.8, 153.4, 0, "F"), "TP806": (154.0, 153.4, 0, "F"),
+    "TP807": (143.0, 153.4, 0, "F"), "TP803": (147.4, 153.4, 0, "F"), "TP806": (154.0, 153.4, 0, "F"),
     "TP808": (156.2, 153.4, 0, "F"),
+    # --- indicator LEDs: side-view, lens at the right edge (rotation 270 turns the lens from -y to +x), between
+    #     H103 and H105 (below the I2C_SDA via at (178.1, 156.5)), each with its 330R behind it: P1 (GPIO18),
+    #     P2 (GPIO19), USER (GPIO5) ---
+    "D801": (179.0, 159.0, 270, "F"), "R808": (175.4, 159.0, 0, "F"),
+    "D802": (179.0, 164.0, 270, "F"), "R809": (175.4, 164.0, 0, "F"),
+    "D803": (179.0, 169.0, 270, "F"), "R810": (175.4, 169.0, 0, "F"),
     # --- coin cell on the bottom side, bottom-right (its pins land at (159, 151.6) and (159, 172.4)), RTC above ---
     "BT401": (159.0, 162.0, 90, "B"),
     "U401": (166.0, 158.0, 0, "F"), "C401": (161.0, 158.0, 90, "F"),
@@ -180,12 +186,15 @@ LABELS = [
     # the RS485 solder jumpers, stacked top to bottom beside U701 (too tight for their own references)
     ("JP702 TERM", 138.2, 140.0, 0.8, False), ("JP703 BIAS A", 138.2, 141.2, 0.8, False),
     ("JP704 BIAS B", 138.2, 142.4, 0.8, False),
+    ("P1", 176.6, 157.2, 0.8, True), ("P2", 176.6, 162.2, 0.8, True), ("USR", 176.6, 167.2, 0.8, True),   # LEDs
 ]
 
 # J1 pinout on the bottom silkscreen, behind the header, for whoever crimps the harness: (x, y) of the first line
-J1_PINOUT_AT = (101.5, 162.5)
-J1_PINOUT = ("J1 MICRO-FIT 3.0", "1 GND      8 VIN", "2 GND      9 AIN1", "3 TX      10 DOUT1", "4 RX      11 +5V",
-             "5 485 A    12 485 B", "6 DIN COM  13 DIN1", "7 DIN COM  14 DIN2")
+# (the user's two-column layout of 2026-10-29: pins 1-7 on the left and 8-14 on the right, as seen from below)
+J1_PINOUT_TITLE = ("J1 MICRO-FIT 3.0", 105.0, 161.25)
+J1_PINOUT_COLUMNS = ((116.0, ("1 GND", "2 GND", "3 TX", "4 RX", "5 485 A", "6 DIN COM", "7 DIN COM")),
+                     (108.0, ("8 VIN", "9 AIN1", "10 DOUT1", "11 +5V", "12 485 B", "13 DIN1", "14 DIN2")))
+J1_PINOUT_Y, J1_PINOUT_PITCH = 163.0, 1.25
 
 LAYOUT = build.Layout((X0, Y0, W, H), PSU_AREA, VEHICLE_AREA, None, frozenset({"U201", "J201"}),
                       PLACEMENT, LABELS, SLOTS)
@@ -209,19 +218,25 @@ def place(pcb=PCB):
     return board
 
 
-def add_pinout(board, size=0.8, pitch=1.25):
-    """The J1_PINOUT lines on the bottom silkscreen, mirrored so they read from below, left-aligned at J1_PINOUT_AT."""
-    x, y = J1_PINOUT_AT
-    for i, line in enumerate(J1_PINOUT):
+def add_pinout(board, size=0.8):
+    """J1's pinout on the bottom silkscreen behind J1, mirrored so it reads from below: a title, then one text per
+    pin in two columns."""
+    def add(line, x, y, justify, thickness):
         text = pcbnew.PCB_TEXT(board)
         text.SetText(line)
         text.SetLayer(pcbnew.B_SilkS)
         text.SetMirrored(True)
-        text.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_RIGHT)   # mirrored: right-aligned reads as left-aligned from below
+        text.SetHorizJustify(justify)
         text.SetTextSize(pcbnew.VECTOR2I(build.mm(size), build.mm(size)))
-        text.SetTextThickness(build.mm(size * (0.2 if i == 0 else 0.15)))
-        text.SetPosition(pcbnew.VECTOR2I(build.mm(x), build.mm(y + i * pitch)))
+        text.SetTextThickness(build.mm(thickness))
+        text.SetPosition(pcbnew.VECTOR2I(build.mm(x), build.mm(y)))
         board.Add(text)
+
+    title, x, y = J1_PINOUT_TITLE
+    add(title, x, y, pcbnew.GR_TEXT_H_ALIGN_RIGHT, 0.16)
+    for x, lines in J1_PINOUT_COLUMNS:
+        for i, line in enumerate(lines):
+            add(line, x, J1_PINOUT_Y + i * J1_PINOUT_PITCH, pcbnew.GR_TEXT_H_ALIGN_LEFT, 0.12)
 
 
 # The blocks that keep the I/O board's placement get its routing, copied by `reuse`: (x1, y1, x2, y2)
@@ -366,6 +381,86 @@ REF_POSITIONS = {"L101": (149.4, 172.6), "U701": (135.4, 125.2), "J802": (103.0,
 HIDDEN_REFS = ("JP702", "JP703", "JP704")   # named by the legend in LABELS
 
 
+# nets whose tracks `update` takes up so `finish` routes them afresh. Empty for the indicator LEDs: GPIO5/18/19
+# keep their routes to where their test pads were, and Freerouting extends them east to the LEDs (the direct way
+# down the right edge is blocked by USB-C, the buttons and H103)
+UPDATE_RIP = ()
+
+
+def board_offset(board):
+    """(dx, dy) in mm by which the board file sits away from this script's coordinates: the user may move the whole
+    board in KiCad (2026-10-29: by (18.2, -48.27)). Measured on U601's courtyard centre."""
+    centre = build.courtyard_box(board.FindFootprintByReference("U601")).GetCenter()
+    x, y = PLACEMENT["U601"][:2]
+    return round(pcbnew.ToMM(centre.x) - x, 4), round(pcbnew.ToMM(centre.y) - y, 4)
+
+
+def match_board(pcb=PCB):
+    """Shift build.LAYOUT (outline, vehicle area, placement, labels, slots) onto the board file as it was saved, so
+    pours, plane vias, new parts and labels land where they belong on a board moved in KiCad."""
+    dx, dy = board_offset(pcbnew.LoadBoard(pcb))
+    if (dx, dy) != (0.0, 0.0):
+        x0, y0, w, h = LAYOUT.outline
+        move = lambda r: (r[0] + dx, r[1] + dy, r[2] + dx, r[3] + dy)
+        build.LAYOUT = LAYOUT._replace(
+            outline=(x0 + dx, y0 + dy, w, h), vehicle_area=move(LAYOUT.vehicle_area),
+            placement={ref: (x + dx, y + dy, rot, side) for ref, (x, y, rot, side) in LAYOUT.placement.items()},
+            labels=[(text, x + dx, y + dy, size, bold) for text, x, y, size, bold in LAYOUT.labels],
+            slots=tuple(((x1 + dx, y1 + dy), (x2 + dx, y2 + dy), width) for (x1, y1), (x2, y2), width in LAYOUT.slots))
+        print(f"the board file is moved by ({dx}, {dy}) mm from the script's coordinates: layout shifted to match")
+    return dx, dy
+
+
+def update_parts(pcb=PCB, rip=()):
+    """Bring the routed board in line with the schematic without re-routing it: parts that left the schematic are
+    removed, new parts are placed from PLACEMENT and get their nets, and the tracks of the `rip` nets are taken up.
+    `finish` then routes every open connection."""
+    comps, nets = build.export_netlist(SCH)
+    board = pcbnew.LoadBoard(pcb)
+    have = {fp.GetReference(): fp for fp in build.footprints_of(board)}
+    for ref in sorted(set(have) - set(comps)):
+        finish.remove(board, have[ref])
+        print("removed", ref)
+    added = {}
+    for ref in sorted(set(comps) - set(have)):   # as build.add_footprints_and_nets does it
+        comp = comps[ref]
+        fp = build.load_fp(comp["footprint"])
+        fp.SetReference(ref)
+        fp.SetValue(comp["value"])
+        fp.SetPath(pcbnew.KIID_PATH(comp["path"]))
+        fp.GetField(pcbnew.FIELD_T_DATASHEET).SetText(comp["datasheet"])
+        fp.GetField(pcbnew.FIELD_T_DESCRIPTION).SetText(comp["description"])
+        fp.SetExcludedFromBOM(not comp["in_bom"])
+        fp.SetDNP(comp["dnp"])
+        for name, text in comp["extra"].items():
+            fp.SetField(name, text)
+            fp.GetField(name).SetVisible(False)
+        fp.Reference().SetTextSize(pcbnew.VECTOR2I(build.mm(build.REF_TEXT_MM), build.mm(build.REF_TEXT_MM)))
+        fp.Reference().SetTextThickness(build.mm(build.REF_TEXT_MM * 0.15))
+        board.Add(fp)
+        build.place(fp, *build.LAYOUT.placement[ref])
+        added[ref] = fp
+        print("added", ref)
+    for name, nodes in nets:
+        if name.startswith(("unconnected-(", "Net-(")):
+            name = name.replace("/", "{slash}")   # matches eeschema's escaping of pin names
+        net = board.FindNet(name)
+        if net is None:
+            net = pcbnew.NETINFO_ITEM(board, name)
+            board.Add(net)
+        for ref, pin in nodes:
+            for pad in added[ref].Pads() if ref in added else ():
+                if pad.GetNumber() == pin:
+                    pad.SetNet(net)
+    ripped = [t for t in finish.tracks_of(board) if t.GetNetname() in rip]
+    for track in ripped:
+        finish.remove(board, track)
+    print(f"took up {len(ripped)} tracks and vias of", ", ".join(rip) or "no nets")
+    tidy_silkscreen(board, *board_offset(board))
+    set_models(board)
+    pcbnew.SaveBoard(pcb, board)
+
+
 def relabel(pcb=PCB):
     """Re-apply LABELS and the reference positions to the routed board, so silkscreen fixes need no re-route."""
     board = pcbnew.LoadBoard(pcb)
@@ -373,15 +468,15 @@ def relabel(pcb=PCB):
     for item in [drawings[i] for i in range(len(drawings))]:
         if item.GetClass() == "PCB_TEXT" and item.GetLayer() == pcbnew.F_SilkS:
             finish.remove(board, item)
-    build.add_labels(board, LABELS)
-    tidy_silkscreen(board)
+    build.add_labels(board, build.LAYOUT.labels)
+    tidy_silkscreen(board, *board_offset(board))
     pcbnew.SaveBoard(pcb, board)
 
 
-def tidy_silkscreen(board):
+def tidy_silkscreen(board, dx=0.0, dy=0.0):
     """The board is too dense for a silkscreen reference on every part: parts under 30 mm^2 and the
     mounting holes keep theirs on the fab layer only, while connectors, switches, jumpers, the battery
-    and the larger ICs stay labelled."""
+    and the larger ICs stay labelled. (dx, dy): how far the board was moved in KiCad."""
     fps = board.Footprints()
     for fp in (fps[i] for i in range(len(fps))):
         ref = fp.GetReference()
@@ -390,7 +485,7 @@ def tidy_silkscreen(board):
             fp.Reference().SetVisible(False)
         if ref in REF_POSITIONS:
             x, y, *angle = REF_POSITIONS[ref]
-            fp.Reference().SetPosition(pcbnew.VECTOR2I(build.mm(x), build.mm(y)))
+            fp.Reference().SetPosition(pcbnew.VECTOR2I(build.mm(x + dx), build.mm(y + dy)))
             if angle:
                 fp.Reference().SetTextAngleDegrees(angle[0])
 
@@ -543,10 +638,17 @@ if __name__ == "__main__":
         reuse_routing()
         print("saved", PCB)
     elif mode == "route":
+        match_board()
         route.main(4 if count is None else count, PCB)
     elif mode == "finish":
+        match_board()
         finish.main(3 if count is None else count, PCB)
+    elif mode == "update":
+        match_board()
+        update_parts(rip=UPDATE_RIP)
+        print("saved", PCB)
     elif mode == "silk":
+        match_board()
         relabel()
         print("saved", PCB)
     elif mode == "models":
