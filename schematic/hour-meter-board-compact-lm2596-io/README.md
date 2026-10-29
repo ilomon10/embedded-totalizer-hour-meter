@@ -13,21 +13,22 @@ The folder is a KiCad *Save As* copy of `../hour-meter-board-compact-lm2596`, so
 
 | | |
 |---|---|
-| Schematic | `hour-meter-board-compact-lm2596-io.kicad_sch` + 9 module sheets. The new `io.kicad_sch` holds J902, AIN1 and DOUT1. Changes on the other sheets: the opto inputs are renamed DIN1/DIN2, GPIO23 is `DOUT1_CTRL`, and J804 pin 6 is no longer connected |
-| PCB | `hour-meter-board-compact-lm2596-io.kicad_pcb`: 80 × 92 mm, 2 layers, 142 parts, GND pour on both layers |
+| Schematic | `hour-meter-board-compact-lm2596-io.kicad_sch` + 9 module sheets. The new `io.kicad_sch` holds J902, AIN1 and DOUT1. Changes on the other sheets: the opto inputs are renamed DIN1/DIN2, GPIO23 is `DOUT1_CTRL`, J804 pin 6 is no longer connected, and the two-hole TP101 is split into the VIN and GND solder pads TP101 and TP102 |
+| PCB | `hour-meter-board-compact-lm2596-io.kicad_pcb`: 80 × 92 mm, 2 layers, 143 parts, GND pour on both layers |
 | Script | `tools-pcb.py` with `check`, `place`, `reuse`, `route [tries]`, `finish [passes]`, `production` or `models` |
 | Order files | `production/`: Gerber zip, BOM and CPL |
 | Firmware | Not yet: AIN1 and DOUT1 need firmware support (see [Firmware](#firmware-to-do)). DIN1 and DIN2 work as before |
 
-**Checks at this revision (2026-10-28):**
+**Checks at this revision (2026-10-29):**
 - **ERC:** 0 errors, 2 intended warnings (the IMU address straps, as on the compact board).
-- **DRC:** 0 errors, 0 unconnected items, 0 schematic-parity issues. The 8 warnings are silkscreen that the fab clips at an edge or a slot, as on the LM2596 board.
+- **DRC:** 0 errors, 0 unconnected items, 0 schematic-parity issues. The 6 warnings are silkscreen that the fab clips at an edge or a slot, as on the LM2596 board.
 - **Copper:** 2 layers. The Gerbers have only L1 (top) and L2 (bottom). The GND pour on both layers reaches the new bottom edge.
 - **Net classes:** the LM2596 board's `Vehicle`, `Power`, `Plane` and Default classes. The patterns follow the DIN1/DIN2 rename, AIN1_RAW, AIN1_MID and DOUT1 are added to `Vehicle`, and +5V_OUT to `Power`.
 - **Isolation:** the GND pour is 3.3 mm from the nearest vehicle-side copper, as on the LM2596 and compact boards.
 - **Routing:**
   - Everything this board shares with the LM2596 board uses that board's routing, copied by `reuse`. Freerouting (`finish`) routed only the I/O strip.
   - One hand fix: Freerouting's round trip left an old UART2_TX track 1 µm inside the 0.2 mm clearance to UART_5V, so its bend moved 0.1 mm.
+  - Hand-routed: the 0.5 mm B.Cu track from J101 pin 1 to the TP101 solder pad.
 - **Order files:** the BOM has 76 lines and the CPL 135 parts. R904 (not fitted) is left out of both, and BT401 is still the only part on the bottom.
 - **Stock:** all parts are in JLCPCB stock for 10 boards (checked 2026-10-28): 33 basic, 1 preferred and 42 extended lines. The Diodes BSP75N has the least stock (621). The Infineon BSP75N (C114056, 7210 in stock) fits the same footprint.
 - **Fault simulations:** AIN1 passes every case in the [fault analysis](../fault-analysis/README.md). DOUT1 is calculated from its datasheet.
@@ -55,7 +56,9 @@ Teltonika's figures are from the [FMC640 datasheet](https://content.gps-trace.co
 |---|---|---|---|---|
 | **J902** | **I/O** | B5P-VH (C160318) | 1 +5V out, 2 AIN1, 3 GND, 4 DOUT1, 5 GND | VHR-5N |
 | J301 | DIN1 / DIN2 (isolated) | B3P-VH (C160316) | 1 DIN1, 2 DIN2, 3 COM | VHR-3N |
-| J101, TP101, J701, J801–J803 | | as on the [LM2596 board](../hour-meter-board-compact-lm2596/README.md#connectors) | | |
+| TP101 | VIN solder pad | 1.5 × 1.5 mm SMD pad on the **bottom side**, above J101 | 1 VIN | wire soldered on, for an installation without a plug |
+| TP102 | GND solder pad | 1.5 × 1.5 mm SMD pad on the **bottom side**, below J101 | 1 GND | wire soldered on |
+| J101, J701, J801–J803 | | as on the [LM2596 board](../hour-meter-board-compact-lm2596/README.md#connectors) | | |
 
 - **Silkscreen:** the J902 pin names (5V, AIN1, GND, DOUT1, GND) are printed above the header. Pin 1 is on the left, with the square pad.
 - **No other plug fits J902:** it is the only 5-pin header on the board.
@@ -126,6 +129,10 @@ GPIO23 ─┬─ U902 74AHCT1G125 (+5V) ─ U903 BSP75N IN     drain ─ J902-4 
 - **Net classes:** AIN1_RAW, AIN1_MID and DOUT1 are in the `Vehicle` class (0.8 mm clearance, 0.5 mm track); +5V_OUT is in `Power`.
 - **Mounting holes:** H104 and H105 moved to the new bottom corners.
 - **Moved part:** J801 keeps the position it was moved to by hand on the LM2596 board.
+- **VIN/GND solder pads:** TP101 (VIN) and TP102 (GND) are 1.5 mm pads on the back, above and below J101. They replace the LM2596 board's two-hole TP101.
+  - TP101 has a B.Cu track from J101 pin 1, in the `Vehicle` class.
+  - TP102 joins the GND pour solid, since its thermal spokes would be thinner than the pour's minimum.
+  - TP101/TP102 are in parallel with J101: use one or the other, never both from different supplies.
 - **Unchanged:** everything else.
 
 ## Firmware (to do)
@@ -163,7 +170,7 @@ python3 tools-pcb.py production   # production/: Gerber zip, BOM, CPL (Do-Not-Po
 python3 tools-pcb.py models       # JLCPCB 3D models into 3d/ (once per checkout), set on the board
 ```
 
-- **Why `reuse`:** routing the whole board from scratch (`route 2`, then `finish`) left 5 +3V3 connections open, at the IMU's pins and in the ADS1115 corner. The LM2596 board's routing already solves the IMU. `reuse` measures the LM2596 board file's offset on U601, maps the renamed nets, and drops the old GPIO23 route to J804.
+- **Why `reuse`:** routing the whole board from scratch (`route 2`, then `finish`) left 5 +3V3 connections open, at the IMU's pins and in the ADS1115 corner. The LM2596 board's routing already solves the IMU. `reuse` measures the LM2596 board file's offset on U601 and maps the renamed nets. It drops two routes: the old GPIO23 route to J804, and the B.Cu route from J101 pin 1 to the LM2596 board's two-hole TP101, which would cross TP102 here. `finish` then routes TP101.
 - **If `finish` drops a nearly finished result:** `finish` keeps a result only if it has no more errors than before. On this board, Freerouting's first pass reached 1 open connection with 1 clearance error (the UART2_TX bend above), so `finish` dropped it. In that case:
   1. keep that pass;
   2. fix the error;

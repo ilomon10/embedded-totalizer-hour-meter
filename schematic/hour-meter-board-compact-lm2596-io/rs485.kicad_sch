@@ -1,720 +1,10 @@
 (kicad_sch
-	(version 20250610)
-	(generator "konnect")
+	(version 20260306)
+	(generator "eeschema")
 	(generator_version "10.0")
 	(uuid "0ce21759-2d08-40f0-9f64-da0d1cc3be9c")
 	(paper "A4")
 	(lib_symbols
-		(symbol "Interface_UART:SP3485EN"
-			(property "Reference" "U"
-				(at -7.62 13.97 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Value" "SP3485EN"
-				(at 1.905 13.97 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"
-				(at 26.67 -8.89 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-						(italic yes)
-					)
-				)
-			)
-			(property "Datasheet" "http://www.icbase.com/pdf/SPX/SPX00480106.pdf"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "Industrial 3.3V Low Power Half-Duplex RS-485 Transceiver 10Mbps, SOIC-8"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "Low Power Half-Duplex RS-485 Transceiver 10Mbps"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_fp_filters" "SOIC*3.9x4.9mm*P1.27mm*"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(embedded_fonts no)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(symbol "SP3485EN_0_1"
-				(rectangle
-					(start -7.62 12.7)
-					(end 7.62 -12.7)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
-				)
-				(polyline
-					(pts
-						(xy -4.191 2.54)
-						(xy -1.27 2.54)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -4.191 0)
-						(xy -0.889 0)
-						(xy -0.889 -2.286)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -3.175 5.08)
-						(xy -4.191 5.08)
-						(xy -4.064 5.08)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -2.54 -5.08)
-						(xy -4.191 -5.08)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -2.413 -5.08)
-						(xy -2.413 -1.27)
-						(xy 2.667 -4.826)
-						(xy -2.413 -8.89)
-						(xy -2.413 -5.08)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -0.635 -7.62)
-						(xy 5.08 -7.62)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 0.381 -2.54)
-					(radius 0.508)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.889 -2.54)
-						(xy 3.81 -2.54)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.032 7.62)
-						(xy 5.715 7.62)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 3.048 2.54)
-						(xy 5.715 2.54)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 3.81 2.54)
-					(radius 0.2794)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy 3.81 -2.54)
-						(xy 3.81 2.54)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 5.08 -7.62)
-						(xy 5.08 7.62)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "SP3485EN_1_1"
-				(circle
-					(center -0.762 2.54)
-					(radius 0.508)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.032 4.826)
-						(xy 2.032 8.636)
-						(xy -3.048 5.08)
-						(xy 2.032 1.016)
-						(xy 2.032 4.826)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 2.54 2.54)
-					(radius 0.508)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 5.08 7.62)
-					(radius 0.2794)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(pin output line
-					(at -10.16 5.08 0)
-					(length 2.54)
-					(name "RO"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -10.16 2.54 0)
-					(length 2.54)
-					(name "~{RE}"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -10.16 0 0)
-					(length 2.54)
-					(name "DE"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -10.16 -5.08 0)
-					(length 2.54)
-					(name "DI"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin power_in line
-					(at 0 -15.24 90)
-					(length 2.54)
-					(name "GND"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "5"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin bidirectional line
-					(at 10.16 7.62 180)
-					(length 2.54)
-					(name "A"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "6"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin bidirectional line
-					(at 10.16 2.54 180)
-					(length 2.54)
-					(name "B"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "7"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin power_in line
-					(at 0 15.24 270)
-					(length 2.54)
-					(name "VCC"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "8"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
-		(symbol "Diode:SM712_SOT23"
-			(pin_names
-				(offset 1.016)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "D"
-				(at 0 4.445 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "SM712_SOT23"
-				(at 0 2.54 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-				(at 0 -8.89 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" "https://www.littelfuse.com/~/media/electronics/datasheets/tvs_diode_arrays/littelfuse_tvs_diode_array_sm712_datasheet.pdf.pdf"
-				(at -3.81 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "7V/12V, 600W Asymmetrical TVS Diode Array, SOT-23"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "transient voltage suppressor thyrector transil"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_fp_filters" "SOT?23*"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "SM712_SOT23_0_0"
-				(polyline
-					(pts
-						(xy 0 -1.27)
-						(xy 0 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "SM712_SOT23_0_1"
-				(polyline
-					(pts
-						(xy -6.35 0)
-						(xy 6.35 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -6.35 -1.27)
-						(xy -1.27 1.27)
-						(xy -1.27 -1.27)
-						(xy -6.35 1.27)
-						(xy -6.35 -1.27)
-					)
-					(stroke
-						(width 0.2032)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -3.302 1.27)
-						(xy -3.81 1.27)
-						(xy -3.81 -1.27)
-						(xy -4.318 -1.27)
-					)
-					(stroke
-						(width 0.2032)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 0 0)
-					(radius 0.254)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 -1.27)
-						(xy 1.27 1.27)
-						(xy 6.35 -1.27)
-						(xy 6.35 1.27)
-						(xy 1.27 -1.27)
-					)
-					(stroke
-						(width 0.2032)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 4.318 1.27)
-						(xy 3.81 1.27)
-						(xy 3.81 -1.27)
-						(xy 3.302 -1.27)
-					)
-					(stroke
-						(width 0.2032)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "SM712_SOT23_1_1"
-				(pin passive line
-					(at -8.89 0 0)
-					(length 2.54)
-					(name "A1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 8.89 0 180)
-					(length 2.54)
-					(name "A2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at 0 -3.81 90)
-					(length 2.54)
-					(name "common"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "Connector:Screw_Terminal_01x03"
 			(pin_names
 				(offset 1.016)
@@ -814,8 +104,7 @@
 				)
 				(polyline
 					(pts
-						(xy -0.5334 2.8702)
-						(xy 0.3302 2.032)
+						(xy -0.5334 2.8702) (xy 0.3302 2.032)
 					)
 					(stroke
 						(width 0.1524)
@@ -827,8 +116,7 @@
 				)
 				(polyline
 					(pts
-						(xy -0.5334 0.3302)
-						(xy 0.3302 -0.508)
+						(xy -0.5334 0.3302) (xy 0.3302 -0.508)
 					)
 					(stroke
 						(width 0.1524)
@@ -840,8 +128,7 @@
 				)
 				(polyline
 					(pts
-						(xy -0.5334 -2.2098)
-						(xy 0.3302 -3.048)
+						(xy -0.5334 -2.2098) (xy 0.3302 -3.048)
 					)
 					(stroke
 						(width 0.1524)
@@ -853,8 +140,7 @@
 				)
 				(polyline
 					(pts
-						(xy -0.3556 3.048)
-						(xy 0.508 2.2098)
+						(xy -0.3556 3.048) (xy 0.508 2.2098)
 					)
 					(stroke
 						(width 0.1524)
@@ -866,8 +152,7 @@
 				)
 				(polyline
 					(pts
-						(xy -0.3556 0.508)
-						(xy 0.508 -0.3302)
+						(xy -0.3556 0.508) (xy 0.508 -0.3302)
 					)
 					(stroke
 						(width 0.1524)
@@ -879,8 +164,7 @@
 				)
 				(polyline
 					(pts
-						(xy -0.3556 -2.032)
-						(xy 0.508 -2.8702)
+						(xy -0.3556 -2.032) (xy 0.508 -2.8702)
 					)
 					(stroke
 						(width 0.1524)
@@ -1446,8 +730,7 @@
 			(symbol "C_0_1"
 				(polyline
 					(pts
-						(xy -2.032 0.762)
-						(xy 2.032 0.762)
+						(xy -2.032 0.762) (xy 2.032 0.762)
 					)
 					(stroke
 						(width 0.508)
@@ -1459,8 +742,7 @@
 				)
 				(polyline
 					(pts
-						(xy -2.032 -0.762)
-						(xy 2.032 -0.762)
+						(xy -2.032 -0.762) (xy 2.032 -0.762)
 					)
 					(stroke
 						(width 0.508)
@@ -1494,6 +776,172 @@
 					(at 0 -3.81 90)
 					(length 2.794)
 					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "Device:D_TVS"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "D"
+				(at 0 2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "D_TVS"
+				(at 0 -2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Bidirectional transient-voltage-suppression diode"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "diode TVS thyrector"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "TO-???* *_Diode_* *SingleDiode* D_*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "D_TVS_0_1"
+				(polyline
+					(pts
+						(xy -2.54 1.27) (xy -2.54 -1.27) (xy 2.54 1.27) (xy 2.54 -1.27) (xy -2.54 1.27)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.508 1.27) (xy 0 1.27) (xy 0 -1.27) (xy -0.508 -1.27)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 0) (xy -1.27 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "D_TVS_1_1"
+				(pin passive line
+					(at -3.81 0 0)
+					(length 2.54)
+					(name "A1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 3.81 0 180)
+					(length 2.54)
+					(name "A2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1651,6 +1099,680 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Diode:SM712_SOT23"
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "D"
+				(at 0 4.445 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "SM712_SOT23"
+				(at 0 2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+				(at 0 -8.89 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" "https://www.littelfuse.com/~/media/electronics/datasheets/tvs_diode_arrays/littelfuse_tvs_diode_array_sm712_datasheet.pdf.pdf"
+				(at -3.81 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "7V/12V, 600W Asymmetrical TVS Diode Array, SOT-23"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "transient voltage suppressor thyrector transil"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "SOT?23*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "SM712_SOT23_0_0"
+				(polyline
+					(pts
+						(xy 0 -1.27) (xy 0 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "SM712_SOT23_0_1"
+				(polyline
+					(pts
+						(xy -6.35 0) (xy 6.35 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -6.35 -1.27) (xy -1.27 1.27) (xy -1.27 -1.27) (xy -6.35 1.27) (xy -6.35 -1.27)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -3.302 1.27) (xy -3.81 1.27) (xy -3.81 -1.27) (xy -4.318 -1.27)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 0 0)
+					(radius 0.254)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.27 -1.27) (xy 1.27 1.27) (xy 6.35 -1.27) (xy 6.35 1.27) (xy 1.27 -1.27)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 4.318 1.27) (xy 3.81 1.27) (xy 3.81 -1.27) (xy 3.302 -1.27)
+					)
+					(stroke
+						(width 0.2032)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "SM712_SOT23_1_1"
+				(pin passive line
+					(at -8.89 0 0)
+					(length 2.54)
+					(name "A1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 8.89 0 180)
+					(length 2.54)
+					(name "A2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 0 -3.81 90)
+					(length 2.54)
+					(name "common"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "Interface_UART:SP3485EN"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "U"
+				(at -7.62 13.97 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "SP3485EN"
+				(at 1.905 13.97 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"
+				(at 26.67 -8.89 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+				)
+			)
+			(property "Datasheet" "http://www.icbase.com/pdf/SPX/SPX00480106.pdf"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Industrial 3.3V Low Power Half-Duplex RS-485 Transceiver 10Mbps, SOIC-8"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "Low Power Half-Duplex RS-485 Transceiver 10Mbps"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "SOIC*3.9x4.9mm*P1.27mm*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "SP3485EN_0_1"
+				(rectangle
+					(start -7.62 12.7)
+					(end 7.62 -12.7)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(polyline
+					(pts
+						(xy -4.191 2.54) (xy -1.27 2.54)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -4.191 0) (xy -0.889 0) (xy -0.889 -2.286)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -3.175 5.08) (xy -4.191 5.08) (xy -4.064 5.08)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.54 -5.08) (xy -4.191 -5.08)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.413 -5.08) (xy -2.413 -1.27) (xy 2.667 -4.826) (xy -2.413 -8.89) (xy -2.413 -5.08)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -0.635 -7.62) (xy 5.08 -7.62)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 0.381 -2.54)
+					(radius 0.508)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.889 -2.54) (xy 3.81 -2.54)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.032 7.62) (xy 5.715 7.62)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.048 2.54) (xy 5.715 2.54)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 3.81 2.54)
+					(radius 0.2794)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.81 -2.54) (xy 3.81 2.54)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 5.08 -7.62) (xy 5.08 7.62)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "SP3485EN_1_1"
+				(circle
+					(center -0.762 2.54)
+					(radius 0.508)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.032 4.826) (xy 2.032 8.636) (xy -3.048 5.08) (xy 2.032 1.016) (xy 2.032 4.826)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 2.54 2.54)
+					(radius 0.508)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 5.08 7.62)
+					(radius 0.2794)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(pin output line
+					(at -10.16 5.08 0)
+					(length 2.54)
+					(name "RO"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -10.16 2.54 0)
+					(length 2.54)
+					(name "~{RE}"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -10.16 0 0)
+					(length 2.54)
+					(name "DE"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -10.16 -5.08 0)
+					(length 2.54)
+					(name "DI"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 0 -15.24 90)
+					(length 2.54)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at 10.16 7.62 180)
+					(length 2.54)
+					(name "A"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at 10.16 2.54 180)
+					(length 2.54)
+					(name "B"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 0 15.24 270)
+					(length 2.54)
+					(name "VCC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "power:+3V3"
 			(power global)
 			(pin_numbers
@@ -1733,8 +1855,7 @@
 			(symbol "+3V3_0_1"
 				(polyline
 					(pts
-						(xy -0.762 1.27)
-						(xy 0 2.54)
+						(xy -0.762 1.27) (xy 0 2.54)
 					)
 					(stroke
 						(width 0)
@@ -1746,8 +1867,7 @@
 				)
 				(polyline
 					(pts
-						(xy 0 2.54)
-						(xy 0.762 1.27)
+						(xy 0 2.54) (xy 0.762 1.27)
 					)
 					(stroke
 						(width 0)
@@ -1759,8 +1879,7 @@
 				)
 				(polyline
 					(pts
-						(xy 0 0)
-						(xy 0 2.54)
+						(xy 0 0) (xy 0 2.54)
 					)
 					(stroke
 						(width 0)
@@ -1875,12 +1994,7 @@
 			(symbol "GND_0_1"
 				(polyline
 					(pts
-						(xy 0 0)
-						(xy 0 -1.27)
-						(xy 1.27 -1.27)
-						(xy 0 -2.54)
-						(xy -1.27 -1.27)
-						(xy 0 -1.27)
+						(xy 0 0) (xy 0 -1.27) (xy 1.27 -1.27) (xy 0 -2.54) (xy -1.27 -1.27) (xy 0 -1.27)
 					)
 					(stroke
 						(width 0)
@@ -1913,482 +2027,357 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Device:D_TVS"
-			(pin_numbers
-				(hide yes)
+	)
+	(text "RS485 (replaces MAX485 module), fault-protected\nU701 THVD2410DR 3.3 V half-duplex transceiver on UART1: GPIO4 = TX (D), GPIO35 = RX (R),\nGPIO25 = DE + /RE (ESP-IDF UART RS485 half-duplex mode). A and B are rated +/-70 V and work over +/-25 V\ncommon mode, so a bus wire shorted to the 12 V or 24 V supply does no damage.\nR701 / R702 hold RX / TX high (R floats while transmitting); R703 holds DE low (receive) while the MCU is in reset.\nD701 / D702 SMAJ33CA clamp A and B to GND: 33 V standoff (above a 24 V system's 28.8 V), 53 V clamp (below 70 V).\nJ702 TERM: fit a shunt (120R across A-B) only on the two nodes at the ends of the bus.\nJ703 BIAS: fit both shunts, across 1-2 and 3-4 (A to 3V3 and B to GND via 330R), on exactly one node:\nidle A-B = 3.3 V x 60/(330+330+60) = 0.28 V with both ends terminated (receiver threshold 0.2 V).\nJumpers off = no termination and no bias. With J702/J703 fitted, a supply short burns R704-R706 (U701 survives)."
+		(exclude_from_sim no)
+		(at 25.4 25.4 0)
+		(effects
+			(font
+				(size 1.5 1.5)
 			)
-			(pin_names
-				(offset 1.016)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "D"
-				(at 0 2.54 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "D_TVS"
-				(at 0 -2.54 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "Bidirectional transient-voltage-suppression diode"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "diode TVS thyrector"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_fp_filters" "TO-???* *_Diode_* *SingleDiode* D_*"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "D_TVS_0_1"
-				(polyline
-					(pts
-						(xy -2.54 1.27)
-						(xy -2.54 -1.27)
-						(xy 2.54 1.27)
-						(xy 2.54 -1.27)
-						(xy -2.54 1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.508 1.27)
-						(xy 0 1.27)
-						(xy 0 -1.27)
-						(xy -0.508 -1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 0)
-						(xy -1.27 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "D_TVS_1_1"
-				(pin passive line
-					(at -3.81 0 0)
-					(length 2.54)
-					(name "A1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 3.81 0 180)
-					(length 2.54)
-					(name "A2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
+			(justify left top)
 		)
+		(uuid "dcf36c07-7a63-499d-92a5-90f5e9e37df7")
 	)
 	(junction
 		(at 86.36 99.06)
 		(diameter 0)
+		(color 0 0 0 0)
 		(uuid "2874056f-efdd-4658-a3df-0a3dc55173af")
-	)
-	(junction
-		(at 93.98 104.14)
-		(diameter 0)
-		(uuid "bd6fdbd7-6ae8-4665-b8bc-66f8eb9967eb")
 	)
 	(junction
 		(at 78.74 104.14)
 		(diameter 0)
+		(color 0 0 0 0)
 		(uuid "6de1d578-5c61-4d04-a1c0-6a32faad559c")
 	)
 	(junction
 		(at 71.12 121.92)
 		(diameter 0)
+		(color 0 0 0 0)
 		(uuid "a2c026ed-ef37-4e6a-b12c-d53e59a5bb12")
+	)
+	(junction
+		(at 93.98 104.14)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "bd6fdbd7-6ae8-4665-b8bc-66f8eb9967eb")
 	)
 	(junction
 		(at 106.68 81.28)
 		(diameter 0)
+		(color 0 0 0 0)
 		(uuid "fc541181-ba6f-4d35-8904-05e86ec35117")
 	)
 	(wire
 		(pts
-			(xy 96.52 99.06)
-			(xy 86.36 99.06)
+			(xy 170.18 116.84) (xy 147.32 116.84)
 		)
-		(uuid "6ae61e7b-8f59-4651-a216-558a65f1f680")
-	)
-	(wire
-		(pts
-			(xy 86.36 99.06)
-			(xy 63.5 99.06)
-		)
-		(uuid "66e150e2-04e8-4412-9806-16a5f54d9480")
-	)
-	(wire
-		(pts
-			(xy 96.52 101.6)
-			(xy 93.98 101.6)
-		)
-		(uuid "66caf06c-29bb-4b10-8531-b74527d856c6")
-	)
-	(wire
-		(pts
-			(xy 93.98 101.6)
-			(xy 93.98 104.14)
-		)
-		(uuid "8de55e9d-27da-4e0b-9460-a36cbe570e8c")
-	)
-	(wire
-		(pts
-			(xy 96.52 104.14)
-			(xy 93.98 104.14)
-		)
-		(uuid "5aeef112-b862-4202-8061-e523379e0aed")
-	)
-	(wire
-		(pts
-			(xy 93.98 104.14)
-			(xy 78.74 104.14)
-		)
-		(uuid "8d8bec0b-aeea-4517-9f6a-9948d110d4e9")
-	)
-	(wire
-		(pts
-			(xy 78.74 104.14)
-			(xy 63.5 104.14)
-		)
-		(uuid "eab9a439-9d1c-4665-9242-4c73518eb0df")
-	)
-	(wire
-		(pts
-			(xy 96.52 109.22)
-			(xy 91.44 109.22)
-		)
-		(uuid "845236c0-1b11-46b3-8224-cebf952c8f23")
-	)
-	(wire
-		(pts
-			(xy 91.44 109.22)
-			(xy 91.44 121.92)
-		)
-		(uuid "80347613-6007-47b6-a93d-8ec8f3a2301e")
-	)
-	(wire
-		(pts
-			(xy 91.44 121.92)
-			(xy 71.12 121.92)
-		)
-		(uuid "679b0829-30f6-4760-8ef7-176a99cc6b13")
-	)
-	(wire
-		(pts
-			(xy 71.12 121.92)
-			(xy 63.5 121.92)
-		)
-		(uuid "3a17372c-bf34-4cc1-9b8e-5393cffd5689")
-	)
-	(wire
-		(pts
-			(xy 106.68 88.9)
-			(xy 106.68 81.28)
-		)
-		(uuid "35cb2503-8f7d-411b-b8bc-9cffe78dc7df")
-	)
-	(wire
-		(pts
-			(xy 106.68 81.28)
-			(xy 106.68 78.74)
-		)
-		(uuid "4a9fc308-6198-49f6-a056-476d51e24737")
-	)
-	(wire
-		(pts
-			(xy 106.68 81.28)
-			(xy 93.98 81.28)
-		)
-		(uuid "4d240858-fcac-4078-9787-1606b2c4efff")
-	)
-	(wire
-		(pts
-			(xy 160.02 114.3)
-			(xy 170.18 114.3)
-		)
-		(uuid "37845175-d247-4278-9b2b-e0a35f9de16b")
-	)
-	(wire
-		(pts
-			(xy 170.18 116.84)
-			(xy 147.32 116.84)
+		(stroke
+			(width 0)
+			(type default)
 		)
 		(uuid "07821821-4352-4960-b136-bafe2e8cc412")
 	)
 	(wire
 		(pts
-			(xy 210.82 88.9)
-			(xy 210.82 86.36)
+			(xy 116.84 101.6) (xy 124.46 101.6)
 		)
-		(uuid "80459d7b-aa1a-4b51-b5df-8c3d498bce0e")
-	)
-	(wire
-		(pts
-			(xy 210.82 91.44)
-			(xy 200.66 91.44)
-		)
-		(uuid "1e966afd-3138-4b4e-9ba7-c1247de285bd")
-	)
-	(wire
-		(pts
-			(xy 223.52 88.9)
-			(xy 233.68 88.9)
-		)
-		(uuid "d688dcb3-f425-4305-b44b-a4b4538cc384")
-	)
-	(wire
-		(pts
-			(xy 223.52 91.44)
-			(xy 223.52 93.98)
-		)
-		(uuid "83b5caa0-d03a-4032-bcab-486cf78fd0ea")
-	)
-	(wire
-		(pts
-			(xy 251.46 116.84)
-			(xy 248.92 116.84)
-		)
-		(uuid "c99062a9-6523-444e-a2e3-9fc65ed6a9e9")
-	)
-	(wire
-		(pts
-			(xy 248.92 116.84)
-			(xy 248.92 119.38)
-		)
-		(uuid "4fafc924-8b7d-4e8e-9db7-d299c2b6728f")
-	)
-	(wire
-		(pts
-			(xy 116.84 96.52)
-			(xy 124.46 96.52)
-		)
-		(uuid "8136d9e9-a5ba-42ee-b79f-65112fea3bdc")
-	)
-	(wire
-		(pts
-			(xy 116.84 101.6)
-			(xy 124.46 101.6)
+		(stroke
+			(width 0)
+			(type default)
 		)
 		(uuid "098eda73-c991-4373-9654-f4dbccf95c0d")
 	)
 	(wire
 		(pts
-			(xy 147.32 88.9)
-			(xy 142.24 88.9)
+			(xy 147.32 88.9) (xy 142.24 88.9)
+		)
+		(stroke
+			(width 0)
+			(type default)
 		)
 		(uuid "1c9f34f0-f0d3-4a65-a47a-b00ace83cc80")
 	)
 	(wire
 		(pts
-			(xy 152.4 114.3)
-			(xy 147.32 114.3)
+			(xy 210.82 91.44) (xy 200.66 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1e966afd-3138-4b4e-9ba7-c1247de285bd")
+	)
+	(wire
+		(pts
+			(xy 152.4 114.3) (xy 147.32 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
 		)
 		(uuid "28865067-a4fc-4fe8-b9c8-2106b746c579")
 	)
 	(wire
 		(pts
-			(xy 241.3 88.9)
-			(xy 246.38 88.9)
+			(xy 106.68 88.9) (xy 106.68 81.28)
 		)
-		(uuid "c2ef482f-dda3-43da-b1ac-cebc8144b1d8")
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "35cb2503-8f7d-411b-b8bc-9cffe78dc7df")
 	)
 	(wire
 		(pts
-			(xy 251.46 111.76)
-			(xy 246.38 111.76)
+			(xy 160.02 114.3) (xy 170.18 114.3)
 		)
-		(uuid "9b47aba0-725d-41fc-9dca-96f5a8692bf2")
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "37845175-d247-4278-9b2b-e0a35f9de16b")
 	)
 	(wire
 		(pts
-			(xy 165.1 88.9)
-			(xy 170.18 88.9)
+			(xy 71.12 121.92) (xy 63.5 121.92)
 		)
-		(uuid "b471a237-29c9-4211-8c51-0d5a042a8730")
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3a17372c-bf34-4cc1-9b8e-5393cffd5689")
 	)
 	(wire
 		(pts
-			(xy 193.04 91.44)
-			(xy 187.96 91.44)
+			(xy 106.68 81.28) (xy 106.68 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4a9fc308-6198-49f6-a056-476d51e24737")
+	)
+	(wire
+		(pts
+			(xy 106.68 81.28) (xy 93.98 81.28)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4d240858-fcac-4078-9787-1606b2c4efff")
+	)
+	(wire
+		(pts
+			(xy 248.92 116.84) (xy 248.92 119.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4fafc924-8b7d-4e8e-9db7-d299c2b6728f")
+	)
+	(wire
+		(pts
+			(xy 96.52 104.14) (xy 93.98 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5aeef112-b862-4202-8061-e523379e0aed")
+	)
+	(wire
+		(pts
+			(xy 193.04 91.44) (xy 187.96 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
 		)
 		(uuid "5bcf9985-787c-44a0-83a9-228152d42bdd")
 	)
 	(wire
 		(pts
-			(xy 251.46 114.3)
-			(xy 246.38 114.3)
+			(xy 96.52 101.6) (xy 93.98 101.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "66caf06c-29bb-4b10-8531-b74527d856c6")
+	)
+	(wire
+		(pts
+			(xy 86.36 99.06) (xy 63.5 99.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "66e150e2-04e8-4412-9806-16a5f54d9480")
+	)
+	(wire
+		(pts
+			(xy 91.44 121.92) (xy 71.12 121.92)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "679b0829-30f6-4760-8ef7-176a99cc6b13")
+	)
+	(wire
+		(pts
+			(xy 96.52 99.06) (xy 86.36 99.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6ae61e7b-8f59-4651-a216-558a65f1f680")
+	)
+	(wire
+		(pts
+			(xy 91.44 109.22) (xy 91.44 121.92)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "80347613-6007-47b6-a93d-8ec8f3a2301e")
+	)
+	(wire
+		(pts
+			(xy 210.82 88.9) (xy 210.82 86.36)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "80459d7b-aa1a-4b51-b5df-8c3d498bce0e")
+	)
+	(wire
+		(pts
+			(xy 116.84 96.52) (xy 124.46 96.52)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8136d9e9-a5ba-42ee-b79f-65112fea3bdc")
+	)
+	(wire
+		(pts
+			(xy 223.52 91.44) (xy 223.52 93.98)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "83b5caa0-d03a-4032-bcab-486cf78fd0ea")
+	)
+	(wire
+		(pts
+			(xy 96.52 109.22) (xy 91.44 109.22)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "845236c0-1b11-46b3-8224-cebf952c8f23")
+	)
+	(wire
+		(pts
+			(xy 93.98 104.14) (xy 78.74 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8d8bec0b-aeea-4517-9f6a-9948d110d4e9")
+	)
+	(wire
+		(pts
+			(xy 93.98 101.6) (xy 93.98 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8de55e9d-27da-4e0b-9460-a36cbe570e8c")
+	)
+	(wire
+		(pts
+			(xy 251.46 114.3) (xy 246.38 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
 		)
 		(uuid "9ae38294-d156-4825-8498-b4af781f84f9")
 	)
-	(label "RS485_A"
-		(at 124.46 96.52 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
+	(wire
+		(pts
+			(xy 251.46 111.76) (xy 246.38 111.76)
 		)
-		(uuid "c26c9416-5b5b-423a-9f26-f018423b6e7b")
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9b47aba0-725d-41fc-9dca-96f5a8692bf2")
 	)
-	(label "RS485_B"
-		(at 124.46 101.6 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
+	(wire
+		(pts
+			(xy 165.1 88.9) (xy 170.18 88.9)
 		)
-		(uuid "7484945c-99bc-4f7d-91a3-5d1b7dedf4d6")
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b471a237-29c9-4211-8c51-0d5a042a8730")
 	)
-	(label "RS485_A"
-		(at 142.24 88.9 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
+	(wire
+		(pts
+			(xy 241.3 88.9) (xy 246.38 88.9)
 		)
-		(uuid "5f6d6ea7-eaeb-4c46-b14f-bfe6f5214a0c")
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c2ef482f-dda3-43da-b1ac-cebc8144b1d8")
 	)
-	(label "RS485_A"
-		(at 147.32 114.3 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
+	(wire
+		(pts
+			(xy 251.46 116.84) (xy 248.92 116.84)
 		)
-		(uuid "fef474b4-1467-43ba-b01f-0b8b6728a593")
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c99062a9-6523-444e-a2e3-9fc65ed6a9e9")
 	)
-	(label "RS485_A"
-		(at 246.38 88.9 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
+	(wire
+		(pts
+			(xy 223.52 88.9) (xy 233.68 88.9)
 		)
-		(uuid "d132fe60-37cd-433c-88b3-593b6598a173")
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d688dcb3-f425-4305-b44b-a4b4538cc384")
 	)
-	(label "RS485_A"
-		(at 246.38 111.76 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
+	(wire
+		(pts
+			(xy 78.74 104.14) (xy 63.5 104.14)
 		)
-		(uuid "db08bca6-0818-4e61-a48f-38c938d37b65")
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "eab9a439-9d1c-4665-9242-4c73518eb0df")
 	)
 	(label "RS485_B"
 		(at 170.18 88.9 0)
@@ -2410,25 +2399,35 @@
 		)
 		(uuid "1d9e0c45-6887-4fe5-a858-48c6f3556b3c")
 	)
-	(label "RS485_B"
-		(at 246.38 114.3 180)
+	(label "BIAS_B"
+		(at 210.82 91.44 180)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify right bottom)
 		)
-		(uuid "d1a861f2-1981-4e5a-a987-a4800e4fcc1e")
+		(uuid "3d8c9c8e-fac7-4d42-85ed-3bd37b21053c")
+	)
+	(label "RS485_A"
+		(at 142.24 88.9 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "5f6d6ea7-eaeb-4c46-b14f-bfe6f5214a0c")
 	)
 	(label "RS485_B"
-		(at 147.32 116.84 180)
+		(at 124.46 101.6 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify left bottom)
 		)
-		(uuid "d19d3f9d-96fb-4cd7-bb4b-a4afc6134758")
+		(uuid "7484945c-99bc-4f7d-91a3-5d1b7dedf4d6")
 	)
 	(label "TERM_A"
 		(at 170.18 114.3 180)
@@ -2440,16 +2439,6 @@
 		)
 		(uuid "75b9de00-541e-4737-af1d-cd03249afa0a")
 	)
-	(label "BIAS_B"
-		(at 210.82 91.44 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "3d8c9c8e-fac7-4d42-85ed-3bd37b21053c")
-	)
 	(label "BIAS_A"
 		(at 223.52 88.9 0)
 		(effects
@@ -2459,6 +2448,77 @@
 			(justify left bottom)
 		)
 		(uuid "78f9a6dc-9a14-41a2-bad3-d8f05f044dc6")
+	)
+	(label "RS485_A"
+		(at 124.46 96.52 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c26c9416-5b5b-423a-9f26-f018423b6e7b")
+	)
+	(label "RS485_A"
+		(at 246.38 88.9 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "d132fe60-37cd-433c-88b3-593b6598a173")
+	)
+	(label "RS485_B"
+		(at 147.32 116.84 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "d19d3f9d-96fb-4cd7-bb4b-a4afc6134758")
+	)
+	(label "RS485_B"
+		(at 246.38 114.3 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "d1a861f2-1981-4e5a-a987-a4800e4fcc1e")
+	)
+	(label "RS485_A"
+		(at 246.38 111.76 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "db08bca6-0818-4e61-a48f-38c938d37b65")
+	)
+	(label "RS485_A"
+		(at 147.32 114.3 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "fef474b4-1467-43ba-b01f-0b8b6728a593")
+	)
+	(hierarchical_label "RS485_TX"
+		(shape input)
+		(at 63.5 121.92 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "41129aac-63be-4759-8d41-0933539b3aea")
 	)
 	(hierarchical_label "RS485_RX"
 		(shape output)
@@ -2482,268 +2542,21 @@
 		)
 		(uuid "91967a45-ea33-4542-81a5-cb9f2ede43e6")
 	)
-	(hierarchical_label "RS485_TX"
-		(shape input)
-		(at 63.5 121.92 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "41129aac-63be-4759-8d41-0933539b3aea")
-	)
-  (text "RS485 (replaces MAX485 module), fault-protected\nU701 THVD2410DR 3.3 V half-duplex transceiver on UART1: GPIO4 = TX (D), GPIO35 = RX (R),\nGPIO25 = DE + /RE (ESP-IDF UART RS485 half-duplex mode). A and B are rated +/-70 V and work over +/-25 V\ncommon mode, so a bus wire shorted to the 12 V or 24 V supply does no damage.\nR701 / R702 hold RX / TX high (R floats while transmitting); R703 holds DE low (receive) while the MCU is in reset.\nD701 / D702 SMAJ33CA clamp A and B to GND: 33 V standoff (above a 24 V system's 28.8 V), 53 V clamp (below 70 V).\nJ702 TERM: fit a shunt (120R across A-B) only on the two nodes at the ends of the bus.\nJ703 BIAS: fit both shunts, across 1-2 and 3-4 (A to 3V3 and B to GND via 330R), on exactly one node:\nidle A-B = 3.3 V x 60/(330+330+60) = 0.28 V with both ends terminated (receiver threshold 0.2 V).\nJumpers off = no termination and no bias. With J702/J703 fitted, a supply short burns R704-R706 (U701 survives)."
-    (at 25.4 25.4 0)
-    (effects (font (size 1.5 1.5)) (justify left top))
-    (uuid "dcf36c07-7a63-499d-92a5-90f5e9e37df7")
-  )
-	(symbol
-		(lib_id "Interface_UART:SP3485EN")
-		(at 106.68 104.14 0)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "6bae12bc-a7ed-4dfa-ad7f-b86d2f71fea4")
-		(property "Reference" "U701"
-			(at 99.06 90.17 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "THVD2410DR"
-			(at 108.585 90.17 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"
-			(at 106.68 104.14 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/thvd2410.pdf"
-			(at 106.68 104.14 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "3.3-5 V half-duplex RS-485 transceiver, +/-70 V bus fault protection, +/-25 V common mode, 500 kbps, SOIC-8 (SP3485 pinout)"
-			(at 106.68 104.14 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C1849398"
-			(at 106.68 104.14 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "THVD2410DR"
-			(at 106.68 104.14 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-compact-lm2596-io"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "U701")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:Screw_Terminal_01x03")
-		(at 256.54 114.3 0)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "96596841-087d-4d70-87ed-6aca9e1244de")
-		(property "Reference" "J701"
-			(at 256.54 109.22 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "RS485"
-			(at 256.54 119.38 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Connector_JST:JST_VH_B3P-VH_1x03_P3.96mm_Vertical"
-			(at 256.54 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 256.54 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"
-			(at 256.54 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C160316"
-			(at 256.54 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "B3P-VH(LF)(SN)"
-			(at 256.54 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-compact-lm2596-io"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "J701")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector_Generic:Conn_01x02")
-		(at 175.26 114.3 0)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "3fd1d69b-7157-494a-be42-bb2272596e9e")
-		(property "Reference" "J702"
-			(at 175.26 111.76 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "TERM"
-			(at 175.26 119.38 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
-			(at 175.26 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 175.26 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"
-			(at 175.26 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C53055672"
-			(at 175.26 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "254PZ-1x2P-V"
-			(at 175.26 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-compact-lm2596-io"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "J702")
-					(unit 1)
-				)
-			)
-		)
-	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_02x02_Odd_Even")
 		(at 215.9 88.9 0)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
 		(uuid "01a6e7fe-fa22-4e49-83f4-30b25074414f")
 		(property "Reference" "J703"
 			(at 217.17 86.36 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2752,6 +2565,8 @@
 		)
 		(property "Value" "BIAS"
 			(at 217.17 93.98 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2761,6 +2576,8 @@
 		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_2x02_P2.54mm_Vertical"
 			(at 215.9 88.9 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2770,6 +2587,8 @@
 		(property "Datasheet" ""
 			(at 215.9 88.9 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2779,6 +2598,8 @@
 		(property "Description" "Generic connector, double row, 02x02, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)"
 			(at 215.9 88.9 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2788,6 +2609,8 @@
 		(property "LCSC" "C66690"
 			(at 215.9 88.9 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2797,11 +2620,25 @@
 		(property "MPN" "2.54-2*2PPin"
 			(at 215.9 88.9 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
+		)
+		(pin "3"
+			(uuid "6c58d463-272b-48cb-a0d7-ecae553e1d23")
+		)
+		(pin "4"
+			(uuid "893e465d-4cb0-4829-bef7-f2b9e983a615")
+		)
+		(pin "1"
+			(uuid "add01dbe-99bb-47a4-aac3-52e8a1273a95")
+		)
+		(pin "2"
+			(uuid "9fc60c71-d227-4e30-9aa5-e09001b7d2fa")
 		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
@@ -2813,34 +2650,42 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:C")
-		(at 93.98 85.09 0)
+		(lib_id "power:+3V3")
+		(at 86.36 91.44 0)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
-		(uuid "f6ff7a11-a0d1-4cb4-8a44-367af7b76a37")
-		(property "Reference" "C701"
-			(at 94.615 82.55 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "100nF"
-			(at 94.615 87.63 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
-			(at 93.98 85.09 0)
+		(uuid "08be6af9-ead2-479b-9f9e-24fabb7d9cc7")
+		(property "Reference" "#PWR701"
+			(at 86.36 95.25 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 86.36 87.884 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 86.36 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2848,435 +2693,135 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 93.98 85.09 0)
+			(at 86.36 91.44 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Description" "Unpolarized capacitor"
-			(at 93.98 85.09 0)
+		(property "Description" "Power symbol creates a global label with name \"+3V3\""
+			(at 86.36 91.44 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "LCSC" "C14663"
-			(at 93.98 85.09 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "CC0603KRX7R9BB104"
-			(at 93.98 85.09 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
+		(pin "1"
+			(uuid "17a71a8a-8d2b-433f-8194-0a83b962b7fc")
 		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "C701")
+					(reference "#PWR701")
 					(unit 1)
 				)
 			)
 		)
 	)
 	(symbol
-		(lib_id "Device:R")
-		(at 86.36 95.25 0)
+		(lib_id "Device:D_TVS")
+		(at 147.32 92.71 270)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
-		(uuid "44e3b6ab-08e3-4ea2-96a2-dcef6732cdbf")
-		(property "Reference" "R701"
-			(at 88.392 95.25 90)
+		(uuid "11dafd8e-93b8-4318-864b-7be4980e2c9c")
+		(property "Reference" "D701"
+			(at 149.86 92.71 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Value" "10k"
-			(at 86.36 95.25 90)
+		(property "Value" "SMAJ33CA"
+			(at 144.78 92.71 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 86.36 95.25 0)
+		(property "Footprint" "Diode_SMD:D_SMA"
+			(at 147.32 92.71 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Datasheet" ""
-			(at 86.36 95.25 0)
+		(property "Datasheet" "https://www.littelfuse.com/assetdocs/littelfuse-tvs-diode-smaj-datasheet"
+			(at 147.32 92.71 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Description" "Resistor"
-			(at 86.36 95.25 0)
+		(property "Description" "33 V bidirectional TVS, 400 W (10/1000 us), 53.3 V clamp at 7.5 A: RS485 A to GND"
+			(at 147.32 92.71 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "LCSC" "C25804"
-			(at 86.36 95.25 0)
+		(property "LCSC" "C115251"
+			(at 147.32 92.71 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "MPN" "0603WAF1002T5E"
-			(at 86.36 95.25 0)
+		(property "MPN" "SMAJ33CA"
+			(at 147.32 92.71 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
+		)
+		(pin "1"
+			(uuid "c97c187e-15f1-43f0-be05-37b2bd578508")
+		)
+		(pin "2"
+			(uuid "bdba019c-a57e-4745-a92f-4880d0c2289c")
 		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "R701")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 71.12 118.11 0)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "c94ff9c9-a116-4d5d-b144-0d0afbc2a553")
-		(property "Reference" "R702"
-			(at 73.152 118.11 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "10k"
-			(at 71.12 118.11 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 71.12 118.11 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 71.12 118.11 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 71.12 118.11 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C25804"
-			(at 71.12 118.11 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "0603WAF1002T5E"
-			(at 71.12 118.11 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-compact-lm2596-io"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "R702")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 78.74 107.95 0)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "ab71a8f7-1cf6-4ef0-acf0-fc7d0c740fe0")
-		(property "Reference" "R703"
-			(at 80.772 107.95 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "10k"
-			(at 78.74 107.95 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 78.74 107.95 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 78.74 107.95 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 78.74 107.95 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C25804"
-			(at 78.74 107.95 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "0603WAF1002T5E"
-			(at 78.74 107.95 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-compact-lm2596-io"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "R703")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 156.21 114.3 90)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "dd81a107-f93f-4fa6-9df2-68f6ab74eb9c")
-		(property "Reference" "R704"
-			(at 156.21 112.268 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "120R"
-			(at 156.21 114.3 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
-			(at 156.21 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 156.21 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 156.21 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C17437"
-			(at 156.21 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "0805W8F1200T5E"
-			(at 156.21 114.3 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-compact-lm2596-io"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "R704")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 237.49 88.9 90)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "c7485324-197a-4448-bc94-58bc5d2947ef")
-		(property "Reference" "R705"
-			(at 237.49 86.868 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "330R"
-			(at 237.49 88.9 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 237.49 88.9 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 237.49 88.9 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 237.49 88.9 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C23138"
-			(at 237.49 88.9 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "0603WAF3300T5E"
-			(at 237.49 88.9 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-compact-lm2596-io"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "R705")
+					(reference "D701")
 					(unit 1)
 				)
 			)
@@ -3286,12 +2831,17 @@
 		(lib_id "Device:R")
 		(at 196.85 91.44 90)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
 		(uuid "124976bc-012c-4c1e-ba2e-bf4ada17a586")
 		(property "Reference" "R706"
 			(at 196.85 89.408 90)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3300,6 +2850,8 @@
 		)
 		(property "Value" "330R"
 			(at 196.85 91.44 90)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3309,6 +2861,8 @@
 		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 196.85 91.44 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3318,6 +2872,8 @@
 		(property "Datasheet" ""
 			(at 196.85 91.44 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3327,6 +2883,8 @@
 		(property "Description" "Resistor"
 			(at 196.85 91.44 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3336,6 +2894,8 @@
 		(property "LCSC" "C23138"
 			(at 196.85 91.44 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3345,11 +2905,19 @@
 		(property "MPN" "0603WAF3300T5E"
 			(at 196.85 91.44 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
+		)
+		(pin "2"
+			(uuid "5a39f3ba-160b-49b2-974c-e417d4707a2d")
+		)
+		(pin "1"
+			(uuid "0d9ca842-2f9a-4e40-81c6-3141a351af1c")
 		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
@@ -3362,15 +2930,20 @@
 	)
 	(symbol
 		(lib_id "power:+3V3")
-		(at 86.36 91.44 0)
+		(at 210.82 86.36 0)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
-		(uuid "08be6af9-ead2-479b-9f9e-24fabb7d9cc7")
-		(property "Reference" "#PWR701"
-			(at 86.36 95.25 0)
+		(uuid "2424b87e-3004-42c6-8d53-3efb5dd14816")
+		(property "Reference" "#PWR708"
+			(at 210.82 90.17 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3378,7 +2951,9 @@
 			)
 		)
 		(property "Value" "+3V3"
-			(at 86.36 87.884 0)
+			(at 210.82 82.804 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3386,8 +2961,10 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 86.36 91.44 0)
+			(at 210.82 86.36 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3395,8 +2972,10 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 86.36 91.44 0)
+			(at 210.82 86.36 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3404,18 +2983,346 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3V3\""
-			(at 86.36 91.44 0)
+			(at 210.82 86.36 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
+		(pin "1"
+			(uuid "5e81a742-e1ce-43fd-af6d-e8b163c469b5")
+		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "#PWR701")
+					(reference "#PWR708")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x02")
+		(at 175.26 114.3 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "3fd1d69b-7157-494a-be42-bb2272596e9e")
+		(property "Reference" "J702"
+			(at 175.26 111.76 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TERM"
+			(at 175.26 119.38 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
+			(at 175.26 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 175.26 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"
+			(at 175.26 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C53055672"
+			(at 175.26 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "254PZ-1x2P-V"
+			(at 175.26 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "d59584a3-6634-487b-9bf6-0172f79fb10e")
+		)
+		(pin "1"
+			(uuid "080c4132-4c8e-4aa0-8068-7b9db14b927b")
+		)
+		(instances
+			(project "hour-meter-board-compact-lm2596-io"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "J702")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 86.36 95.25 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "44e3b6ab-08e3-4ea2-96a2-dcef6732cdbf")
+		(property "Reference" "R701"
+			(at 88.392 95.25 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "10k"
+			(at 86.36 95.25 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 86.36 95.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 86.36 95.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 86.36 95.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25804"
+			(at 86.36 95.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0603WAF1002T5E"
+			(at 86.36 95.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "9af487a1-6005-47bf-bd94-3b3d06f82ffb")
+		)
+		(pin "1"
+			(uuid "84c50f58-c3ee-4ec0-a2d1-a064bb5cdb3a")
+		)
+		(instances
+			(project "hour-meter-board-compact-lm2596-io"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "R701")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Interface_UART:SP3485EN")
+		(at 106.68 104.14 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "6bae12bc-a7ed-4dfa-ad7f-b86d2f71fea4")
+		(property "Reference" "U701"
+			(at 99.06 90.17 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "THVD2410DR"
+			(at 108.585 90.17 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"
+			(at 106.68 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/thvd2410.pdf"
+			(at 106.68 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "3.3-5 V half-duplex RS-485 transceiver, +/-70 V bus fault protection, +/-25 V common mode, 500 kbps, SOIC-8 (SP3485 pinout)"
+			(at 106.68 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1849398"
+			(at 106.68 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "THVD2410DR"
+			(at 106.68 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "3a18ff6c-3543-44c8-8770-457aadea8008")
+		)
+		(pin "8"
+			(uuid "22a35f6e-07d5-453e-a780-f58f19b7a366")
+		)
+		(pin "2"
+			(uuid "64140447-bae7-4724-904a-37ad965db421")
+		)
+		(pin "5"
+			(uuid "81608da4-c1a0-40a2-a5b2-51df64ded89a")
+		)
+		(pin "6"
+			(uuid "0f1ce431-8a4e-49ad-81fd-1e0f41a5d06a")
+		)
+		(pin "4"
+			(uuid "a139dd44-82ef-401f-8299-64c05dac7df6")
+		)
+		(pin "3"
+			(uuid "7a82ce43-7258-42b3-b21f-fa39e75ad3c6")
+		)
+		(pin "7"
+			(uuid "f10765e3-ff63-4cc8-9424-e16d6e19c3cf")
+		)
+		(instances
+			(project "hour-meter-board-compact-lm2596-io"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "U701")
 					(unit 1)
 				)
 			)
@@ -3425,13 +3332,18 @@
 		(lib_id "power:+3V3")
 		(at 71.12 114.3 0)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
 		(uuid "7f7108d8-6785-4876-930f-138454db303a")
 		(property "Reference" "#PWR702"
 			(at 71.12 118.11 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3440,6 +3352,8 @@
 		)
 		(property "Value" "+3V3"
 			(at 71.12 110.744 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3449,6 +3363,8 @@
 		(property "Footprint" ""
 			(at 71.12 114.3 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3458,6 +3374,8 @@
 		(property "Datasheet" ""
 			(at 71.12 114.3 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3467,11 +3385,16 @@
 		(property "Description" "Power symbol creates a global label with name \"+3V3\""
 			(at 71.12 114.3 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
+		)
+		(pin "1"
+			(uuid "631f939c-9720-4696-b7b2-f5de15bada1c")
 		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
@@ -3484,15 +3407,456 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 78.74 111.76 0)
+		(at 147.32 96.52 0)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "8d9c2e9c-9dca-4622-8b8f-4e3a45c20f7a")
+		(property "Reference" "#PWR707"
+			(at 147.32 102.87 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 147.32 100.33 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 147.32 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 147.32 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 147.32 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "572cb80e-65b4-4843-9fcc-226bfd1c1952")
+		)
+		(instances
+			(project "hour-meter-board-compact-lm2596-io"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "#PWR707")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector:Screw_Terminal_01x03")
+		(at 256.54 114.3 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "96596841-087d-4d70-87ed-6aca9e1244de")
+		(property "Reference" "J701"
+			(at 256.54 109.22 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "RS485"
+			(at 256.54 119.38 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_JST:JST_VH_B3P-VH_1x03_P3.96mm_Vertical"
+			(at 256.54 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 256.54 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"
+			(at 256.54 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C160316"
+			(at 256.54 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "B3P-VH(LF)(SN)"
+			(at 256.54 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "f22c2582-a152-422e-b325-d2a0617bc3bd")
+		)
+		(pin "2"
+			(uuid "61f1eab5-94b6-4b20-b066-c28421bca4bb")
+		)
+		(pin "3"
+			(uuid "240c6700-89fe-42c1-9348-ade358f9d1a7")
+		)
+		(instances
+			(project "hour-meter-board-compact-lm2596-io"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "J701")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 93.98 88.9 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "9fb9bf63-2259-43da-9516-53a0c340da95")
+		(property "Reference" "#PWR705"
+			(at 93.98 95.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 93.98 92.71 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 93.98 88.9 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 93.98 88.9 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 93.98 88.9 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "76232cdc-d3af-479b-8a7a-2717219077bf")
+		)
+		(instances
+			(project "hour-meter-board-compact-lm2596-io"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "#PWR705")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 78.74 107.95 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "ab71a8f7-1cf6-4ef0-acf0-fc7d0c740fe0")
+		(property "Reference" "R703"
+			(at 80.772 107.95 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "10k"
+			(at 78.74 107.95 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 78.74 107.95 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 78.74 107.95 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 78.74 107.95 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25804"
+			(at 78.74 107.95 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0603WAF1002T5E"
+			(at 78.74 107.95 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "bc2754b6-dcc2-40ec-8615-492abf1fe599")
+		)
+		(pin "1"
+			(uuid "05d45d25-4bd7-4c1b-a586-6078d1c91d03")
+		)
+		(instances
+			(project "hour-meter-board-compact-lm2596-io"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "R703")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 106.68 119.38 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "ba0a3347-56a2-4489-a11e-f030afca2e6b")
+		(property "Reference" "#PWR706"
+			(at 106.68 125.73 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 106.68 123.19 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 106.68 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 106.68 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 106.68 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "f4905e80-8ed3-4ac1-b943-0defc47cf517")
+		)
+		(instances
+			(project "hour-meter-board-compact-lm2596-io"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "#PWR706")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 78.74 111.76 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
 		(uuid "bbfe425d-eee2-4b48-b439-791851e3666c")
 		(property "Reference" "#PWR703"
 			(at 78.74 118.11 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3501,6 +3865,8 @@
 		)
 		(property "Value" "GND"
 			(at 78.74 115.57 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3510,6 +3876,8 @@
 		(property "Footprint" ""
 			(at 78.74 111.76 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3519,6 +3887,8 @@
 		(property "Datasheet" ""
 			(at 78.74 111.76 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3528,11 +3898,16 @@
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
 			(at 78.74 111.76 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
+		)
+		(pin "1"
+			(uuid "90e2d970-b570-4bcc-933a-1de90a5fde6a")
 		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
@@ -3547,13 +3922,18 @@
 		(lib_id "power:+3V3")
 		(at 106.68 78.74 0)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
 		(uuid "bcefa53b-abee-4a95-b2f3-20080cd849b5")
 		(property "Reference" "#PWR704"
 			(at 106.68 82.55 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3562,6 +3942,8 @@
 		)
 		(property "Value" "+3V3"
 			(at 106.68 75.184 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3571,6 +3953,8 @@
 		(property "Footprint" ""
 			(at 106.68 78.74 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3580,6 +3964,8 @@
 		(property "Datasheet" ""
 			(at 106.68 78.74 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3589,11 +3975,16 @@
 		(property "Description" "Power symbol creates a global label with name \"+3V3\""
 			(at 106.68 78.74 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
+		)
+		(pin "1"
+			(uuid "b36d6b45-b85f-4734-bab7-a2e3e399d010")
 		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
@@ -3605,33 +3996,41 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 93.98 88.9 0)
+		(lib_id "Device:R")
+		(at 237.49 88.9 90)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
-		(uuid "9fb9bf63-2259-43da-9516-53a0c340da95")
-		(property "Reference" "#PWR705"
-			(at 93.98 95.25 0)
-			(hide yes)
+		(uuid "c7485324-197a-4448-bc94-58bc5d2947ef")
+		(property "Reference" "R705"
+			(at 237.49 86.868 90)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Value" "GND"
-			(at 93.98 92.71 0)
+		(property "Value" "330R"
+			(at 237.49 88.9 90)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Footprint" ""
-			(at 93.98 88.9 0)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 237.49 88.9 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3639,149 +4038,59 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 93.98 88.9 0)
+			(at 237.49 88.9 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 93.98 88.9 0)
+		(property "Description" "Resistor"
+			(at 237.49 88.9 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
+		)
+		(property "LCSC" "C23138"
+			(at 237.49 88.9 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0603WAF3300T5E"
+			(at 237.49 88.9 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "0f2190f2-ecfc-4872-b74f-3a1e65cf3ae3")
+		)
+		(pin "2"
+			(uuid "3d8f5e78-fe31-4aad-bd53-e68b7db8c279")
 		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "#PWR705")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 106.68 119.38 0)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "ba0a3347-56a2-4489-a11e-f030afca2e6b")
-		(property "Reference" "#PWR706"
-			(at 106.68 125.73 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 106.68 123.19 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 106.68 119.38 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 106.68 119.38 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 106.68 119.38 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-compact-lm2596-io"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "#PWR706")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:+3V3")
-		(at 210.82 86.36 0)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "2424b87e-3004-42c6-8d53-3efb5dd14816")
-		(property "Reference" "#PWR708"
-			(at 210.82 90.17 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "+3V3"
-			(at 210.82 82.804 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 210.82 86.36 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 210.82 86.36 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+3V3\""
-			(at 210.82 86.36 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-compact-lm2596-io"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "#PWR708")
+					(reference "R705")
 					(unit 1)
 				)
 			)
@@ -3791,13 +4100,18 @@
 		(lib_id "power:GND")
 		(at 223.52 93.98 0)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
 		(uuid "c849f2c3-e1d8-481a-ad05-f37ae8658924")
 		(property "Reference" "#PWR709"
 			(at 223.52 100.33 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3806,6 +4120,8 @@
 		)
 		(property "Value" "GND"
 			(at 223.52 97.79 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3815,6 +4131,8 @@
 		(property "Footprint" ""
 			(at 223.52 93.98 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3824,6 +4142,8 @@
 		(property "Datasheet" ""
 			(at 223.52 93.98 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3833,11 +4153,16 @@
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
 			(at 223.52 93.98 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
+		)
+		(pin "1"
+			(uuid "7facc957-f152-478a-af01-5032160bbce9")
 		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
@@ -3849,16 +4174,223 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R")
+		(at 71.12 118.11 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "c94ff9c9-a116-4d5d-b144-0d0afbc2a553")
+		(property "Reference" "R702"
+			(at 73.152 118.11 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "10k"
+			(at 71.12 118.11 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 71.12 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 71.12 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 71.12 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25804"
+			(at 71.12 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0603WAF1002T5E"
+			(at 71.12 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "e9869842-1ef8-425d-a89c-07f0561126b1")
+		)
+		(pin "1"
+			(uuid "5ca09182-902f-4d3d-82c9-130341bc23a6")
+		)
+		(instances
+			(project "hour-meter-board-compact-lm2596-io"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "R702")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:D_TVS")
+		(at 165.1 92.71 270)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "ca584334-5ba5-4341-8a69-a4351bfdc714")
+		(property "Reference" "D702"
+			(at 167.64 92.71 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "SMAJ33CA"
+			(at 162.56 92.71 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Diode_SMD:D_SMA"
+			(at 165.1 92.71 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "https://www.littelfuse.com/assetdocs/littelfuse-tvs-diode-smaj-datasheet"
+			(at 165.1 92.71 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "33 V bidirectional TVS, 400 W (10/1000 us), 53.3 V clamp at 7.5 A: RS485 B to GND"
+			(at 165.1 92.71 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C115251"
+			(at 165.1 92.71 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "SMAJ33CA"
+			(at 165.1 92.71 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "0fc413fc-85fe-4fa7-9028-9e09395c5933")
+		)
+		(pin "2"
+			(uuid "6b40b056-2f37-4c1b-a17b-93480ee8f8cf")
+		)
+		(instances
+			(project "hour-meter-board-compact-lm2596-io"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "D702")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 248.92 119.38 0)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
 		(uuid "cf7ace39-9bcf-4c9c-873d-e7ffa934adb0")
 		(property "Reference" "#PWR710"
 			(at 248.92 125.73 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3867,6 +4399,8 @@
 		)
 		(property "Value" "GND"
 			(at 248.92 123.19 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3876,6 +4410,8 @@
 		(property "Footprint" ""
 			(at 248.92 119.38 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3885,6 +4421,8 @@
 		(property "Datasheet" ""
 			(at 248.92 119.38 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3894,11 +4432,16 @@
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
 			(at 248.92 119.38 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
+		)
+		(pin "1"
+			(uuid "48754e3f-62a8-4dba-9d8f-92537cf4fb06")
 		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
@@ -3910,189 +4453,41 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:D_TVS")
-		(at 147.32 92.71 270)
+		(lib_id "Device:R")
+		(at 156.21 114.3 90)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
-		(uuid "11dafd8e-93b8-4318-864b-7be4980e2c9c")
-		(property "Reference" "D701"
-			(at 149.86 92.71 0)
+		(uuid "dd81a107-f93f-4fa6-9df2-68f6ab74eb9c")
+		(property "Reference" "R704"
+			(at 156.21 112.268 90)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Value" "SMAJ33CA"
-			(at 144.78 92.71 0)
+		(property "Value" "120R"
+			(at 156.21 114.3 90)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Footprint" "Diode_SMD:D_SMA"
-			(at 147.32 92.71 0)
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
+			(at 156.21 114.3 0)
 			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" "https://www.littelfuse.com/assetdocs/littelfuse-tvs-diode-smaj-datasheet"
-			(at 147.32 92.71 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "33 V bidirectional TVS, 400 W (10/1000 us), 53.3 V clamp at 7.5 A: RS485 A to GND"
-			(at 147.32 92.71 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-compact-lm2596-io"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "D701")
-					(unit 1)
-				)
-			)
-		)
-	
-		(property "LCSC" "C115251"
-			(at 147.32 92.71 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "SMAJ33CA"
-			(at 147.32 92.71 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		))
-	(symbol
-		(lib_id "Device:D_TVS")
-		(at 165.1 92.71 270)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "ca584334-5ba5-4341-8a69-a4351bfdc714")
-		(property "Reference" "D702"
-			(at 167.64 92.71 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "SMAJ33CA"
-			(at 162.56 92.71 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Diode_SMD:D_SMA"
-			(at 165.1 92.71 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" "https://www.littelfuse.com/assetdocs/littelfuse-tvs-diode-smaj-datasheet"
-			(at 165.1 92.71 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "33 V bidirectional TVS, 400 W (10/1000 us), 53.3 V clamp at 7.5 A: RS485 B to GND"
-			(at 165.1 92.71 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hour-meter-board-compact-lm2596-io"
-				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "D702")
-					(unit 1)
-				)
-			)
-		)
-	
-		(property "LCSC" "C115251"
-			(at 165.1 92.71 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "SMAJ33CA"
-			(at 165.1 92.71 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		))
-	(symbol
-		(lib_id "power:GND")
-		(at 147.32 96.52 0)
-		(unit 1)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "8d9c2e9c-9dca-4622-8b8f-4e3a45c20f7a")
-		(property "Reference" "#PWR707"
-			(at 147.32 102.87 0)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 147.32 100.33 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 147.32 96.52 0)
-			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4100,27 +4495,59 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 147.32 96.52 0)
+			(at 156.21 114.3 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 147.32 96.52 0)
+		(property "Description" "Resistor"
+			(at 156.21 114.3 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
+		)
+		(property "LCSC" "C17437"
+			(at 156.21 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0805W8F1200T5E"
+			(at 156.21 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "e4eb375e-f4ef-4714-aea8-096fc8e8b63c")
+		)
+		(pin "1"
+			(uuid "85a935a8-8f66-4e66-90ad-dfc24f924c2a")
 		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
-					(reference "#PWR707")
+					(reference "R704")
 					(unit 1)
 				)
 			)
@@ -4130,13 +4557,18 @@
 		(lib_id "power:GND")
 		(at 165.1 96.52 0)
 		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
+		(in_pos_files yes)
 		(dnp no)
 		(uuid "ed8c042f-a3fd-412c-9682-7a5d9d4292a4")
 		(property "Reference" "#PWR711"
 			(at 165.1 102.87 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4145,6 +4577,8 @@
 		)
 		(property "Value" "GND"
 			(at 165.1 100.33 0)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4154,6 +4588,8 @@
 		(property "Footprint" ""
 			(at 165.1 96.52 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4163,6 +4599,8 @@
 		(property "Datasheet" ""
 			(at 165.1 96.52 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4172,16 +4610,124 @@
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
 			(at 165.1 96.52 0)
 			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
+		(pin "1"
+			(uuid "c6d47315-1e34-439d-9df8-121ef2869307")
+		)
 		(instances
 			(project "hour-meter-board-compact-lm2596-io"
 				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
 					(reference "#PWR711")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 93.98 85.09 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "f6ff7a11-a0d1-4cb4-8a44-367af7b76a37")
+		(property "Reference" "C701"
+			(at 94.615 82.55 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "100nF"
+			(at 94.615 87.63 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 93.98 85.09 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 93.98 85.09 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor"
+			(at 93.98 85.09 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C14663"
+			(at 93.98 85.09 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "CC0603KRX7R9BB104"
+			(at 93.98 85.09 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "b0d71afd-9cab-4117-9629-ed11535c5720")
+		)
+		(pin "1"
+			(uuid "92bf2cb0-3386-48ae-b6a2-9ed2a312e0a8")
+		)
+		(instances
+			(project "hour-meter-board-compact-lm2596-io"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/da8532f2-696e-47f1-98b9-1159d60c743e"
+					(reference "C701")
 					(unit 1)
 				)
 			)

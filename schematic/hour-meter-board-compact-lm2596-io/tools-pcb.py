@@ -69,7 +69,8 @@ PLACEMENT = {
     "J301": (105.95, 116.5, 270, "F"),   # DIN1 / DIN2 / COM = VEH_GND (isolated)
     "J701": (105.95, 135.0, 270, "F"),   # RS485 A / B / GND
     "J101": (105.95, 151.0, 270, "F"),   # VIN 9-36 V
-    "TP101": (106.0, 159.5, 0, "F"),     # VIN solder pads, for wiring without the JST plug
+    # VIN and GND solder pads on the back, above and below J101, for wiring without the JST plug
+    "TP101": (103.45, 144.36, 0, "B"), "TP102": (103.45, 157.61, 0, "B"),
     # --- vehicle inputs (isolated corner): two chains of 3 x 1k, M7, zener, LED bleeder ---
     "R301": (114.5, 101.8, 0, "F"), "R302": (119.5, 101.8, 0, "F"),
     "R303": (114.5, 104.8, 0, "F"), "R304": (120.0, 104.8, 0, "F"),
@@ -188,6 +189,8 @@ def place(pcb=PCB):
     edge_keepouts(board)
     tidy_silkscreen(board)
     set_models(board)
+    # TP102 joins the GND pour solid: its 0.2 mm thermal spokes are under the pour's 0.25 mm minimum and would be dropped
+    board.FindFootprintByReference("TP102").Pads()[0].SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
     build.add_order_mark(board, "B", ORDER_MARK_AT)
     title = board.GetTitleBlock()
     title.SetTitle("Hour Meter main board, compact + LM2596 + I/O (80 x 92 mm, 2 layers)")
@@ -391,7 +394,8 @@ def magnetometer_report(board):
     return lines
 
 
-# the LM2596 board's net names that this board renamed (old -> new); its GPIO23 route (EXP_IO23 to J804) is dropped
+# the LM2596 board's net names that this board renamed (old -> new). Dropped: its GPIO23 route (EXP_IO23 to J804)
+# and its B.Cu route from J101 pin 1 to the two-hole TP101, which would cross TP102 here
 NET_RENAMES = (("/ALT_IN_N", "/DIN1_IN_N"), ("/PULSE_IN_N", "/DIN2_IN_N"),
                ("2ch)/ALT_", "2ch)/DIN1_"), ("2ch)/PULSE_", "2ch)/DIN2_"))
 
@@ -409,7 +413,7 @@ def reuse_routing(pcb=PCB, source=LM2596_PCB):
     tracks = src.Tracks()
     for item in (tracks[i] for i in range(len(tracks))):
         name = item.GetNetname()
-        if name.endswith("/EXP_IO23"):
+        if name.endswith("/EXP_IO23") or (name == "Net-(J101-Pin_1)" and item.GetLayer() == pcbnew.B_Cu):
             continue
         for old, new in NET_RENAMES:
             name = name.replace(old, new)
