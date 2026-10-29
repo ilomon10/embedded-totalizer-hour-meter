@@ -41,13 +41,17 @@ This folder started as a copy of the I/O board's; that board is unchanged.
 - **AIN1 front end:** 28.5 mm from the LM2596 switch node (`check` wants ≥ 8 mm).
 - **Order files:** the BOM has 71 lines and the CPL 131 parts. BT401 is the only part on the bottom. R904 (not fitted) is left out of both.
 - **Stock:** all parts are in JLCPCB stock for 10 boards (checked 2026-10-29): 33 basic, 2 preferred and 36 extended lines. The tightest are J1 (C277677, 462), the BSP75N (621) and the LIS3MDL (1411).
-- **Fault simulations:** the circuits are unchanged, so the I/O board's [fault analysis](../fault-analysis/README.md) still applies.
+- **JLCPCB check:** the copper and drilling are within JLCPCB's 2-layer limits. The silkscreen is below their legibility minimums, and the CPL is set for their footprints ([JLCPCB check](#jlcpcb-check)).
+- **Fault simulations:** the I/O board's [fault analysis](../fault-analysis/README.md) still applies, since the circuits are unchanged. It adds the [J1 harness](../fault-analysis/README.md#micro-fit-harness-j1) (each pin miswired, each pair of neighbouring cavities shorted), the LM2596 input stage and the indicator LEDs.
+  - **Weak spots:** DOUT1 (pin 10) sits beside the +5 V output (11) and across from UART TX (3), see [Why this pin order](#j1-harness-connector).
+  - **24 V vehicles:** they need a 24 → 12 V converter in front of VIN, see [Wiring](#j1-harness-connector).
+  - **Pulse 1:** a negative ISO 7637-2 pulse 1 drives the 40 V reverse-polarity diode D103 into avalanche. The [fix](../fault-analysis/README.md#what-is-still-open) is for the next revision.
 
 ## J1 harness connector
 
 | Pin | Signal | | Pin | Signal |
 |---|---|---|---|---|
-| 1 | GND (battery negative) | | 8 | VIN 9–30 V |
+| 1 | GND (battery negative) | | 8 | VIN 9–30 V, from a 12 V system |
 | 2 | GND (sensor, UART and RS485 return) | | 9 | AIN1, 0–30 V |
 | 3 | UART TX (3.3 V out) | | 10 | DOUT1, 0.5 A low-side switch |
 | 4 | UART RX (5 V-tolerant in) | | 11 | +5 V out, 200 mA (F801) |
@@ -78,7 +82,8 @@ The same table is printed on the bottom silkscreen, behind J1.
 - **Wire:** 20 AWG for VIN, GND and DOUT1; 22–24 AWG for signals.
 
 **Wiring:**
-- **Supply:** VIN (8) from a fused +12/24 V, with a 1 A fuse at the battery end; GND (1) to the battery negative.
+- **Supply:** VIN (8) from a fused +12 V, with a 1 A fuse at the battery end; GND (1) to the battery negative.
+  - **In a 24 V vehicle,** feed VIN from a 24 → 12 V converter rated for 24 V vehicles. On its own the LM2596 stage does not survive a 24 V vehicle's 36 V jump start or 58 V load dump ([fault analysis](../fault-analysis/README.md#results)). The I/O pins take 24 V signals and loads.
 - **DIN1, DIN2:** the signals (9–36 V when active) on 13 and 14, and their return on 6 or 7 (DIN COM).
   - DIN COM is not connected to GND on the board. Wire it to the signals' ground, usually the chassis.
   - The firmware reads DIN1 as the alternator / engine-running input and DIN2 as the pulse counter, as before. See [WIRING.md](../../esp32/docs/WIRING.md).
@@ -94,6 +99,9 @@ The same table is printed on the bottom silkscreen, behind J1.
   - So each front-row signal leaves between a back-row pair that holds at most one vehicle net.
 - **The isolated group at one end.** DIN1, DIN2 and the two DIN COM pins fill the pin 7/14 end, next to the DIN island. Their neighbours are RS485 A/B, which are rated ±70 V.
 - **Pairs sit together:** VIN/GND (8/1), AIN1/GND (9/2), RS485 A/B (5/12), and UART TX/RX (3/4) with +5 V (11).
+- **Known weak spot:** DOUT1 (10) sits beside +5 V out (11) and across from UART TX (3).
+  - **The risk:** while DOUT1 is off, its load holds pin 10 at the supply. A stray strand there lifts +5V to 6.6–7.1 V or forces GPIO17 above its input limit ([J1 harness faults](../fault-analysis/README.md#micro-fit-harness-j1)).
+  - **Fix for the next revision:** swap DOUT1 and AIN1 (9/10). Both are vehicle nets on the back row, so the rule above still holds.
 
 ## Other ports
 
@@ -118,7 +126,8 @@ Three side-view LEDs sit on the right edge, between H103 and H105, with their le
 | D802 | P2 | yellow | GPIO19 | process indicator | LTST-S270KSKT (C133119) |
 | D803 | USR | blue | GPIO5 | free for the program | LTST-S270TBKT (C125115) |
 
-- **Drive:** active high (GPIO = 1: LED on), 2–4 mA each through 330 Ω.
+- **Drive:** active high (GPIO = 1: LED on) through 330 Ω. Simulated: green 1.7 mA, yellow 4.2 mA, blue 1.5 mA, which is 0.5–2.6 mA across the blue's forward-voltage spread ([fault analysis](../fault-analysis/README.md#results)).
+- **Lens direction:** check it in JLCPCB's 3D preview before ordering ([JLCPCB check](#jlcpcb-check)).
 - **GPIO5** is a strapping pin, but only for the SDIO-slave timing, which this board doesn't use. The blue LED may flicker while the ESP32 boots.
 - **Unchanged:** the PWR and STATUS (GPIO2) LEDs on the top side stay as before.
 - **Firmware:** the three GPIOs were spare test pads; the firmware does not drive them yet.
@@ -182,6 +191,44 @@ The [LM2596 board's notes](../hour-meter-board-compact-lm2596/README.md#before-y
 In addition:
 1. **R904 is not fitted.** It is left out of the BOM and CPL. Hand-solder a 120 Ω 0.1 % 1206 resistor for a 4–20 mA sensor.
 2. **The harness plug is not part of the assembly.** Add the 43025-1400 housing and the 43030-0007 terminals to the LCSC order (see the [harness parts](#j1-harness-connector)).
+3. **In the placement preview,** check the three side-view LEDs and BT401 (below). The CPL already carries JLCPCB's rotations.
+
+### JLCPCB check
+
+Checked on 2026-10-29 against [JLCPCB's PCB capabilities](https://jlcpcb.com/capabilities/pcb-capabilities) and [assembly capabilities](https://jlcpcb.com/capabilities/pcb-assembly-capabilities), for 2 layers, 1.6 mm and 1 oz copper. The hole and clearance limits ran as KiCad custom rules on a scratch copy of the board.
+
+**Fabrication:**
+
+| Item | JLCPCB | This board |
+|---|---|---|
+| Track width, spacing | 0.10 mm, 0.10 mm | 0.10 mm (one neck-down; most are 0.15–0.5 mm), 0.15 mm |
+| Vias | 0.15 mm hole minimum. Under 0.3 mm with a pad under 0.45 mm costs extra | 0.25 / 0.50 mm and 0.40 / 0.80 mm: standard price |
+| Through-hole annular ring | 0.20 mm (0.18 absolute, 0.25 recommended) | 0.20 mm (USB-C shell, ESP32 GND-pad vias); J1 0.24 mm |
+| Holes | PTH 0.15 mm, NPTH 0.5 mm | PTH 0.20 mm (the ESP32's GND-pad vias), NPTH 0.65 mm (USB-C pegs) |
+| Slots | plated 0.5 mm wide and 2 × as long; milled 1.0 mm | USB-C shell 0.6 × 1.2 / 0.6 × 1.7 mm; DIN island 1.5 mm |
+| Hole to hole, hole to copper | pads 0.45 mm, vias 0.2 mm; PTH to copper 0.28 mm | no violation |
+| Copper to board edge | 0.2 mm | 0.3 mm (board rule) |
+| Board size for Standard PCBA | 70 × 70 mm minimum | 80 × 80 mm |
+| Silkscreen text | 1.0 mm high, 0.15 mm stroke | **45 texts are 0.8 mm high:** 22 reference designators, the J1 pinout and the board labels. 39 of them have 0.12 mm strokes |
+| Silkscreen lines | 0.15 mm | **0.12 mm** (KiCad's library footprints) |
+
+The silkscreen is still printed, but small text can come out blurred. Raising it to 1.0 mm means re-placing labels in the tight spots, so it is left as is.
+
+**Assembly:**
+- **CPL rotations:** JLCPCB places each part with its own footprint. `production` turns or re-centres 21 parts to match (`JLC_PLACEMENT` in `tools-pcb.py`):
+  - SOT-23, SOT-223, SC-70 and TO-263: 180°;
+  - SOIC, VSSOP, QFN, LGA and the ESP32: 270°;
+  - J1's centroid moves 9.1 mm from pin 1 to the body centre, BT401's 10.4 mm, U201's 3.6 mm, U101's 2.5 mm and the USB-C's 1.6 mm.
+- **How they were found:** each part's pads were fitted onto JLCPCB's footprint for the same LCSC part.
+  - Diodes and LEDs were matched by pin name, not pad number: JLCPCB's SS54 (D103, D105) and 0603 LEDs number the anode 1.
+  - So D103, D105 and the 0603 LEDs need no turn, though a number match would have reversed them.
+- **Polarity:** every diode and LED keeps its cathode on the KiCad cathode pad. Check the cathode marks in the preview anyway.
+- **Side-view LEDs (D801–D803):** JLCPCB's 3D model of D801 has its body on the same side of the pads as the KiCad footprint's lens. The models of D802 and D803 sit on the other side.
+  - All three are LTST-S270 parts with the cathode on pad 1, so the models probably disagree, not the parts.
+  - Check in the 3D preview that all three lenses face the right board edge.
+  - If D802 or D803 faces inward, it has to be turned 180° on the board with its two nets swapped. A CPL rotation would reverse its polarity.
+- **BT401 (bottom, through-hole):** placed at the midpoint of its pins, turned 270°. Check in the preview that its + clip sits on pin 1 (RTC_VBAT).
+- **Switches (SW201, SW202):** JLCPCB's footprint has the same four pads as the KiCad footprint, unturned, so they keep KiCad's rotation.
 
 ## Re-generating the board
 
@@ -192,7 +239,7 @@ python3 tools-pcb.py reuse        # the I/O board's routing of the unchanged blo
 JAVA_TOOL_OPTIONS=-Xmx1536m python3 tools-pcb.py finish 3   # Freerouting routes the rest, then plane vias and clean-up
 python3 tools-pcb.py silk         # silkscreen labels and reference positions on the routed board
 kicad-cli pcb drc --severity-all --schematic-parity --refill-zones hour-meter-board-microfit.kicad_pcb
-python3 tools-pcb.py production   # production/: Gerber zip, BOM, CPL (Do-Not-Populate parts left out)
+python3 tools-pcb.py production   # production/: Gerber zip, BOM, CPL set for JLCPCB's footprints (Do-Not-Populate parts left out)
 python3 tools-pcb.py models       # JLCPCB 3D models into 3d/ (once per checkout), set on the board
 ```
 

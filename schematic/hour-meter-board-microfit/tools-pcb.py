@@ -9,7 +9,7 @@ header (J1, 2 x 7), 80 x 80 mm, 2 copper layers.
   python3 tools-pcb.py finish [passes]  -> close what Freerouting left open (exit 1 if anything still is)
   python3 tools-pcb.py update           -> add / remove parts on the routed board after a schematic change
   python3 tools-pcb.py silk             -> re-apply the silkscreen labels and reference positions (no re-route)
-  python3 tools-pcb.py production       -> production/: Gerber zip, BOM and CPL for JLCPCB
+  python3 tools-pcb.py production       -> production/: Gerber zip, BOM and CPL for JLCPCB (CPL set for JLCPCB's footprints)
   python3 tools-pcb.py models           -> download the JLCPCB 3D models into 3d/ and set them on the board
 
 A variant of ../hour-meter-board-compact-lm2596-io (see README.md). The build, route and finish scripts are the
@@ -20,6 +20,7 @@ main board's, called with this board's LAYOUT. The floor plan:
   * logic zone on the right: the ESP32 module (antenna past the top edge), USB, the IMU, EEPROM and RTC.
 The ESP32/USB block, the IMU block and the LM2596 stage keep the I/O board's coordinates.
 """
+import csv
 import json
 import math
 import os
@@ -317,6 +318,33 @@ JLC_MODELS = {
 }
 # EasyEDA has no STEP file for these parts: use the model of a part with the same body and pads (LCSC -> LCSC)
 MODEL_STANDINS = {}
+# JLCPCB places each part with its own (EasyEDA) footprint. For these parts that footprint is turned, or has its
+# origin elsewhere, compared with the KiCad footprint: (degrees to add to the CPL rotation, JLCPCB's origin in the
+# KiCad footprint's frame, mm). Found by fitting JLCPCB's pads onto the KiCad pads: diodes and LEDs by pin name
+# (C22452 and the 0603 LEDs number the anode 1, so they need no turn), the switches' four pads and BT401 by hand.
+# Every other part matches within 0.1 mm.
+JLC_PLACEMENT = {
+    "C277677": (180, (9.0, 1.5)),     # J1 Micro-Fit: KiCad's origin is pin 1
+    "C2979167": (180, (10.4, 0.0)),   # BT401 CR2032 holder (bottom): KiCad's origin is pin 1
+    "C165948": (0, (0.0, -1.57)),     # J201 USB-C
+    "C133065": (0, (0.0, -0.1)),      # J802 JST GH
+    "C701341": (270, (0.0, 3.62)),    # U201 ESP32-WROOM-32E
+    "C347423": (180, (-2.49, 0.0)),   # U101 LM2596S, TO-263-5
+    "C6186": (180, (-0.18, 0.0)),     # U204 AMS1117, SOT-223
+    "C172450": (180, (0.0, 0.0)),     # U903 BSP75N, SOT-223
+    "C68983": (180, (0.0, 0.0)),      # D901 BAV99, SOT-23
+    "C20526": (180, (0.0, 0.0)),      # Q201, Q202, SOT-23
+    "C7484": (180, (0.0, 0.0)),       # U902 SN74AHCT1G125, SOT-23-5
+    "C85364": (180, (0.0, 0.0)),      # U802 SRV05-4, SOT-23-6
+    "C426705": (180, (0.0, 0.0)),     # U801 74LVC1G17, SC-70-5
+    "C7519": (270, (0.0, 0.0)),       # U203 USBLC6-2SC6, SOT-23-6
+    "C84681": (270, (0.0, 0.0)),      # U202 CH340C, SOIC-16
+    "C107410": (270, (0.0, 0.0)),     # U401 DS3231M, SOIC-8
+    "C6482": (270, (0.0, 0.0)),       # U501 AT24C256C, SOIC-8
+    "C468683": (270, (0.0, 0.0)),     # U901 ADS1115, VSSOP-10
+    "C50278": (270, (0.0, 0.0)),      # U601 MPU-6500, QFN-24
+    "C478483": (270, (0.0, 0.0)),     # U602 LIS3MDL, LGA-12
+}
 # KiCad 10 renamed or lacks these library models
 LIB_MODELS = {"U601": "Package_DFN_QFN.3dshapes/QFN-24_3x3mm_P0.4mm.step"}
 MODEL_DIR = os.path.join(HERE, "3d")
@@ -341,6 +369,34 @@ def fetch_models():
             f.write(step)
         print("downloaded", path)
 
+
+def jlc_cpl():
+    """Rewrite production/CPL-*.csv for JLCPCB's footprints (JLC_PLACEMENT): the shared script writes KiCad's."""
+    name = os.path.splitext(os.path.basename(PCB))[0]
+    out = os.path.join(HERE, "production")
+    lcsc = {}
+    with open(os.path.join(out, f"BOM-{name}.csv"), newline="") as f:
+        for row in csv.DictReader(f):
+            lcsc.update({ref.strip(): row["LCSC"].strip() for ref in row["Designator"].split(",")})
+    cpl = os.path.join(out, f"CPL-{name}.csv")
+    with open(cpl, newline="") as f:
+        rows = list(csv.DictReader(f))
+    for row in rows:
+        if lcsc.get(row["Designator"]) not in JLC_PLACEMENT:
+            continue
+        turn, (cx, cy) = JLC_PLACEMENT[lcsc[row["Designator"]]]
+        rotation = float(row["Rotation"])
+        a = math.radians(rotation)
+        # the offset turns with the footprint (KiCad: y down, counter-clockwise as seen); the CPL's y points up
+        dx, dy = cx * math.cos(a) + cy * math.sin(a), -cx * math.sin(a) + cy * math.cos(a)
+        row["Mid X"] = f"{float(row['Mid X'].removesuffix('mm')) + dx:.4f}mm"
+        row["Mid Y"] = f"{float(row['Mid Y'].removesuffix('mm')) - dy:.4f}mm"
+        row["Rotation"] = f"{(rotation + turn) % 360:.6f}"
+    with open(cpl, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+    print(f"{cpl}: {sum(lcsc.get(r['Designator']) in JLC_PLACEMENT for r in rows)} parts set for JLCPCB's footprints")
 
 def set_models(board):
     """Point the footprints at the JLCPCB models (by LCSC field) and the renamed KiCad library models."""
@@ -659,5 +715,6 @@ if __name__ == "__main__":
         print("saved", PCB)
     elif mode == "production":
         subprocess.run([sys.executable, os.path.join(MAIN, "tools-production.py"), PCB], check=True)
+        jlc_cpl()
     else:
         raise SystemExit(__doc__)
