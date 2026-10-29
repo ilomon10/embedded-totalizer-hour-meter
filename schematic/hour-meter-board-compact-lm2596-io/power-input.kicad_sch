@@ -6063,7 +6063,7 @@
 				)
 			)
 		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_1.5x1.5mm"
+		(property "Footprint" "TestPoint:TestPoint_Pad_3.0x3.0mm"
 			(at 29.21 48.26 0)
 			(hide yes)
 			(show_name no)
@@ -7134,7 +7134,7 @@
 				)
 			)
 		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_1.5x1.5mm"
+		(property "Footprint" "TestPoint:TestPoint_Pad_3.0x3.0mm"
 			(at 29.21 44.45 0)
 			(hide yes)
 			(show_name no)

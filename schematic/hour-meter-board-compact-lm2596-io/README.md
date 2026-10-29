@@ -56,8 +56,8 @@ Teltonika's figures are from the [FMC640 datasheet](https://content.gps-trace.co
 |---|---|---|---|---|
 | **J902** | **I/O** | B5P-VH (C160318) | 1 +5V out, 2 AIN1, 3 GND, 4 DOUT1, 5 GND | VHR-5N |
 | J301 | DIN1 / DIN2 (isolated) | B3P-VH (C160316) | 1 DIN1, 2 DIN2, 3 COM | VHR-3N |
-| TP101 | VIN solder pad | 1.5 × 1.5 mm SMD pad on the **bottom side**, above J101 | 1 VIN | wire soldered on, for an installation without a plug |
-| TP102 | GND solder pad | 1.5 × 1.5 mm SMD pad on the **bottom side**, below J101 | 1 GND | wire soldered on |
+| TP101 | VIN solder pad | 3 × 3 mm SMD pad on the **bottom side**, above J101 | 1 VIN | wire soldered on (18–22 AWG), for an installation without a plug |
+| TP102 | GND solder pad | 3 × 3 mm SMD pad on the **bottom side**, below J101 | 1 GND | wire soldered on (18–22 AWG) |
 | J101, J701, J801–J803 | | as on the [LM2596 board](../hour-meter-board-compact-lm2596/README.md#connectors) | | |
 
 - **Silkscreen:** the J902 pin names (5V, AIN1, GND, DOUT1, GND) are printed above the header. Pin 1 is on the left, with the square pad.
@@ -129,9 +129,10 @@ GPIO23 ─┬─ U902 74AHCT1G125 (+5V) ─ U903 BSP75N IN     drain ─ J902-4 
 - **Net classes:** AIN1_RAW, AIN1_MID and DOUT1 are in the `Vehicle` class (0.8 mm clearance, 0.5 mm track); +5V_OUT is in `Power`.
 - **Mounting holes:** H104 and H105 moved to the new bottom corners.
 - **Moved part:** J801 keeps the position it was moved to by hand on the LM2596 board.
-- **VIN/GND solder pads:** TP101 (VIN) and TP102 (GND) are 1.5 mm pads on the back, above and below J101. They replace the LM2596 board's two-hole TP101.
+- **VIN/GND solder pads:** TP101 (VIN) and TP102 (GND) are 3 × 3 mm pads on the back, above and below J101. They replace the LM2596 board's two-hole TP101.
   - TP101 has a B.Cu track from J101 pin 1, in the `Vehicle` class.
-  - TP102 joins the GND pour solid, since its thermal spokes would be thinner than the pour's minimum.
+  - TP102 has a B.Cu track from J101 pin 2, and joins the GND pour solid, since its thermal spokes would be thinner than the pour's minimum.
+  - With the largest pad size (4 × 4 mm) TP101 would still be 2.2 mm from other-net copper (0.8 mm needed) and 1.45 mm from the edge.
   - TP101/TP102 are in parallel with J101: use one or the other, never both from different supplies.
 - **Unchanged:** everything else.
 
@@ -170,7 +171,7 @@ python3 tools-pcb.py production   # production/: Gerber zip, BOM, CPL (Do-Not-Po
 python3 tools-pcb.py models       # JLCPCB 3D models into 3d/ (once per checkout), set on the board
 ```
 
-- **Why `reuse`:** routing the whole board from scratch (`route 2`, then `finish`) left 5 +3V3 connections open, at the IMU's pins and in the ADS1115 corner. The LM2596 board's routing already solves the IMU. `reuse` measures the LM2596 board file's offset on U601 and maps the renamed nets. It drops two routes: the old GPIO23 route to J804, and the B.Cu route from J101 pin 1 to the LM2596 board's two-hole TP101, which would cross TP102 here. `finish` then routes TP101.
+- **Why `reuse`:** routing the whole board from scratch (`route 2`, then `finish`) left 5 +3V3 connections open, at the IMU's pins and in the ADS1115 corner. The LM2596 board's routing already solves the IMU. `reuse` measures the LM2596 board file's offset on U601 and maps the renamed nets. It drops the old GPIO23 route to J804. It also drops the two routes from J101 to the LM2596 board's two-hole TP101, because the VIN one would cross TP102 here. `finish` then routes TP101 and TP102.
 - **If `finish` drops a nearly finished result:** `finish` keeps a result only if it has no more errors than before. On this board, Freerouting's first pass reached 1 open connection with 1 clearance error (the UART2_TX bend above), so `finish` dropped it. In that case:
   1. keep that pass;
   2. fix the error;

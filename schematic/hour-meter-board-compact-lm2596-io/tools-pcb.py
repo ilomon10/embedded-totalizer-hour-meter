@@ -394,10 +394,40 @@ def magnetometer_report(board):
     return lines
 
 
-# the LM2596 board's net names that this board renamed (old -> new). Dropped: its GPIO23 route (EXP_IO23 to J804)
-# and its B.Cu route from J101 pin 1 to the two-hole TP101, which would cross TP102 here
+# the LM2596 board's net names that this board renamed (old -> new); its GPIO23 route (EXP_IO23 to J804) is dropped
 NET_RENAMES = (("/ALT_IN_N", "/DIN1_IN_N"), ("/PULSE_IN_N", "/DIN2_IN_N"),
                ("2ch)/ALT_", "2ch)/DIN1_"), ("2ch)/PULSE_", "2ch)/DIN2_"))
+
+
+def old_tp101_routes(src):
+    """Indices into src.Tracks() of the LM2596 board's routes from J101 to its two-hole TP101: the plain track chains
+    (no branches) that lead from a TP101 pad to a J101 pad. This board has TP101/TP102 solder pads elsewhere, and the
+    old VIN route would cross TP102."""
+    tracks = src.Tracks()
+    ends = lambda t: ((t.GetStart().x, t.GetStart().y), (t.GetEnd().x, t.GetEnd().y))
+    at = {}   # point -> indices of the tracks that end there
+    for i in range(len(tracks)):
+        if tracks[i].GetClass() != "PCB_VIA":
+            for point in ends(tracks[i]):
+                at.setdefault(point, []).append(i)
+    j101 = {(p.GetPosition().x, p.GetPosition().y) for p in src.FindFootprintByReference("J101").Pads()}
+    found = set()
+    for pad in src.FindFootprintByReference("TP101").Pads():
+        start = (pad.GetPosition().x, pad.GetPosition().y)
+        for i in at.get(start, []):
+            chain, point = [], start
+            while True:
+                chain.append(i)
+                a, b = ends(tracks[i])
+                point = b if a == point else a
+                if point in j101:
+                    found.update(chain)
+                    break
+                onward = [k for k in at.get(point, []) if k != i]
+                if len(onward) != 1:   # a branch or a dead end: not a plain route to J101
+                    break
+                i = onward[0]
+    return found
 
 
 def reuse_routing(pcb=PCB, source=LM2596_PCB):
@@ -411,9 +441,11 @@ def reuse_routing(pcb=PCB, source=LM2596_PCB):
     here, there = board.FindFootprintByReference("U601").GetPosition(), src.FindFootprintByReference("U601").GetPosition()
     shift = pcbnew.VECTOR2I(here.x - there.x, here.y - there.y)
     tracks = src.Tracks()
-    for item in (tracks[i] for i in range(len(tracks))):
+    dropped = old_tp101_routes(src)
+    for i in range(len(tracks)):
+        item = tracks[i]
         name = item.GetNetname()
-        if name.endswith("/EXP_IO23") or (name == "Net-(J101-Pin_1)" and item.GetLayer() == pcbnew.B_Cu):
+        if name.endswith("/EXP_IO23") or i in dropped:
             continue
         for old, new in NET_RENAMES:
             name = name.replace(old, new)
