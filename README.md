@@ -35,6 +35,7 @@ Firmware version: **2.7.0** (see `kFirmwareVersion` in [`Protocol.h`](esp32/lib/
 | [`schematic/fault-analysis/`](schematic/fault-analysis/README.md) | ngspice fault simulations for the rev-B boards and PSU-B: load dump, ISO 7637 pulses, reverse polarity, shorted outputs, miswired connectors |
 | [`schematic/hour-meter-psu-b/`](schematic/hour-meter-psu-b/README.md) | Plug-on 9–36 V → 5.3 V supply (TPS54360B) for the rev-B board |
 | [`schematic/hour-meter-esp32/`](schematic/hour-meter-esp32/README.md) | Carrier PCB rev A (KiCad): schematic, 2-layer THT board for the loose modules, JLCPCB Gerbers + BOM in `production/`, generator scripts `tools-*.py`. Superseded by rev B |
+| [`schematic/hour-meter-esp32-v4/`](schematic/hour-meter-esp32-v4/README.md) | Module carrier rev C (KiCad): 88 × 71 mm, 2 layers, THT only, for parts from Indonesian shops. The ESP32 DevKit V4 (USB-C, 38 pins), the 817 module, GY-9250, DS3231 and AT24C256 plug in, and the board runs from the DevKit's USB-C. Vehicle inputs get a 15 V clamp; spare GPIO header and status LED. Gerbers, a BOM with local shop names and a 1:1 fit-check PDF are in `production/` |
 | `schematic/totalizator-hour-meter-schematic/` | Early KiCad draft (DevKit pin headers only), superseded by `hour-meter-esp32/` |
 | [`simulator/`](simulator/README.md) | Bun device simulator: the real protocol on a virtual serial port (socat), TCP or stdio, with fault scenarios, the Bluetooth lock, and a web UI (`--web`): every value live, a 3D bench, and a truck/plane on an OpenStreetMap map with IMU-only dead reckoning. For driver development without hardware |
 | `canbus/` | `can.sh`: CANable2 (slcan) helper for can-utils: `up [rate] [--tx]`, `down`, `scan [seconds]`, `status`. Listen-only by default |
@@ -115,7 +116,7 @@ It warns when a part changed since the previous release but still has the same v
 | Building an app that talks to the device | [INTEGRATION-GUIDE.md](esp32/docs/INTEGRATION-GUIDE.md) + [SensorFrame SPEC.md](sensorframe/SPEC.md) |
 | Writing a driver: exact bytes of every frame | [FRAME-CATALOG.md](esp32/docs/FRAME-CATALOG.md) |
 | Developing without hardware | [simulator/README.md](simulator/README.md) |
-| Wiring the hardware | [WIRING.md](esp32/docs/WIRING.md), [rev-B main board](schematic/hour-meter-board/README.md), [rev-A carrier PCB](schematic/hour-meter-esp32/README.md) |
+| Wiring the hardware | [WIRING.md](esp32/docs/WIRING.md), [rev-B main board](schematic/hour-meter-board/README.md), [rev-A carrier PCB](schematic/hour-meter-esp32/README.md), [V4 module carrier](schematic/hour-meter-esp32-v4/README.md) |
 | Working on the firmware | [ARCHITECTURE.md](esp32/docs/ARCHITECTURE.md), [CODING-STANDARD.md](esp32/docs/CODING-STANDARD.md) |
 | A TypeScript developer new to C++ | [CPP-FOR-TYPESCRIPT.md](esp32/docs/CPP-FOR-TYPESCRIPT.md) |
 | Curious how data survives power cuts | [STORAGE.md](esp32/docs/STORAGE.md), [EEPROM-LAYOUT.md](esp32/docs/EEPROM-LAYOUT.md) |

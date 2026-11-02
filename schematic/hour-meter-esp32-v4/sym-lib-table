@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+
+  (lib (name "hour_meter_modules") (type "KiCad") (uri "${KIPRJMOD}/hour-meter-modules.kicad_sym") (options "") (descr "")))

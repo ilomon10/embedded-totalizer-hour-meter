@@ -56,6 +56,12 @@ MODELS = """
 .model LEDG D(Is=4.5e-12 N=5.22 Rs=10)
 .model LEDGLO D(Is=8.7e-11 N=5.22 Rs=10)
 .model LEDGHI D(Is=5.2e-14 N=5.22 Rs=10)
+* 1N4744A (V4 carrier D3/D4): 15 V +/-5 % at 17 mA, Zzt 14 ohm, 1 W
+.model Z15 D(Is=1e-14 N=1 Rs=14 BV=14.6 IBV=1m)
+* P6KE18A (V4 carrier hardening option for D3/D4): VBR 17.1-18.9 V @ 1 mA, VC 25.2 V @ 24 A, 600 W 10/1000 us
+.model TVS18 D(Is=1e-12 N=1 Rs=0.3 BV=17.8 IBV=1m)
+* Red indicator LED on the 817 module: about 1.8 V at a few mA
+.model LEDRED D(Is=1e-18 N=1.8 Rs=10)
 """
 
 
@@ -602,6 +608,85 @@ def leds(results):
                         f"{i * 1e3:.2f} mA at {m.get('v(a)', 0):.2f} V; about {mcd * i / 20e-3:.0f} mcd ({mcd} mcd at 20 mA, scaled by current)"))
 
 
+# --- V4 module carrier (hour-meter-esp32-v4), per input: J1 -> D1 1N4007 -> R4 1.5k 1W -> OPTO1, D3 1N4744A
+#     to VEH_GND -> 817 module (about 3k + red LED + PC817 LED); output V1 (about 3k in series) -> 47k to 3V3, 100 nF
+CARRIER_V4 = """
+VD1 in d1a 0
+D1 d1a d1k M7
+R4 d1k opto 1.5k
+VZ opto zk 0
+DZ 0 zk {clamp}
+RM opto m1 3k
+DRED m1 m2 LEDRED
+VLED m2 m3 0
+DLED m3 0 LED817
+* PC817 CTR taken as 100 % (PC817C is 200-400 % at 5 mA; less at 2 mA)
+VCC vcc 0 3.3
+R5 vcc out 47k
+C1 out 0 100n
+RV out vc 3k
+BCTR vc 0 I = 1.0 * max(i(vled), 0) * (1 - exp(-V(vc) / 0.1))
+"""
+
+# 1N4744A surge rating (onsemi IZSM): 304 mA, 8.3 ms square wave; scaled as t^-1/2 for longer events
+Z15_SURGE = (0.304, 8.3e-3)
+
+
+def carrier_v4(results):
+    """V4 carrier vehicle inputs (ALT on J1, PULSE on J2: the same parts)."""
+    run("v4_dc", "VIN in 0 0\n" + CARRIER_V4.format(clamp="Z15"),
+        "dc vin -40 120 0.05\nlet pr4 = (v(d1k) - v(opto))^2 / 1500\nlet pz = v(opto) * i(vz)\n"
+        "let prm = (v(opto) - v(m1))^2 / 3000\n"
+        "wrdata DATA v(out) i(vled) v(opto) pr4 pz prm\n")
+    w = waveforms("v4_dc")
+    x = w["v-sweep"] if "v-sweep" in w else w["time"]
+    at = lambda v, key: float(np.interp(v, x, w[key]))
+    on = x[w["v(out)"] < 0.825]
+    v_on = float(on[on > 0].min()) if len(on[on > 0]) else float("nan")
+    results.append(("V4 carrier: input threshold", "PASS" if 3 < v_on < 8 and at(2.0, "v(out)") > 2.475 else "FAIL",
+                    f"GPIO reads LOW above {v_on:.1f} V; a key-on L terminal (2 V) leaves it at {at(2.0, 'v(out)'):.2f} V (HIGH)"))
+    for vin, label in ((12.0, "12.0 V (weak 12 V system)"), (13.8, "13.8 V (12 V charging)"), (28.8, "28.8 V (24 V charging)")):
+        iled, vo = at(vin, "i(vled)"), at(vin, "v(out)")
+        ok = iled >= 1.5e-3 and vo < 0.825 and at(vin, "pr4") < 1.0 and at(vin, "pz") < 1.0 and at(vin, "prm") < 0.1
+        results.append((f"V4 carrier: input at {label}", "PASS" if ok else "FAIL",
+                        f"LED {iled * 1e3:.2f} mA, GPIO {vo:.2f} V, module input {at(vin, 'v(opto)'):.1f} V; R4 {at(vin, 'pr4') * 1e3:.0f} mW (1 W), "
+                        f"D3 {at(vin, 'pz') * 1e3:.0f} mW (1 W), module 3k {at(vin, 'prm') * 1e3:.0f} mW (0603, 100 mW)"))
+    results.append(("V4 carrier: input reversed (-28.8 V)", "PASS" if abs(at(-28.8, "i(vled)")) < 1e-6 else "FAIL",
+                    f"D1 blocks: LED {abs(at(-28.8, 'i(vled)')) * 1e6:.2f} uA"))
+    ld24a = load_dump(27, 202, None, 1, 0.35)
+    cases = (("12 V unclamped load dump (101 V, 0.5 ohm, 400 ms)", "v4_ld12a", load_dump(13.5, 101, None, 0.5, 0.4), 0.5, 1.0, 0.4, "Z15"),
+             ("24 V clamped load dump (58 V, 1 ohm, 350 ms)", "v4_ld24b", load_dump(27, 202, 58, 1, 0.35), 1, 1.0, 0.35, "Z15"),
+             ("24 V unclamped load dump (202 V, 1 ohm, 350 ms)", "v4_ld24a", ld24a, 1, 1.0, 0.35, "Z15"),
+             ("same, D3/D4 = P6KE18A TVS (option)", "v4_ld24a_tvs", ld24a, 1, 1.0, 0.35, "TVS18"),
+             ("24 V pulse 2a (+112 V, 2 ohm, 50 us)", "v4_p2a", iso_pulse(27, 112, 50e-6, 1e-6), 2, 2e-3, 50e-6, "Z15"),
+             ("24 V pulse 1 (-600 V, 50 ohm, 1 ms)", "v4_p1", iso_pulse(27, -600, 1e-3, 3e-6, battery_off=True), 50, 4e-3, 1e-3, "Z15"))
+    for label, name, expr, ri, tstop, td, clamp in cases:
+        step = 1e-4 if tstop > 0.1 else 1e-7
+        m = run(name, f"BGEN gen 0 V = {expr}\nRI gen in {ri}\n" + CARRIER_V4.format(clamp=clamp),
+                f"tran {step} {tstop}\nlet pr4 = (v(d1k) - v(opto))^2 / 1500\nlet pz = v(opto) * i(vz)\n"
+                "let prm = (v(opto) - v(m1))^2 / 3000\nlet vd1 = v(d1a) - v(d1k)\n"
+                "meas tran opto_max max v(opto)\nmeas tran pr4_max max pr4\nmeas tran iz_max max i(vz)\n"
+                f"meas tran e_r4 integ pr4 from=0 to={tstop}\nmeas tran e_z integ pz from=0 to={tstop}\n"
+                "meas tran prm_max max prm\nmeas tran iled_max max i(vled)\nmeas tran vd1_min min vd1\n")
+        t_eff = td / 2  # an exponential decay heats like a rectangle of about half its decay time
+        # R4 (1 W): IEC 60115-1 short-time overload, 6.25 W for 5 s, scaled as t^-1/2 like the clamp ratings
+        r4_limit = 6.25 * math.sqrt(5.0 / t_eff)
+        if clamp == "Z15":
+            clamp_limit = Z15_SURGE[0] * math.sqrt(Z15_SURGE[1] / max(t_eff, Z15_SURGE[1]))
+            clamp_ok = m.get("iz_max", 0) <= clamp_limit
+            clamp_txt = f"1N4744A {m.get('iz_max', 0) * 1e3:.0f} mA peak (surge about {clamp_limit * 1e3:.0f} mA)"
+        else:
+            clamp_limit = tvs_rating_j(t_eff)
+            clamp_ok = m.get("e_z", 0) < clamp_limit / 2
+            clamp_txt = f"P6KE18A {m.get('iz_max', 0) * 1e3:.0f} mA peak, {m.get('e_z', 0):.2g} J (survives about {clamp_limit:.0f} J)"
+        ok = (m.get("opto_max", 0) < 20 and m.get("pr4_max", 0) <= r4_limit and clamp_ok
+              and m.get("prm_max", 0) < 0.1 and m.get("vd1_min", 0) > -1000)
+        results.append((f"V4 carrier: {label}", "PASS" if ok else "CHECK",
+                        f"module input peaks at {m.get('opto_max', 0):.1f} V; R4 {m.get('pr4_max', 0):.1f} W peak, {m.get('e_r4', 0):.2g} J "
+                        f"(about {min(r4_limit, 999):.0f} W allowed); {clamp_txt}; module 3k {m.get('prm_max', 0) * 1e3:.0f} mW; "
+                        f"D1 {abs(min(m.get('vd1_min', 0), 0)):.0f} V reverse (1000 V)"))
+
+
 def plot(results):
     os.makedirs(PLOTS, exist_ok=True)
     fig, axes = plt.subplots(1, 2, figsize=(11, 3.8))
@@ -674,6 +759,7 @@ def main():
     lm2596_dc(results)
     microfit_pins(results)
     leds(results)
+    carrier_v4(results)
     plot(results)
     width = max(len(r[0]) for r in results)
     for label, verdict, detail in results:

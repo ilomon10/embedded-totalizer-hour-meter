@@ -1,4 +1,4 @@
-# Fault analysis (rev B boards, PSU-B, the LM2596 boards and the Micro-Fit harness)
+# Fault analysis (rev B boards, PSU-B, the LM2596 boards, the Micro-Fit harness and the V4 module carrier)
 
 SPICE simulations of the faults a vehicle installation can throw at the hour meter: supply transients, reverse polarity, shorted outputs and miswired connectors. Each case is a small ngspice deck built from the parts on the real schematics, and each result is checked against the parts' ratings.
 
@@ -11,6 +11,7 @@ Which results apply to which board:
 - **[LM2596 board](../hour-meter-board-compact-lm2596/README.md):** the *LM2596 input stage* group instead of PSU-B's *Supply*, plus the compact board's rows.
 - **[I/O board](../hour-meter-board-compact-lm2596-io/README.md):** the LM2596 board's, plus *AIN1* and *DOUT1*.
 - **[Micro-Fit board](../hour-meter-board-microfit/README.md):** the I/O board's, plus the [J1 harness](#micro-fit-harness-j1) and the *indicator LEDs*.
+- **[V4 module carrier](../hour-meter-esp32-v4/README.md):** only the *V4 module carrier* group. It has no vehicle supply input (the DevKit's USB-C powers it), so the supply rows don't apply.
 
 ## Method
 
@@ -20,6 +21,9 @@ Which results apply to which board:
   - **TVS energy:** under half the energy the TVS survives for the event's length. That rating is extrapolated from 600 W (10/1000 µs) along the √t slope of its pulse-power curve, which is generous for events much longer than 10 ms.
   - **Converter input:** VIN_P under 60 V (TPS54360B operating limit; 65 V absolute).
   - **Part limits:** every other part within its power, current and absolute-maximum ratings.
+- **V4 carrier input parts:** a load dump heats like a rectangle about half its decay time long, and both ratings below are scaled as t^-1/2 from that length:
+  - **R4/R6 (1 W):** from the IEC 60115-1 short-time overload, 6.25 × rated power for 5 s.
+  - **1N4744A:** from its 304 mA surge rating (8.3 ms).
 - **Fuses:** F101 on the LM2596 boards trips once its I²t reaches its slowest trip (150 ms at 8 A). The TVS and the regulator are judged up to that moment. F801–F803 are worked out the same way (80 ms at 8 A).
 - **Harness shorts:** DOUT1 is open drain, so while it is off its load pulls pin 10 up to the supply. A short to pin 10 therefore sees the supply through the load: a relay coil (85 Ω on 12 V, 280 Ω on 24 V) or a 0.5 A load. The board's +5V load is taken as 50 mA (the AMS1117 with the ESP32 awake); the less the board draws, the further a back-feed lifts +5V. The ESP32 GPIO is 3.3 V behind 33 Ω (its default drive strength).
 - **LEDs:** fitted to LCSC's forward voltage at 20 mA, with a generic InGaN slope. Brightness is the 20 mA figure scaled by current.
@@ -78,6 +82,16 @@ The 4-layer board, the 2-layer copy and PSU-B share these circuits. The compact 
 | VIN_SENSE divider to GPIO34 (D102, 100k / 5.6k) | Pass | 0.45 V at 9 V, 1.50 V at 28.8 V, 3.04 V at 58 V (ESP32 maximum 3.6 V) |
 | **Indicator LEDs (Micro-Fit D801–D803: GPIO → 330 Ω → LED)** | | |
 | D801–D803, all green LTST-S270TGKT | Pass | 1.7 mA, about 38 mcd. A part anywhere in the 2.8–3.8 V spread of InGaN LEDs gets 0.5–2.6 mA (12–59 mcd) |
+| **V4 module carrier, per input (J1/J2 → D1/D2 1N4007 → R4/R6 1.5 kΩ 1 W → D3/D4 1N4744A → 817 module: about 3 kΩ + red LED + PC817)** | | |
+| Input threshold | Pass | GPIO27/26 reads LOW above 3.0 V; a key-on L terminal (2 V) leaves it at 3.29 V (HIGH) |
+| Engine running: 12.0 V, 13.8 V, 28.8 V | Pass | PC817 LED at 1.9, 2.3 and 4.0 mA. At 28.8 V the module input sits at 14.7 V: R4 120 mW (1 W), D3 73 mW (1 W), the module's 0603 3 kΩ 47 mW (100 mW) |
+| Input reversed (−28.8 V) | Pass | D1 blocks; no LED current |
+| 12 V unclamped load dump (Test A, 101 V, 400 ms) | Pass | Module input peaks at 15.4 V; R4 4.8 W peak, 0.42 J; D3 52 mA peak (surge rating for this length about 62 mA) |
+| 24 V clamped load dump (Test B, 58 V, 350 ms) | Pass | Module input 15.0 V; R4 1.2 W peak; D3 24 mA peak |
+| 24 V unclamped load dump (Test A, 202 V, 350 ms) | **Check** | D3 (1N4744A) takes 119 mA peak, about twice its surge rating for this length (66 mA). R4: 22.7 W peak, 2.1 J (about 33 W allowed) |
+| Same, D3/D4 = P6KE18A TVS in the same holes | Pass | The TVS takes 117 mA and 0.34 J (it survives about 11 J); the module input reaches 18.0 V and its 3 kΩ 76 mW |
+| ISO 7637-2 pulse 2a (+112 V, 2 Ω, 50 µs) | Pass | Module input 15.8 V; R4 9.9 W for 50 µs (0.3 mJ) |
+| ISO 7637-2 pulse 1 (−600 V, 50 Ω, 1 ms) | Pass | D1 blocks 600 V (rated 1000 V) |
 
 ## Micro-Fit harness (J1)
 
@@ -149,7 +163,8 @@ Two kinds of harness fault are covered:
    - **R801 1 kΩ instead of 100 Ω** keeps GPIO17 under about 4 mA when TX is pulled up. The SRV05-4 still takes a 0.5 A load's current, so this protects only the ESP32.
 6. **RS485 jumpers.** With J702/J703 (Micro-Fit: JP702–JP704) fitted, a bus wire shorted to the supply burns the 120 Ω and 330 Ω resistors (the THVD2410 survives).
 7. **DOUT1 and unclamped load dumps.** A load on DOUT1 hangs on the vehicle supply directly, so in a 24 V vehicle without central load-dump suppression the BSP75N's clamp absorbs the event and fails. AIN1 survives it.
-8. **AIN1 with R904 fitted.** The 120 Ω 4–20 mA shunt makes AIN1 no longer battery-proof: a wire to 24 V puts 6.9 W into it. A 4–20 mA loop on a vehicle needs its own fuse.
+8. **V4 carrier inputs on unclamped 24 V trucks.** The 1N4744A clamps are within their ratings for 12 V vehicles and for 24 V vehicles whose alternator clamps load dump (Test B). On an older 24 V truck without that clamp, fit a P6KE18A in D3/D4 instead. It uses the same holes and passes; the module's 3 kΩ then runs at 76 mW of its 100 mW.
+9. **AIN1 with R904 fitted.** The 120 Ω 4–20 mA shunt makes AIN1 no longer battery-proof: a wire to 24 V puts 6.9 W into it. A 4–20 mA loop on a vehicle needs its own fuse.
 
 ## Sources
 
@@ -161,3 +176,4 @@ Two kinds of harness fault are covered:
 - LM2596 input limits and current limit (40 V operating, 45 V absolute, 3.6–6.9 A): [TI LM2596](https://www.ti.com/lit/ds/symlink/lm2596.pdf), as for the board's UMW part ([LCSC C347423](https://www.lcsc.com/product-detail/C347423.html))
 - LM2596-stage parts, from their LCSC listings: SMAJ30CA [C110043](https://www.lcsc.com/product-detail/C110043.html), SS54 [C22452](https://www.lcsc.com/product-detail/C22452.html), F101 1812L050/60GR [C19078719](https://www.lcsc.com/product-detail/C19078719.html), F801 SMD1206P020TF [C20984](https://www.lcsc.com/product-detail/C20984.html), SRV05-4 [C85364](https://www.lcsc.com/product-detail/C85364.html)
 - Indicator LEDs: LTST-S270TGKT [C364567](https://www.lcsc.com/product-detail/C364567.html)
+- V4 carrier clamps: 1N4744A surge current IZSM 304 mA (8.3 ms square wave), [onsemi 1N4728A–1N4758A](https://docs.rs-online.com/33f7/A700000015903056.pdf); P6KE18A VBR 17.1–18.9 V, VC 25.2 V at 24 A, [RS P6KE table](https://docs.rs-online.com/10cf/0900766b814f4391.pdf); 817 module input (about 3 kΩ + LED) and its output resistor: [WIRING.md](../../esp32/docs/WIRING.md#the-817-module)

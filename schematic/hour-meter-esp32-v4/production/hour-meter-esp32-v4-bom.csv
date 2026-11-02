@@ -1,0 +1,28 @@
+References,Qty,Part,Search term (Tokopedia / Shopee / shop),Note,Schematic value,Footprint
+"C1, C4",2,Ceramic capacitor 100 nF 50 V (104),kapasitor keramik 104,,100nF,C_Disc_D5.0mm_W2.5mm_P5.00mm
+C2,1,Ceramic capacitor 1 nF 50 V (102),kapasitor keramik 102,,1nF,C_Disc_D5.0mm_W2.5mm_P5.00mm
+C3,1,"Electrolytic capacitor 10 uF 16 V or 25 V, 5 mm",elco 10uF 16V,Long leg (+) to the square pad,10uF 16V,CP_Radial_D5.0mm_P2.00mm
+"D1, D2",2,1N4007 rectifier diode,dioda 1N4007,Band (cathode) toward the K mark,1N4007,D_DO-41_SOD81_P10.16mm_Horizontal
+"D3, D4",2,1N4744A zener 15 V 1 W,dioda zener 15V 1W 1N4744A,Old 24 V trucks without load-dump protection: P6KE18A TVS in the same holes,1N4744A (15V 1W),D_DO-41_SOD81_P10.16mm_Horizontal
+D5,1,LED 3 mm green,LED 3mm hijau,Long leg (anode) to the round pad,LED 3mm green,LED_D3.0mm
+F1,1,"PTC resettable fuse 0.1 A 60 V, 5 mm pitch (MF-R010 / JK60-010)",PTC resettable fuse 0.1A 60V,,PTC 0.1A 60V,PTC_Radial_P5.00mm
+"J1, J2",2,"Screw terminal 2 pin, 5.08 mm (KF301-2P)",terminal block KF301 2P 5.08,Wire entry toward the board edge,ALTERNATOR / PULSE 12/24V,"TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal"
+J3,1,"Pin header 2x5, 2.54 mm, straight",pin header male 2x5 2.54,Cut from a 2x40 strip,SPARE GPIO 3.3V,PinHeader_2x05_P2.54mm_Vertical
+M1,1,2-channel PC817 isolation module (817 Module),modul optocoupler PC817 2 channel,Remove both G jumpers; mounts on 4 M3 standoffs,817 Module 2CH (remove G jumpers),Module_PC817_2CH_Stacked
+M2,1,DS3231 RTC module ZS-042 + CR2032,modul RTC DS3231 ZS-042,Remove its charge resistor; solder a straight 1x6 header underneath,DS3231 RTC module (ZS-042),Module_DS3231_ZS042_Flat
+M3,1,AT24C256 I2C EEPROM module,modul EEPROM AT24C256 I2C,A0-A2 and WP jumpers to GND; solder a straight 1x4 header underneath,"AT24C256 EEPROM module (A0-A2, WP = GND: 0x50)",Module_AT24C256_Flat
+M4,1,GY-9250 (MPU9250 or MPU6500) module,modul GY-9250 MPU9250,"Straight 1x10 header underneath, chip side up","MPU9250 module (AD0 = 3V3, 0x69)",Module_MPU9250_GY9250_Flat
+R1,1,Resistor 1 kohm 1/4 W,resistor 1K 1/4W,,1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal
+"R4, R6",2,Resistor 1.5 kohm 1 W metal film,resistor 1K5 1W,,1.5k 1W,R_Axial_DIN0414_L11.9mm_D4.5mm_P15.24mm_Horizontal
+"R5, R7",2,Resistor 47 kohm 1/4 W,resistor 47K 1/4W,,47k,R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal
+U1,1,"ESP32 DevKit V4, USB-C, 38 pins (ESP32-WROOM-32D/E)",ESP32 DevKit V4 Type C 38 pin,Check its pin rows are 25.4 mm apart (fit-check PDF),ESP32 DevKit V4 Type-C (38-pin),ESP32_DevKitC_V4_38pin_Socket
+,2,"Female header 1x20, 2.54 mm (cut to 19)",female header 1x20 2.54,U1 sockets,,
+,1,"Female header 1x6, 2.54 mm",female header 1x6 2.54,M2 socket,,
+,1,"Female header 1x4, 2.54 mm",female header 1x4 2.54,M3 socket,,
+,1,"Female header 1x10, 2.54 mm",female header 1x10 2.54,M4 socket,,
+,1,"Pin header 1x40, 2.54 mm, straight",pin header male 1x40 2.54,Cut 6 + 4 for the M2 and M3 modules,,
+,4,"Nylon M3 spacer 10-12 mm, with M3 screws",spacer nylon M3 10mm,M1 standoffs; parts underneath are up to 6 mm tall,,
+,2,"M3 spacer 11 mm (or 10 mm + washer), with M3 screws",spacer M3 11mm,Optional: holds the GY-9250 rigid,,
+,1,"Hook-up wire 22-24 AWG, about 30 cm",kabel jumper 22 AWG,8 short wires from the M1 pads to the 817 module terminals,,
+,1,CR2032 coin cell (or LIR2032 with the charge resistor kept),baterai CR2032,RTC backup,,
+,4,M3 screws and spacers for the enclosure,baut M3 + spacer,H1-H4; H2 and H3 sit under the DevKit and the AT24C256,,
