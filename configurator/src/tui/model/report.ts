@@ -5,8 +5,8 @@ import { causeText } from '../../restart.ts';
 import { SETTINGS } from '../../tags.ts';
 import { activeFlags, type DeviceState } from '../state.ts';
 import { deviceIdText, num, utcText } from './format.ts';
-import { problems } from './health.ts';
-import { changedFromFactory, SETTING_UI, valueText } from './settings.ts';
+import { type HealthContext, i2cIdleReason, issueFor, problems } from './health.ts';
+import { changedFromFactory, pulseInputOff, SETTING_UI, valueText } from './settings.ts';
 
 export interface ReportFields {
   technician: string;
@@ -33,34 +33,47 @@ export function reportFileName(deviceId: number | undefined, nowMs: number): str
 const calibrated = (flags: string[], missing: string, notCal: string) =>
   flags.includes(missing) ? 'not fitted' : flags.includes(notCal) ? '✖ not calibrated' : '✔ calibrated';
 
+/** What the text of a health issue may depend on, from the device's state. */
+const healthContext = (state: DeviceState, autoTimeSync?: boolean): HealthContext => ({
+  fwVersion: state.values.fwVersion as number | undefined,
+  autoTimeSync,
+  i2cLines: state.values.i2cLines as number | undefined,
+});
+
 /** The lines the Report screen shows before saving: [label, value]. */
 export function reportSummary(input: ReportInput): Array<[string, string]> {
   const { state } = input;
   const v = state.values;
   const flags = activeFlags(state);
-  const list = problems(flags, { fwVersion: v.fwVersion as number | undefined, autoTimeSync: input.autoTimeSync });
+  const list = problems(flags, healthContext(state, input.autoTimeSync));
   const changed = SETTING_UI.filter((s) => changedFromFactory(s.name, state.settings[s.name])).length;
   const read = SETTING_UI.filter((s) => state.settings[s.name] !== undefined).length;
   const ppu = Number(state.settings.pulsesPerUnit ?? 1);
+  const health =
+    v.statusFlags === undefined
+      ? 'not read yet'
+      : list.length === 0
+        ? '✔ no problems'
+        : `${list.some((i) => i.severity === 'error') ? '✖' : '▲'} ${list.map((i) => i.title).join(', ')}`;
+  const idle = i2cIdleReason(flags);
   const rows: Array<[string, string]> = [
     [
       'Device',
       `${deviceIdText(state.deviceId)} · firmware ${formatFirmware(v.fwVersion)} · read ${utcText(input.nowMs / 1000)}`,
     ],
     ['Hour meter', `${num(v.runHours)} h (${String(v.runSeconds ?? '–')} s)`],
-    ['Totalizer', `${num(v.totalUnits)} units (${String(v.totalCount ?? '–')} pulses, ${ppu} per unit)`],
     [
-      'Health',
-      v.statusFlags === undefined
-        ? 'not read yet'
-        : list.length === 0
-          ? '✔ no problems'
-          : `${list.some((i) => i.severity === 'error') ? '✖' : '▲'} ${list.map((i) => i.title).join(', ')}`,
+      'Totalizer',
+      `${pulseInputOff(state.settings) ? 'off (pulse input off) · ' : ''}${num(v.totalUnits)} units (${String(v.totalCount ?? '–')} pulses, ${ppu} per unit)`,
     ],
+    // I2C off is a choice, not a problem, so it is not in the list of problems: say it here.
+    ['Health', flags.includes('i2cOff') ? `${health} · ${issueFor('i2cOff', flags).title}` : health],
     ['Settings', `${read} read · ${changed} differ from factory defaults`],
     [
       'Calibration',
-      `IMU ${calibrated(flags, 'imuMissing', 'imuNotCalibrated')} · compass ${calibrated(flags, 'magMissing', 'magNotCalibrated')}`,
+      idle
+        ? `IMU and compass not in use (${idle})`
+        : `IMU ${calibrated(flags, 'imuMissing', 'imuNotCalibrated')} · compass ${calibrated(flags, 'magMissing', 'magNotCalibrated')}`,
     ],
     ['Restarts', `previous run: ${causeText(v) ?? 'ended normally'}`],
   ];
@@ -86,10 +99,7 @@ export function buildReport(input: ReportInput): string {
   ];
   if (fields.note.trim()) lines.push('## Note', '', fields.note.trim(), '');
   const flags = activeFlags(state);
-  const list = problems(flags, {
-    fwVersion: state.values.fwVersion as number | undefined,
-    autoTimeSync: input.autoTimeSync,
-  });
+  const list = problems(flags, healthContext(state, input.autoTimeSync));
   if (list.length) {
     lines.push('## Needs attention', '');
     for (const i of list) lines.push(`- **${i.title}** (\`${i.flag}\`): ${i.why}${i.fix ? ` ${i.fix}` : ''}`);

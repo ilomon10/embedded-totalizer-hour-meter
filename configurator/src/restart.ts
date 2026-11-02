@@ -19,7 +19,9 @@ const RESET_REASON: Readonly<Record<number, string>> = Object.freeze({
 export function causeText(values: Values): string | undefined {
   const cause = Number(values.lastCause);
   if (!values.lastCause || !(cause > 0)) return undefined;
-  const name = LAST_CAUSE[cause] ?? `cause ${cause}`;
+  const known = LAST_CAUSE[cause] ?? `cause ${cause}`;
+  // Firmware 2.7.0 parks a failing I2C bus instead of restarting: this cause can only come from an older one.
+  const name = known === 'i2cStuck' ? `${known} (older firmware)` : known;
   const stage = Number(values.lastStage);
   return stage > 0 ? `${name} while ${LAST_STAGE[stage] ?? `stage ${stage}`}` : name;
 }

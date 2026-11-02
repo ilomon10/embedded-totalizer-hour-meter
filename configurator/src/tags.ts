@@ -76,6 +76,7 @@ export const tags: Record<number, TagDef> = {
   61: { name: 'btState', fmt: 'u8' },
   62: { name: 'lastCause', fmt: 'u8' },
   63: { name: 'lastStage', fmt: 'u8' },
+  64: { name: 'i2cLines', fmt: 'u8' },
   // Commands (host -> device)
   100: { name: 'setTime', fmt: 'u32' },
   101: { name: 'get', fmt: 'u8' },
@@ -126,6 +127,9 @@ export const tags: Record<number, TagDef> = {
   146: { name: 'calMagScaleY', fmt: 'f32' },
   147: { name: 'calMagScaleZ', fmt: 'f32' },
   148: { name: 'calFlags', fmt: 'u8' },
+  // Settings, second block (110..129 is full)
+  150: { name: 'i2c', fmt: 'bool' },
+  151: { name: 'pulseInput', fmt: 'bool' },
   // 240..243 (errorCode, fwVersion, ackSeq, ackStatus) are built into sensorframe.
 };
 
@@ -166,6 +170,8 @@ export const STATUS_FLAGS: readonly string[] = Object.freeze([
   'settingsNotSaved',
   'safeMode',
   'flashStoreMissing',
+  'i2cParked',
+  'i2cOff',
 ]);
 
 export const GET: Readonly<Record<string, number>> = Object.freeze({ hour: 1, settings: 2, status: 3, calib: 4 });
@@ -214,6 +220,8 @@ export const SETTINGS: Record<string, SettingSpec> = {
     unit: 'mg',
     help: 'engine counts only while vibration RMS is above this (0 = off)',
   },
+  i2c: { tag: 150, min: 0, max: 1, help: 'I2C modules (EEPROM, RTC, IMU) on/off; off = hour meter only' },
+  pulseInput: { tag: 151, min: 0, max: 1, help: 'pulse input (GPIO26) on/off; off = the totalizer does not count' },
 };
 
 /** Why the device restarted last time (tag 62), mirror of Protocol.h LastCause. */

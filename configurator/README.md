@@ -36,7 +36,7 @@ Ten screens in three groups: **maintain** (read and correct the counters, keep a
 `hour-meter` without a port starts here:
 
 ```
- HOUR METER  configurator 2.0.0                                                 Connect to a device
+ HOUR METER  configurator 2.1.0                                                 Connect to a device
 ╭─ Ports ──────────────────────────────────────────────────────────────────────────────────────────╮
 │                                                                                                  │
 │ ▸ /dev/ttyUSB0          Silicon Labs CP2102 USB to UART… · ESP32 board   last used               │
@@ -64,7 +64,7 @@ Ten screens in three groups: **maintain** (read and correct the counters, keep a
 ### Screens
 
 ```
- HOUR METER │ 1A2B3C4D │ fw 2.6.0 │ ● DEMO simulated │ 08:16:33 UTC                    ▲ 2 to check
+ HOUR METER │ 1A2B3C4D │ fw 2.7.0 │ ● DEMO simulated │ 08:16:33 UTC                    ▲ 2 to check
 ╭──────────────────╮╭─ Overview ───────────────────────────────────────────────────────────────────╮
 │ MAINTAIN         ││ HOUR METER               TOTALIZER                ENGINE                     │
 │ ▸1 Overview      ││ 1250.00 h                15017.00 units           ● RUNNING                  │
@@ -81,7 +81,7 @@ Ten screens in three groups: **maintain** (read and correct the counters, keep a
 │  0 Log           ││ Storage    ✔ flash + EEPROM · settings from flash copy A                     │
 │                  ││ Restart    power-on, 0 s ago · previous run ended normally                   │
 │                  ││ Link       demo device · telemetry every 1 s · 53 frames                     │
-│                  ││ Firmware   2.6.0                                                             │
+│                  ││ Firmware   2.7.0                                                             │
 │                  ││                                                                              │
 │                  ││ [h] set hours…   [t] set time   [r] refresh   [w] service report             │
 │                  ││                                                                              │
@@ -91,14 +91,14 @@ Ten screens in three groups: **maintain** (read and correct the counters, keep a
 
 | Key | Screen | What it is for |
 |---|---|---|
-| `1` | Overview | The counters and the engine; what needs attention, each with the screen that fixes it; the device clock against this PC, modules, storage, last restart, link. `h` set hours…, `t` set the time, `w` service report |
+| `1` | Overview | The counters and the engine (a totalizer whose pulse input is off reads `off`); what needs attention, each with the screen that fixes it; the device clock against this PC, modules, storage, last restart, link. `h` set hours…, `t` set the time, `w` service report |
 | `2` | Counters | Set the hour meter (hours) or the totalizer (units or pulses) to any value. The dialog shows now → new and the change, and refuses an empty value. A reset to 0 needs `RESET` typed. Saved on the device at once |
 | `3` | Report | A service report in Markdown, with the raw values as JSON at the end, saved in `~/hour-meter-reports` (`$HOUR_METER_REPORTS`). Technician and unit are remembered per device |
 | `4` | Commission | Eight install steps, checked from live data where it can: the engine input at key-on and with the engine running, pulses counting, the clock, the modules. `Enter` runs a step, then moves on once it passed; `Space` ticks the modules that are fitted. Progress is kept per device |
 | `5` | Live inputs | The wiring check: the raw engine input against what is counted; the vibration RMS as a chart over time (`-` and `+` show 30 s to 10 min), with the threshold as a dotted line and the 10 s measurements shaded; the measurements with the key on and the engine off (`o`) and idling (`i`), which suggest a vibration threshold (`t`). Roll, pitch and heading as gauges: the machine seen from behind and from the side, and a compass |
-| `6` | Settings | All 20 settings in groups, with plain names, units, ranges and factory defaults. Changes wait (`• was 200`) until `a` shows them before → after with what they do, then go as one command: all or none. A change that cuts your own link (`output` over USB, `bluetooth` off over Bluetooth) is flagged in red |
+| `6` | Settings | All 22 settings in groups, with plain names, units, ranges and factory defaults (`i2c` and `pulseInput` need firmware 2.7.0). Changes wait (`• was 200`) until `a` shows them before → after with what they do, then go as one command: all or none. A change that cuts your own link (`output` over USB, `bluetooth` off over Bluetooth) is flagged in red |
 | `7` | Calibrate | Accel + gyro, and the compass, guided: the checks first (IMU fitted, engine off, board level), then progress and the result |
-| `8` | Diagnostics | Every status flag in plain words, with its fix; restarts, storage, I2C and link counters. Reboot, panic signal and hard reset, each after a confirmation |
+| `8` | Diagnostics | Every status flag in plain words, with its fix; restarts and safe mode; the I2C bus (parked, with the lines it found held low, or switched off); storage, I2C and link counters. Reboot, panic signal and hard reset, each after a confirmation |
 | `9` | Firmware | The releases (the newest is selected, never a prerelease) and the update, with `FLASH` typed, shown as a checklist. See [Update the firmware](#update-the-firmware) |
 | `0` | Log | Events, commands and problems, scrollable and filtered, kept when you switch ports. `s` saves it to a file |
 
@@ -115,7 +115,7 @@ A banner under the header names the problem and the key that helps. Nothing show
  ▲ Live data goes to the UART pins only (output = UART). Commands still work.           [6] settings
 ```
 
-"No data" waits 5 s, or three telemetry intervals if that is longer. A reset is only offered, never automatic: 8 Diagnostics has the panic signal and the hard reset. A boot is logged with its cause, for example `device restarted: watchdog while IMU (reset reason 6)`, and 8 Diagnostics shows the last restart cause and **safe mode**.
+"No data" waits 5 s, or three telemetry intervals if that is longer. A reset is only offered, never automatic: 8 Diagnostics has the panic signal and the hard reset. A boot is logged with its cause, for example `device restarted: watchdog while IMU (reset reason 6)`, and 8 Diagnostics shows the last restart cause, **safe mode** and the state of the **I2C bus**.
 
 **Unplug and replug.** The TUI keeps going when the board is unplugged. When the port comes back, it connects again and reads everything anew. A board that comes back under another name (`/dev/ttyUSB1`) is found by its adapter. Bluetooth drops and a restarted TCP bridge work the same way. While disconnected, commands say `not connected` at once instead of timing out. The last values stay on screen; when another board shows up on the port, the old one's values are cleared. A port given on the command line that is not there yet is waited for the same way, so `hour-meter /dev/ttyUSB0` can start before the board is plugged in.
 
@@ -182,6 +182,8 @@ hour-meter get status                  # hour | settings | status | calib
 hour-meter set telemetryIntervalMs=500 output=both
 hour-meter set bluetooth=true btPin=4821
 hour-meter set runVibMinMg=25          # count only while the engine vibrates (firmware 2.5.0; 0 = off)
+hour-meter set i2c=false               # hour meter only: never use the RTC, IMU and EEPROM (firmware 2.7.0)
+hour-meter set pulseInput=false        # ignore the pulse input (GPIO26): nothing counts there (firmware 2.7.0)
 hour-meter set-time                    # PC clock as UTC
 hour-meter set-hours 1234.5            # set the hour meter to any value
 hour-meter set-units 5230.75           # set the totalizer in units (uses pulsesPerUnit)
@@ -209,14 +211,24 @@ The hard reset talks to the adapter through libc (`ioctl`, via `bun:ffi`), so it
 
 ### Hours count with the key on but the engine off
 
-The engine-running input is on a wire that is live at ACC/ON. `hour-meter read` shows `engine ON` before the engine starts. Move the input to the alternator's L / D+ terminal or the oil-pressure warning switch ([how to find the wire](../esp32/docs/WIRING.md#pick-the-wire)). If no such wire is reachable, set `runVibMinMg` (firmware 2.5.0). The reader then shows `engine OFF (input on)` while the key is on and the engine is stopped.
+The engine-running input is on a wire that is live at ACC/ON. `hour-meter read` shows `engine ON` before the engine starts. Move the input to the alternator's L / D+ terminal or the oil-pressure warning switch ([how to find the wire](../esp32/docs/WIRING.md#pick-the-wire)). From firmware 2.7.0 a W / P phase terminal works too: an input that keeps toggling counts as running. If no such wire is reachable, set `runVibMinMg` (firmware 2.5.0). The reader then shows `engine OFF (input on)` while the key is on and the engine is stopped.
 
 ### Device sends nothing over USB
 
 1. Try `hour-meter reset` (or `n` and `x` in the TUI's 8 Diagnostics). The device restarts and the boot EVENT says why it was stuck.
 2. Check the `output` setting is not UART-only: `hour-meter get settings` over the UART pins (or Bluetooth) shows `output`. `uart` keeps the USB port silent; set `output=both`.
-3. After a restart, `lastCause` and `lastStage` (in `get status`, the boot EVENT and the TUI's 8 Diagnostics) say what happened: `watchdog`, `i2cStuck`, `usbStalled`, `panicSignal`, `rebootCommand` or `crash`, and what the firmware was doing (IMU, RTC, EEPROM...).
-4. **Safe mode:** after 3 unplanned restarts in a row the device boots without I2C (flag `safeMode`; no RTC, IMU or EEPROM). Firmware 2.6.0 still keeps the hour meter, totalizer and settings in the ESP32's flash meanwhile. It leaves safe mode on a power-cycle, a hard reset, or `hour-meter reboot`. Fix the bus fault (a loose or shorted I2C module) first, or it will come back.
+3. After a restart, `lastCause` and `lastStage` (in `get status`, the boot EVENT and the TUI's 8 Diagnostics) say what happened: `watchdog`, `usbStalled`, `panicSignal`, `rebootCommand` or `crash` (and `i2cStuck`, which only firmware 2.6.0 and older report), and what the firmware was doing (IMU, RTC, EEPROM...).
+4. **Safe mode:** after 3 unplanned restarts in a row (watchdog, crash or USB stall) the device boots without I2C (flag `safeMode`; no RTC, IMU or EEPROM), so the USB port stays usable. Firmware 2.6.0 and newer still keep the hour meter, totalizer and settings in the ESP32's flash meanwhile. It leaves safe mode on a power-cycle, a hard reset, or `hour-meter reboot`. If it comes back, `lastCause` says what keeps restarting the device. A bad I2C bus is no longer a cause (firmware 2.7.0, below).
+
+### I2C bus trouble, hour meter only
+
+The RTC, IMU and EEPROM are optional: the hour meter counts and saves in the ESP32's flash without them. Since firmware 2.7.0 a bus that keeps failing never restarts the device (2.6.0 restarted after 30 s, and after 3 restarts ended in safe mode). The device **parks** the bus instead: it stops using it, releases SDA and SCL, counts every module as missing (flag `i2cParked`) and tries again after 10 s, 20 s, 40 s … up to 5 min. The pause starts again at 10 s once the bus has worked for 10 minutes. `i2cLines` (in `get status` and in the boot and modules-changed events, only while parked) says what it found: bit 0 SDA held low, bit 1 SCL held low, 0 both lines free but every transfer timed out.
+
+8 Diagnostics shows this as one fault, **I2C bus parked**, with the lines it found and the fix: unplug the modules one at a time, and check the wiring, the pull-ups and that the MPU9250's AD0 pin is tied to 3.3 V (address 0x69; with AD0 low it clashes with the RTC at 0x68). The missing modules are not listed as problems of their own.
+
+**Hour meter only:** `hour-meter set i2c=false` (6 Settings, "I2C modules") never starts the bus, not even at boot (flag `i2cOff`). The hour meter keeps counting and saving in the flash; the time is kept in RAM, so the TUI and `hour-meter read` set it from this PC after each start, and a restart with no PC connected leaves it unknown (`timeNotBackedUp`). Use it on a unit without modules, or while a faulty one is being replaced.
+
+**No pulse input:** `hour-meter set pulseInput=false` ignores GPIO26, so noise on an unused input cannot count. The totalizer keeps its value, and the screens and the service report show it as `off`.
 
 ## Library
 

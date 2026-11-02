@@ -1,4 +1,4 @@
-// settings.tsx: 6 Settings. The 20 settings grouped by what they control, with their factory default and a mark
+// settings.tsx: 6 Settings. The 22 settings grouped by what they control, with their factory default and a mark
 // on the ones changed but not applied yet. Enter edits in place (a number starts from the current value, a choice
 // is a picker); `a` reviews all changes with their consequences and link warnings, and sends them as one command.
 import { useEffect, useState } from 'react';

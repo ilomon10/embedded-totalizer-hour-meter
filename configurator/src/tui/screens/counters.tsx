@@ -12,6 +12,7 @@ import {
   counterPrompt,
   planCounter,
 } from '../model/counters.ts';
+import { pulseInputOff } from '../model/settings.ts';
 import {
   charOf,
   takeIntent,
@@ -172,7 +173,11 @@ export function CountersScreen() {
       <Line
         segs={[
           ''.padEnd(col),
-          dim(`${String(v.totalCount ?? '–')} pulses · ${ppu} pulse${ppu === 1 ? '' : 's'} per unit`),
+          dim(
+            pulseInputOff(ui.device.settings)
+              ? `${String(v.totalCount ?? '–')} pulses · pulse input off`
+              : `${String(v.totalCount ?? '–')} pulses · ${ppu} pulse${ppu === 1 ? '' : 's'} per unit`,
+          ),
         ]}
       />
       <Line segs={[dim(`${saved}${v.journalSeq !== undefined ? ` · save #${String(v.journalSeq)}` : ''}`)]} />

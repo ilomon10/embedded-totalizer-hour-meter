@@ -179,7 +179,7 @@ test('firmware: the update is a checklist; the device waits for it; refused with
         (await ctrl.panic()).text,
         (await ctrl.hardReset()).text,
       ];
-      hooks.step('backup', 'ok', 'counters + 20 settings');
+      hooks.step('backup', 'ok', 'counters + 22 settings');
       hooks.step('bootloader', 'run');
       hooks.progress({ stage: 'write', done: 1024, total: 2048 });
       hooks.step('bootloader', 'ok', 'ESP32 aa:bb');

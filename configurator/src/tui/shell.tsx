@@ -17,7 +17,7 @@ import { formatFirmware } from '../releases.ts';
 import { FLASH_RUNNING, type TuiController, type UiState } from './controller.ts';
 import { banner } from './model/banner.ts';
 import { age, deviceIdText, fit, shortPort, utcClock } from './model/format.ts';
-import { problems, summary } from './model/health.ts';
+import { ALL_FLAGS, problems, summary } from './model/health.ts';
 import { GROUPS, SCREENS, type ScreenId, screenByKey, screenInfo, WIDE_COLUMNS } from './model/nav.ts';
 import { pendingChanges, SETTING_UI, type Transport } from './model/settings.ts';
 import { activeFlags, updateAvailable } from './state.ts';
@@ -113,7 +113,7 @@ export const SCREEN_HELP: Record<ScreenId, Array<[string, string]>> = {
     ['Enter', 'start'],
   ],
   diagnostics: [
-    ['a', 'all 20 checks'],
+    ['a', `all ${ALL_FLAGS.length} checks`],
     ['b', 'reboot…'],
     ['n', 'panic signal…'],
     ['x', 'hard reset…'],

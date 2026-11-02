@@ -3,6 +3,7 @@
 import { formatFirmware } from '../../releases.ts';
 import { duration, num } from '../model/format.ts';
 import { problems } from '../model/health.ts';
+import { pulseInputOff } from '../model/settings.ts';
 import { activeFlags, updateAvailable } from '../state.ts';
 import { charOf, useNow, useRefState, useScreenKeys, useShell, useUi } from '../shell-context.tsx';
 import { C, MARK } from '../theme.ts';
@@ -17,7 +18,11 @@ export function OverviewScreen() {
   const d = ui.device;
   const v = d.values;
   const flags = activeFlags(d);
-  const list = problems(flags, { fwVersion: v.fwVersion as number | undefined, autoTimeSync: shell.autoTimeSync });
+  const list = problems(flags, {
+    fwVersion: v.fwVersion as number | undefined,
+    autoTimeSync: shell.autoTimeSync,
+    i2cLines: v.i2cLines as number | undefined,
+  });
   const [sel, setSel, selRef] = useRefState(0);
   const index = Math.min(sel, Math.max(0, list.length - 1));
 
@@ -58,21 +63,18 @@ export function OverviewScreen() {
       : [dim(`input ${v.altInput ? 'on' : 'off'}${typeof v.vibRms === 'number' ? ` · vib ${v.vibRms} mg` : ''}`)];
   const col = Math.max(22, Math.floor(shell.width / 3));
   const pad = (s: string) => `${s} `.padEnd(col);
+  const count = String(v.totalCount ?? '–');
+  // With the pulse input off nothing counts: say so, and keep the value the totalizer holds in sight.
+  const totalizer: [Seg, Seg] = pulseInputOff(d.settings)
+    ? [bold(pad('off'), C.dim), dim(pad(`${count} pulses kept`))]
+    : [bold(pad(`${num(v.totalUnits)} units`), C.green), dim(pad(`${count} pulses · ${ppu} per unit`))];
   const update = updateAvailable(v.fwVersion, ui.releases);
   const telemetry = d.settings.telemetryIntervalMs;
   return (
     <box style={{ flexDirection: 'column' }}>
       <Line segs={[bold(pad('HOUR METER'), C.dim), bold(pad('TOTALIZER'), C.dim), bold('ENGINE', C.dim)]} />
-      <Line
-        segs={[bold(pad(`${num(v.runHours)} h`), C.green), bold(pad(`${num(v.totalUnits)} units`), C.green), ...engine]}
-      />
-      <Line
-        segs={[
-          dim(pad(`${String(v.runSeconds ?? '–')} s`)),
-          dim(pad(`${String(v.totalCount ?? '–')} pulses · ${ppu} per unit`)),
-          ...input,
-        ]}
-      />
+      <Line segs={[bold(pad(`${num(v.runHours)} h`), C.green), totalizer[0], ...engine]} />
+      <Line segs={[dim(pad(`${String(v.runSeconds ?? '–')} s`)), totalizer[1], ...input]} />
       <Line segs={[dim(`${savedAgo}${v.journalSeq !== undefined ? ` (#${String(v.journalSeq)})` : ''}`)]} />
       <Blank />
       <Heading title="NEEDS ATTENTION" right={list.length ? [dim(`${list.length}`)] : []} />
@@ -87,7 +89,7 @@ export function OverviewScreen() {
       <Blank />
       <Heading title="DEVICE" />
       <Line segs={['Clock      ', ...clockSegs(ui, now, shell.autoTimeSync)]} />
-      <Line segs={['Modules    ', ...moduleSegs(v)]} />
+      <Line segs={['Modules    ', ...moduleSegs(v, flags)]} />
       <Line segs={['Storage    ', ...storageSegs(d)]} />
       <Line segs={['Restart    ', dim(restartText(v))]} />
       <Line

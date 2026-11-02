@@ -6,15 +6,18 @@ import { assert, assertEquals, assertMatch } from './assert.ts';
 import { checks, emptyProgress, engineVerdict, passed } from '../src/tui/model/commission.ts';
 import { counterPrompt, planCounter } from '../src/tui/model/counters.ts';
 import { ago, bar, deviceIdText, duration, fit, utcText } from '../src/tui/model/format.ts';
-import { issueFor, problems, summary } from '../src/tui/model/health.ts';
+import { ALL_FLAGS, i2cLinesText, issueFor, okAreas, problems, summary } from '../src/tui/model/health.ts';
 import { addSample, grownSince, pulseRate, sparkline, suggestThreshold } from '../src/tui/model/history.ts';
 import { SCREENS, screenByKey, screenRef } from '../src/tui/model/nav.ts';
 import { buildReport, reportFileName, reportSummary } from '../src/tui/model/report.ts';
 import {
+  changedFromFactory,
   commandFor,
   crossCheck,
   editText,
+  parseSettingInput,
   pendingChanges,
+  pulseInputOff,
   rangeText,
   reviewNotes,
   SETTING_GROUPS,
@@ -24,6 +27,9 @@ import {
 } from '../src/tui/model/settings.ts';
 import { initialState } from '../src/tui/state.ts';
 import { SETTINGS, STATUS_FLAGS } from '../src/tags.ts';
+
+/** The statusFlags value with these flags set (by their names in tags.ts). */
+const flagBits = (...names: string[]) => names.reduce((n, f) => n | (1 << STATUS_FLAGS.indexOf(f)), 0);
 
 test('formats: durations, ages, ids, dates, bars', () => {
   assertEquals(duration(45), '45 s');
@@ -60,7 +66,11 @@ test('navigation: ten screens, number keys 1-9 and 0, in three groups', () => {
 });
 
 test('health: every status flag has words; severity follows the context', () => {
-  for (const flag of STATUS_FLAGS) assert(issueFor(flag, [flag]).why.length > 10, flag);
+  for (const flag of STATUS_FLAGS) {
+    const issue = issueFor(flag, [flag]);
+    assert(issue.why.length > 10 && issue.title !== flag, flag); // an unknown flag is titled with its own name
+  }
+  assertEquals([...ALL_FLAGS].sort(), [...STATUS_FLAGS].sort());
   // A missing EEPROM is fine once the flash keeps the values (firmware 2.6.0), a fault before that.
   assertEquals(issueFor('eepromMissing', ['eepromMissing'], { fwVersion: 0x00020600 }).severity, 'info');
   assertEquals(issueFor('eepromMissing', ['eepromMissing'], { fwVersion: 0x00020500 }).severity, 'error');
@@ -78,12 +88,68 @@ test('health: every status flag has words; severity follows the context', () => 
   const flags = ['imuNotCalibrated', 'magNotCalibrated', 'settingsDefaults', 'safeMode'];
   assertEquals(
     problems(flags).map((i) => i.flag),
-    ['safeMode', 'imuNotCalibrated', 'magNotCalibrated'],
+    ['safeMode'], // safe mode skips I2C: the uncalibrated IMU is not a problem of its own then
   );
   assertEquals(summary(flags).text, '✖ 1 fault');
   assertEquals(summary(['imuNotCalibrated', 'magNotCalibrated']).text, '▲ 2 to check');
   assertEquals(summary(['settingsDefaults']).text, '✔ healthy');
   assertEquals(summary(undefined).level, 'unknown');
+});
+
+test('health: safe mode is about unplanned restarts, not about the I2C bus', () => {
+  const safe = issueFor('safeMode', ['safeMode']);
+  assertEquals([safe.severity, safe.title], ['error', 'Safe mode']);
+  assertMatch(safe.why, /Three unplanned restarts in a row \(watchdog, crash or USB stall\)/);
+  assertMatch(safe.why, /RTC, IMU and EEPROM are skipped until the next restart/);
+  assert(!/I2C|bus/i.test(safe.fix!), 'nothing to fix on the bus: reboot, and read the cause');
+
+  // The flags of a 2.6.0 unit in safe mode (a field report): the missing modules follow from safe mode.
+  const field = ['eepromMissing', 'rtcMissing', 'imuMissing', 'magMissing', 'imuNotCalibrated', 'settingsDefaults'];
+  const names = (fwVersion?: number) =>
+    problems([...field, 'timeNotBackedUp', 'safeMode'], { fwVersion }).map((i) => i.flag);
+  assertEquals(names(0x00020600), ['safeMode', 'timeNotBackedUp']);
+  assertMatch(issueFor('rtcMissing', ['rtcMissing', 'safeMode']).why, /Not a separate problem: safe mode skips I2C/);
+  // Safe mode is older than the flash store (2.4.0): it does not prove the flash keeps the values.
+  assert(names(0x00020500).includes('eepromMissing'), 'firmware 2.5.0 in safe mode without an EEPROM saves nothing');
+  assert(names(undefined).includes('eepromMissing'), 'unknown firmware: the EEPROM warning stays');
+});
+
+test('health: a parked I2C bus is one fault with its cause; a bus that is off is a choice; modules are not listed', () => {
+  const parked = issueFor('i2cParked', ['i2cParked']);
+  assertEquals([parked.severity, parked.title, parked.screen], ['error', 'I2C bus parked', 'diagnostics']);
+  assertMatch(parked.fix!, /Unplug the modules one at a time/);
+  assertMatch(parked.fix!, /AD0 pin is tied to 3\.3 V \(address 0x69, else it clashes with the RTC at 0x68\)/);
+  assertMatch(parked.why, /The hour meter keeps counting; the bus is retried automatically\./);
+  // The lines it found held low come with a full status (tag 64): bit 0 SDA, bit 1 SCL, 0 both lines free.
+  const why = (i2cLines: number) => issueFor('i2cParked', ['i2cParked'], { i2cLines }).why;
+  assertMatch(why(1), /^SDA held low\. The bus kept failing/);
+  assertMatch(why(2), /^SCL held low\. /);
+  assertMatch(why(3), /^SDA and SCL held low\. /);
+  assertMatch(why(0), /^Both lines free but transfers time out\. /);
+  assertEquals(i2cLinesText(2), 'SCL held low');
+  assertEquals(i2cLinesText(0), 'both lines free but transfers time out');
+  const off = issueFor('i2cOff', ['i2cOff']);
+  assertEquals([off.severity, off.title], ['info', 'I2C off (hour meter only)']);
+
+  // Every module is missing then, and that is expected: the time is the one thing still worth a warning.
+  const modules = ['eepromMissing', 'rtcMissing', 'imuMissing', 'magMissing', 'imuNotCalibrated', 'i2cErrors'];
+  const names = (flags: string[], ctx = {}) => problems(flags, ctx).map((i) => i.flag);
+  assertEquals(names([...modules, 'i2cOff', 'timeNotBackedUp']), ['timeNotBackedUp']); // no firmware version needed
+  assertEquals(names([...modules, 'i2cParked', 'timeNotBackedUp']), ['i2cParked', 'timeNotBackedUp']);
+  assertEquals(summary([...modules, 'i2cParked']).text, '✖ 1 fault');
+  assertEquals(summary([...modules, 'i2cOff']).text, '✔ healthy');
+  // What is wrong without those flags is still wrong.
+  assertEquals(names(modules), ['eepromMissing', 'rtcMissing', 'i2cErrors']);
+  assertEquals(issueFor('rtcMissing', ['rtcMissing']).severity, 'warn');
+  assertEquals(issueFor('i2cErrors', ['i2cErrors']).severity, 'warn');
+  assertEquals(issueFor('timeNotBackedUp', ['timeNotBackedUp', 'i2cOff']).severity, 'warn');
+  // With I2C off and no flash store, nothing keeps the values: that stays a fault.
+  assertEquals(issueFor('eepromMissing', ['eepromMissing', 'flashStoreMissing', 'i2cOff']).title, 'Nothing is saved');
+  assertEquals(issueFor('eepromMissing', ['eepromMissing', 'flashStoreMissing', 'i2cOff']).severity, 'error');
+
+  assert(okAreas([]).includes('I2C bus'));
+  assert(!okAreas(['i2cParked']).includes('I2C bus'));
+  assert(!okAreas(['i2cOff']).includes('I2C bus'));
 });
 
 test('settings: every device setting has a label, a group and a factory value in range', () => {
@@ -94,6 +160,38 @@ test('settings: every device setting has a label, a group and a factory value in
     assert(n >= spec.min && n <= spec.max, `${s.name} factory ${n}`);
   }
   assertEquals(SETTING_GROUPS[0], 'ENGINE DETECTION');
+  assertEquals(SETTING_UI.length, 22);
+  assertEquals(SETTING_GROUPS.length, 8); // the two new settings joined groups that were there
+  // Firmware 2.7.0: I2C modules on/off (hour meter only) and the pulse input on/off.
+  const row = (name: string) => SETTING_UI.find((x) => x.name === name)!;
+  assertEquals([row('pulseInput').group, row('pulseInput').factory], ['TOTALIZER', true]);
+  assertEquals([row('i2c').group, row('i2c').factory], ['SAVING & CLOCK', true]);
+  for (const name of ['i2c', 'pulseInput']) {
+    assertEquals(
+      row(name).choices?.map((c) => [c.value, c.label]),
+      [
+        [false, 'off'],
+        [true, 'on'],
+      ],
+    );
+    assert(row(name).help.length > 20 && row(name).advice, name);
+    assertEquals(rangeText(name), 'off / on');
+    assertEquals(parseSettingInput(name, 'off'), { value: false });
+    assertEquals(parseSettingInput(name, 'ON'), { value: true });
+    assertEquals(changedFromFactory(name, false), true);
+    assertEquals(changedFromFactory(name, true), false);
+  }
+  assertEquals(valueText('i2c', false), 'off');
+  assertEquals(valueText('pulseInput', true), 'on');
+  assertMatch(row('i2c').help, /the RTC, IMU and EEPROM are never used.*ESP32's flash.*this PC sets the time/);
+  assertEquals(
+    row('pulseInput').advice,
+    'Off when only the engine wire is connected (CH2 unused): nothing on GPIO26 can count.',
+  );
+  assertEquals(
+    [pulseInputOff({ pulseInput: false }), pulseInputOff({ pulseInput: true }), pulseInputOff({})],
+    [true, false, false],
+  );
   assertEquals(valueText('altActiveHigh', false), 'LOW (817 module)');
   assertEquals(valueText('altDebounceMs', 300), '300 ms');
   assertEquals(valueText('runVibMinMg', 0), 'off');
@@ -132,6 +230,16 @@ test('settings: staged changes, one command, consequences and link warnings', ()
     'error',
   );
   assertMatch(reviewNotes({ name: 'btPin', from: 4821, to: 1234 }, ctx)[0].text, /factory PIN/);
+  assertEquals(
+    reviewNotes({ name: 'pulseInput', from: true, to: false }, ctx)[0].text,
+    'pulses are ignored; the totalizer keeps its value',
+  );
+  assertEquals(reviewNotes({ name: 'pulseInput', from: false, to: true }, ctx)[0].text, 'pulses are counted again');
+  assertMatch(
+    reviewNotes({ name: 'i2c', from: true, to: false }, ctx)[0].text,
+    /stop being used; this PC sets the time$/,
+  );
+  assertMatch(reviewNotes({ name: 'i2c', from: false, to: true }, ctx)[0].text, /the bus starts again/);
   assertMatch(crossCheck({ imuStreamHz: 100, imuSampleHz: 50 })!, /must not be above/);
   assertEquals(crossCheck({ imuStreamHz: 10, imuSampleHz: 100 }), undefined);
   assertEquals(transportOf('/dev/rfcomm0', false), 'bluetooth');
@@ -198,6 +306,61 @@ test('commission: the engine check catches a wire that is live at key-on', () =>
   assertMatch(checks('finish', { state, progress })[0].detail!, /factory PIN/);
 });
 
+test('commission: a parked bus fails the modules step, a bus that is off or a pulse input that is off does not block', () => {
+  const unit = (flags: string[], values = {}, settings = {}) => ({
+    ...initialState('/dev/ttyUSB0', false),
+    deviceId: 1,
+    values: { fwVersion: 0x00020700, statusFlags: flagBits(...flags), devices: 0, timeValid: true, ...values },
+    settings,
+  });
+  const modules = (flags: string[], values = {}) =>
+    checks('modules', { state: unit(flags, values), progress: emptyProgress() });
+  const bus = (list: ReturnType<typeof modules>) => list.find((c) => c.label === 'I2C bus');
+  const none = ['eepromMissing', 'rtcMissing', 'imuMissing', 'magMissing'];
+
+  // Parked: no module answers, and the step must not pass as if nothing were wrong.
+  const parked = modules([...none, 'i2cParked'], { i2cLines: 1 });
+  assertEquals([bus(parked)?.status, bus(parked)?.detail], ['fail', 'parked, SDA held low: see 8 Diagnostics']);
+  assertEquals(passed(parked), false);
+  assertEquals(bus(modules([...none, 'i2cParked']))?.detail, 'parked, cause not read yet: see 8 Diagnostics');
+  // A module the technician ticked says why it does not answer.
+  const ticked = checks('modules', {
+    state: unit([...none, 'i2cParked']),
+    progress: { ...emptyProgress(), fitted: { eeprom: false, rtc: true, imu: false, mag: false } },
+  });
+  assertEquals(ticked.find((c) => c.label === 'RTC')?.detail, 'does not answer: I2C bus parked');
+  // Off on purpose: fine for a unit without modules.
+  const off = modules([...none, 'i2cOff']);
+  assertEquals([bus(off)?.status, bus(off)?.detail], ['ok', 'off in 6 Settings: hour meter only']);
+  assert(passed(off));
+  assertEquals(bus(modules([])), undefined); // a healthy bus needs no line
+  // Safe mode is no I2C fault to fix any more.
+  const safe = modules([...none, 'safeMode']).find((c) => c.label === 'Safe mode')!;
+  assertEquals(safe.status, 'fail');
+  assertMatch(safe.detail!, /^on: modules are skipped; reboot the device \(8 Diagnostics\)$/);
+  assert(!/I2C fault/.test(safe.detail!));
+
+  // The clock and the IMU step name the real reason too.
+  const clock = checks('clock', { state: unit([...none, 'i2cOff']), progress: emptyProgress() });
+  assertEquals(clock.find((c) => c.label === 'RTC')?.detail, 'I2C off: the time is lost at every restart');
+  const cal = (flags: string[]) => checks('calibrate', { state: unit(flags), progress: emptyProgress() })[0];
+  assertEquals(
+    [cal([...none, 'i2cOff']).status, cal([...none, 'i2cOff']).detail],
+    ['ok', 'I2C is off: nothing to calibrate'],
+  );
+  assertEquals(cal([...none, 'i2cParked']).status, 'fail');
+  assertMatch(cal([...none, 'i2cParked']).detail!, /not reachable: I2C bus parked/);
+  assertEquals(cal(none).detail, 'no IMU fitted: nothing to calibrate');
+
+  // A pulse input that is off has nothing to count: its step passes at once.
+  const pulse = checks('pulse', { state: unit([], {}, { pulseInput: false }), progress: emptyProgress() });
+  assertEquals([pulse.length, pulse[0].status, passed(pulse)], [1, 'ok', true]);
+  assertEquals(
+    checks('pulse', { state: unit([], {}, { pulseInput: true }), progress: emptyProgress() })[0].status,
+    'todo',
+  );
+});
+
 test('report: a Markdown file named after the device, with every setting and the raw values', () => {
   const state = {
     ...initialState('/dev/ttyUSB0', false),
@@ -216,7 +379,7 @@ test('report: a Markdown file named after the device, with every setting and the
   const input = {
     state,
     fields: { technician: 'A', unit: 'DT-07', note: 'preset from the old meter' },
-    toolVersion: '2.0.0',
+    toolVersion: '2.1.0',
     nowMs,
   };
   assertEquals(reportFileName(0x1a2b3c4d, nowMs), '1A2B3C4D-2026-10-25-1432.md');
@@ -228,4 +391,68 @@ test('report: a Markdown file named after the device, with every setting and the
   assertMatch(md, /\| Input debounce \(`altDebounceMs`\) \| 300 ms • \| 200 ms \|/);
   assertMatch(md, /## Note\n\npreset from the old meter/);
   assertMatch(md, /"deviceId": 439041101/);
+});
+
+test('report: the totalizer says it is off, and a bus that is off or parked reads as that, not as missing modules', () => {
+  const none = ['eepromMissing', 'rtcMissing', 'imuMissing', 'magMissing', 'imuNotCalibrated', 'timeNotBackedUp'];
+  const unit = (flags: string[], values = {}, settings = {}) => ({
+    ...initialState('/dev/ttyUSB0', false),
+    deviceId: 0x1a2b3c4d,
+    values: {
+      fwVersion: 0x00020700,
+      statusFlags: flagBits(...flags),
+      runHours: 18192.24,
+      runSeconds: 65_492_092,
+      totalUnits: 0,
+      totalCount: 0,
+      ...values,
+    },
+    settings: { pulsesPerUnit: 1, ...settings },
+  });
+  const nowMs = Date.UTC(2026, 9, 26, 7, 33, 20);
+  const input = (state: ReturnType<typeof unit>) => ({
+    state,
+    fields: { technician: 'A', unit: 'DT-07', note: '' },
+    toolVersion: '2.1.0',
+    nowMs,
+  });
+  const rows = (state: ReturnType<typeof unit>) => Object.fromEntries(reportSummary(input(state)));
+
+  // Normal unit: as before.
+  assertEquals(rows(unit([])).Totalizer, '0.00 units (0 pulses, 1 per unit)');
+
+  // The pulse input off and I2C off: both are said, and the missing modules are no problem.
+  const off = unit([...none, 'i2cOff'], {}, { pulseInput: false, i2c: false });
+  assertEquals(rows(off).Totalizer, 'off (pulse input off) · 0.00 units (0 pulses, 1 per unit)');
+  assertEquals(rows(off).Health, '▲ Time not backed up · I2C off (hour meter only)');
+  assertEquals(rows(off).Calibration, 'IMU and compass not in use (I2C off)');
+  const offReport = buildReport(input(off));
+  assertMatch(offReport, /\| Totalizer \| off \(pulse input off\) · 0\.00 units/);
+  assertMatch(offReport, /\| Pulse input \(`pulseInput`\) \| off • \| on \|/);
+  assertMatch(offReport, /\| I2C modules \(`i2c`\) \| off • \| on \|/);
+  assertMatch(offReport, /## Needs attention\n\n- \*\*Time not backed up\*\*/);
+  assert(!offReport.includes('No RTC'), 'no module is listed as missing');
+  assertMatch(offReport, /"i2c": false/);
+
+  // Nothing wrong and I2C off: healthy, with the reason for the missing modules.
+  assertEquals(
+    rows(unit(['eepromMissing', 'rtcMissing', 'imuMissing', 'magMissing', 'i2cOff'])).Health,
+    '✔ no problems · I2C off (hour meter only)',
+  );
+
+  // Parked: one fault, with the lines it found held low; the modules are not listed one by one.
+  const parked = unit([...none, 'i2cParked', 'i2cErrors'], { i2cLines: 1 });
+  assertEquals(rows(parked).Health, '✖ I2C bus parked, Time not backed up');
+  assertEquals(rows(parked).Calibration, 'IMU and compass not in use (I2C bus parked)');
+  assertMatch(
+    buildReport(input(parked)),
+    /- \*\*I2C bus parked\*\* \(`i2cParked`\): SDA held low\. The bus kept failing/,
+  );
+
+  // A restart caused by firmware 2.6.0 or older, which restarted for a bad bus.
+  assertEquals(
+    rows(unit([], { lastCause: 2, lastStage: 4 })).Restarts,
+    'previous run: i2cStuck (older firmware) while EEPROM',
+  );
+  assertEquals(rows(unit([], { lastCause: 1, lastStage: 7 })).Restarts, 'previous run: watchdog while IMU');
 });

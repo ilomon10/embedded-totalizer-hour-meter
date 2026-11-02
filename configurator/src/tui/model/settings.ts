@@ -1,4 +1,4 @@
-// settings.ts: the 20 device settings as people read them: grouped by what they control, a plain label, the
+// settings.ts: the 22 device settings as people read them: grouped by what they control, a plain label, the
 // factory default, the unit, the choices, and what a change will do. Edits are staged and sent as one command (the
 // device takes all of them or none). Pure; the ranges come from tags.ts SETTINGS (checked against the firmware).
 import { SETTINGS, tags } from '../../tags.ts';
@@ -68,6 +68,18 @@ export const SETTING_UI: readonly SettingUi[] = Object.freeze([
     advice: 'Measure key-on and idle vibration in 5 Live inputs; it suggests a value.',
   },
   {
+    name: 'pulseInput',
+    label: 'Pulse input',
+    group: 'TOTALIZER',
+    choices: [
+      { value: false, label: 'off' },
+      { value: true, label: 'on' },
+    ],
+    factory: true,
+    help: 'Off: the pulse input (GPIO26) is ignored, so the totalizer does not count. It keeps its value.',
+    advice: 'Off when only the engine wire is connected (CH2 unused): nothing on GPIO26 can count.',
+  },
+  {
     name: 'pulseRisingEdge',
     label: 'Count on edge',
     group: 'TOTALIZER',
@@ -93,6 +105,18 @@ export const SETTING_UI: readonly SettingUi[] = Object.freeze([
     group: 'TOTALIZER',
     factory: 1,
     help: 'Scale of the totalizer in units, e.g. pulses per litre. The stored pulse count does not change.',
+  },
+  {
+    name: 'i2c',
+    label: 'I2C modules',
+    group: 'SAVING & CLOCK',
+    choices: [
+      { value: false, label: 'off' },
+      { value: true, label: 'on' },
+    ],
+    factory: true,
+    help: "Off: the RTC, IMU and EEPROM are never used; the hour meter keeps counting and saving in the ESP32's flash, and this PC sets the time after each start.",
+    advice: 'Turn it off on a unit without modules, or while a faulty module is being replaced.',
   },
   {
     name: 'persistIntervalS',
@@ -353,6 +377,20 @@ export function reviewNotes(change: Change, ctx: ReviewContext): ReviewNote[] {
         notes.push({ level: 'warn', text: 'ignored: there is no IMU' });
       }
       break;
+    case 'pulseInput':
+      notes.push({
+        level: 'info',
+        text: to ? 'pulses are counted again' : 'pulses are ignored; the totalizer keeps its value',
+      });
+      break;
+    case 'i2c':
+      notes.push({
+        level: 'info',
+        text: to
+          ? 'the bus starts again; the modules are found within a few seconds'
+          : 'the RTC, IMU and EEPROM stop being used; this PC sets the time',
+      });
+      break;
     case 'output':
       if (ctx.transport === 'serial' && to === 2) {
         notes.push({
@@ -400,4 +438,10 @@ export function crossCheck(after: Record<string, Value>): string | undefined {
 export function changedFromFactory(name: string, v: Value | undefined): boolean {
   const ui = settingUi(name);
   return ui !== undefined && v !== undefined && !sameValue(ui.factory, v);
+}
+
+/** The pulse input is switched off, so the totalizer does not count (false until the settings are read). */
+export function pulseInputOff(settings: Record<string, Value>): boolean {
+  const v = settings.pulseInput;
+  return v !== undefined && Number(v) === 0;
 }

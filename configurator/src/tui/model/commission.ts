@@ -3,7 +3,9 @@
 // or running). Progress is kept per device id (tui/store.ts), so a half-done install can be continued. Pure.
 import { formatFirmware, compareVersions } from '../../releases.ts';
 import { activeFlags, devicesPresent, type DeviceState } from '../state.ts';
+import { i2cIdleReason, i2cLinesText } from './health.ts';
 import { between, type LiveSample } from './history.ts';
+import { pulseInputOff } from './settings.ts';
 
 export type StepId = 'identify' | 'modules' | 'engine' | 'pulse' | 'clock' | 'calibrate' | 'counters' | 'finish';
 
@@ -169,10 +171,15 @@ export function checks(step: StepId, ctx: CheckContext): Check[] {
       const present = presentModules(state);
       if (!present || !known) return [{ label: 'Modules', status: 'wait', detail: 'reading the device status…' }];
       const fitted = progress.fitted ?? present;
+      const idle = i2cIdleReason(flags);
       const list: Check[] = MODULES.filter(([key]) => fitted[key]).map(([key, name]) => ({
         label: name,
         status: present[key] ? 'ok' : 'fail',
-        detail: present[key] ? 'answers' : 'fitted but does not answer: check its wiring',
+        detail: present[key]
+          ? 'answers'
+          : idle
+            ? `does not answer: ${idle}`
+            : 'fitted but does not answer: check its wiring',
       }));
       const fwOk = typeof v.fwVersion === 'number' && v.fwVersion >= 0x00020600;
       const storeOk = (fwOk && !has('flashStoreMissing')) || present.eeprom;
@@ -187,10 +194,17 @@ export function checks(step: StepId, ctx: CheckContext): Check[] {
               ? `ESP32 flash${present.eeprom ? ' + EEPROM' : ''}`
               : 'EEPROM only',
       });
+      // Shown only when the bus is off or parked: a healthy bus needs no line of its own.
+      if (has('i2cParked')) {
+        const lines = typeof v.i2cLines === 'number' ? i2cLinesText(v.i2cLines) : 'cause not read yet';
+        list.push({ label: 'I2C bus', status: 'fail', detail: `parked, ${lines}: see 8 Diagnostics` });
+      } else if (has('i2cOff')) {
+        list.push({ label: 'I2C bus', status: 'ok', detail: 'off in 6 Settings: hour meter only' });
+      }
       list.push({
         label: 'Safe mode',
         status: has('safeMode') ? 'fail' : 'ok',
-        detail: has('safeMode') ? 'on: fix the I2C fault, then reboot (8 Diagnostics)' : 'off',
+        detail: has('safeMode') ? 'on: modules are skipped; reboot the device (8 Diagnostics)' : 'off',
       });
       return list;
     }
@@ -212,6 +226,9 @@ export function checks(step: StepId, ctx: CheckContext): Check[] {
           : { label: 'b) Engine running', status: 'todo', detail: 'start the engine, then press Enter' },
       ];
     case 'pulse': {
+      if (pulseInputOff(state.settings)) {
+        return [{ label: 'Pulse input', status: 'ok', detail: 'off in 6 Settings: nothing to count' }];
+      }
       const count = typeof v.totalCount === 'number' ? v.totalCount : undefined;
       if (progress.pulseFrom === undefined || count === undefined) {
         return [{ label: 'Pulses counted', status: 'todo', detail: 'press Enter, then let product flow' }];
@@ -230,7 +247,11 @@ export function checks(step: StepId, ctx: CheckContext): Check[] {
           ? { label: 'Time', status: 'ok', detail: 'set (UTC)' }
           : { label: 'Time', status: 'fail', detail: 'unknown: press t to set it from this PC' },
         has('rtcMissing')
-          ? { label: 'RTC', status: 'fail', detail: 'no RTC: the time is lost at every restart' }
+          ? {
+              label: 'RTC',
+              status: 'fail',
+              detail: `${i2cIdleReason(flags) ?? 'no RTC'}: the time is lost at every restart`,
+            }
           : has('rtcBatteryLost') || has('timeNotBackedUp')
             ? {
                 label: 'RTC battery',
@@ -241,7 +262,13 @@ export function checks(step: StepId, ctx: CheckContext): Check[] {
       ];
     case 'calibrate': {
       if (!known) return [{ label: 'IMU', status: 'wait', detail: 'reading…' }];
-      if (has('imuMissing')) return [{ label: 'IMU', status: 'ok', detail: 'no IMU fitted: nothing to calibrate' }];
+      if (has('imuMissing')) {
+        if (has('i2cOff')) return [{ label: 'IMU', status: 'ok', detail: 'I2C is off: nothing to calibrate' }];
+        const idle = i2cIdleReason(flags); // parked: the IMU may be fitted, but cannot be reached
+        return idle
+          ? [{ label: 'IMU', status: 'fail', detail: `not reachable: ${idle}. Fix that first` }]
+          : [{ label: 'IMU', status: 'ok', detail: 'no IMU fitted: nothing to calibrate' }];
+      }
       const list: Check[] = [
         has('imuNotCalibrated')
           ? { label: 'Accel + gyro', status: 'todo', detail: 'press Enter to open 7 Calibrate' }

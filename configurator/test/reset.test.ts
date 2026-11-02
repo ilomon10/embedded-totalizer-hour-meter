@@ -5,7 +5,7 @@ import { assert, assertEquals, assertRejects, assertThrows } from './assert.ts';
 import { parseResetArgs } from '../src/commands.ts';
 import { hardResetSteps, isLocalSerial, panicPayload, runSteps, sendPanic, serialConstants } from '../src/reset.ts';
 import type { Step } from '../src/reset.ts';
-import { bootText, resetResultText } from '../src/restart.ts';
+import { bootText, causeText, resetResultText } from '../src/restart.ts';
 import { banner } from '../src/tui/model/banner.ts';
 import { applyMessage, initialState } from '../src/tui/state.ts';
 import { PANIC_ZERO_RUN } from '../src/tags.ts';
@@ -78,6 +78,16 @@ test('boot text names the cause and stage', () => {
     'device restarted (reset reason 1 power-on, last cause: panicSignal while serial / command)',
   );
   assertEquals(resetResultText({ resetReason: 3 }), 'device restarted (reset reason 3 software)');
+});
+
+test('an i2cStuck restart is said to come from older firmware: 2.7.0 parks a failing bus instead', () => {
+  assertEquals(causeText({ lastCause: 2, lastStage: 4 }), 'i2cStuck (older firmware) while EEPROM');
+  assertEquals(causeText({ lastCause: 2 }), 'i2cStuck (older firmware)');
+  assertEquals(
+    bootText({ resetReason: 4, lastCause: 2, lastStage: 3 }),
+    'device restarted: i2cStuck (older firmware) while starting I2C (reset reason 4)',
+  );
+  assertEquals(causeText({ lastCause: 3, lastStage: 0 }), 'usbStalled'); // the other causes are as they were
 });
 
 test('a boot EVENT with a cause is logged as a warning', () => {

@@ -52,7 +52,7 @@ export const COMMANDS = new Set([
   'reset',
 ]);
 
-const SETTING_NAMES = Object.keys(SETTINGS); // all of 110..128, including bluetooth and btPin
+const SETTING_NAMES = Object.keys(SETTINGS); // all of 110..129 and 150..151, including bluetooth and btPin
 const ENUM_SETTINGS: Record<string, Readonly<Record<string, number>>> = { output: OUTPUT, streamMode: STREAM_MODE };
 
 export interface Request {

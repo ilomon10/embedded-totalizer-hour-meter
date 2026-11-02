@@ -4,6 +4,7 @@ import type { ConnState } from '../connection.ts';
 import { compareVersions, findRelease, type FirmwareRelease, formatFirmware } from '../releases.ts';
 import { bootText, causeText } from '../restart.ts';
 import { ACK_STATUS, decodeStatusFlags, EVENT_KIND, MSG, SETTINGS } from '../tags.ts';
+import { i2cLinesText } from './model/health.ts';
 
 export type Value = number | boolean | bigint | Uint8Array;
 export type Level = 'info' | 'ok' | 'warn' | 'error';
@@ -108,14 +109,19 @@ function describeEvent(values: Record<string, Value>): { level: Level; text: str
     const result = ACK_STATUS[values.calibResult as number] ?? String(values.calibResult);
     return { level: result === 'Ok' ? 'ok' : 'error', text: `calibration finished: ${result}` };
   }
+  // Why no module answers, from the status in the EVENT: " · I2C bus parked (SDA held low)" or " · I2C off".
+  const flags = typeof values.statusFlags === 'number' ? decodeStatusFlags(values.statusFlags) : [];
+  const parked = flags.includes('i2cParked');
+  const lines = parked && typeof values.i2cLines === 'number' ? ` (${i2cLinesText(values.i2cLines)})` : '';
+  const bus = parked ? ` · I2C bus parked${lines}` : flags.includes('i2cOff') ? ' · I2C off' : '';
   if (kind === 'devicesChanged') {
     const list = devicesPresent(values.devices as number)
       .map(([n, p]) => `${n} ${p ? 'yes' : 'no'}`)
       .join(', ');
-    return { level: 'warn', text: `modules changed: ${list}` };
+    return { level: 'warn', text: `modules changed: ${list}${bus}` };
   }
   if (kind === 'boot') {
-    return { level: causeText(values) ? 'warn' : 'info', text: bootText(values) };
+    return { level: causeText(values) || parked ? 'warn' : 'info', text: `${bootText(values)}${bus}` };
   }
   return { level: 'info', text: kind };
 }
@@ -148,13 +154,17 @@ export function applyMessage(state: DeviceState, msg: DecodedMessage, nowMs: num
   for (const [name, value] of Object.entries(msg.values)) {
     if (name in SETTINGS) settings[name] = value;
   }
+  const values = { ...state.values, ...msg.values };
+  // i2cLines comes only in a full status (the one with `devices`) and only while the bus is parked: a full status
+  // without it says the bus is not parked, so the lines of an earlier time are stale.
+  if (msg.values.devices !== undefined && msg.values.i2cLines === undefined) delete values.i2cLines;
   let next: DeviceState = {
     ...state,
     connection: state.connection === 'connecting' ? 'connected' : state.connection,
     deviceId: msg.deviceId,
     lastFrameMs: nowMs,
     frames: state.frames + 1,
-    values: { ...state.values, ...msg.values },
+    values,
     settings,
   };
   if (msg.msgType === MSG.EVENT) {

@@ -3,7 +3,7 @@
 import { causeText } from '../../restart.ts';
 import type { UiState } from '../controller.ts';
 import { duration, localClock, utcText } from '../model/format.ts';
-import type { Issue } from '../model/health.ts';
+import { i2cIdleReason, type Issue } from '../model/health.ts';
 import { screenRef } from '../model/nav.ts';
 import { activeFlags, devicesPresent, type DeviceState } from '../state.ts';
 import { C, MARK } from '../theme.ts';
@@ -31,12 +31,17 @@ export function clockSegs(ui: UiState, nowMs: number, autoTimeSync: boolean): Se
 
 const MODULE_NAMES = ['EEPROM', 'RTC', 'IMU', 'compass'];
 
-export function moduleSegs(values: DeviceState['values']): Seg[] {
+/** The modules that answer; when the bus is switched off or parked, none do, and it says why. */
+export function moduleSegs(values: DeviceState['values'], flags: readonly string[] = []): Seg[] {
   if (typeof values.devices !== 'number') return [dim('reading…')];
-  return devicesPresent(values.devices).flatMap(([, present], i) => [
-    present ? ok(`${MARK.ok} ${MODULE_NAMES[i]}`) : dim(`${MARK.off} ${MODULE_NAMES[i]}`),
-    '   ',
-  ]);
+  const idle = i2cIdleReason(flags);
+  return [
+    ...devicesPresent(values.devices).flatMap(([, present], i) => [
+      present ? ok(`${MARK.ok} ${MODULE_NAMES[i]}`) : dim(`${MARK.off} ${MODULE_NAMES[i]}`),
+      '   ',
+    ]),
+    idle ? dim(`· ${idle}`) : '',
+  ];
 }
 
 const SETTINGS_SOURCE = ['factory defaults', 'EEPROM copy A', 'EEPROM copy B', 'flash copy A', 'flash copy B'];

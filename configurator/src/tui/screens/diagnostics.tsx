@@ -1,11 +1,12 @@
 // diagnostics.tsx: 8 Diagnostics, for technicians. Every problem flag in plain words with its fix (`a` lists all
-// 20 checks), the restarts, where the values are kept, bus and link counters, and the recovery tools, each behind
-// a dialog that says what it does.
+// the checks), the restarts, safe mode and the I2C bus (parked, with the lines it found held low, or switched off),
+// where the values are kept, bus and link counters, and the recovery tools, each behind a dialog that says what
+// it does.
 import { useEffect, useState } from 'react';
 
 import { causeText } from '../../restart.ts';
 import { duration } from '../model/format.ts';
-import { ALL_FLAGS, issueFor, issues, okAreas } from '../model/health.ts';
+import { ALL_FLAGS, i2cLinesText, issueFor, issues, okAreas } from '../model/health.ts';
 import { activeFlags } from '../state.ts';
 import { charOf, takeIntent, useDialogKeys, useScreenKeys, useShell, useUi } from '../shell-context.tsx';
 import { C, MARK } from '../theme.ts';
@@ -70,7 +71,11 @@ export function DiagnosticsScreen() {
   const d = ui.device;
   const v = d.values;
   const flags = activeFlags(d);
-  const ctx = { fwVersion: v.fwVersion as number | undefined, autoTimeSync: shell.autoTimeSync };
+  const ctx = {
+    fwVersion: v.fwVersion as number | undefined,
+    autoTimeSync: shell.autoTimeSync,
+    i2cLines: v.i2cLines as number | undefined,
+  };
   const list = issues(flags, ctx);
   const problemList = list.filter((i) => i.severity !== 'info');
   const wired = shell.transport === 'serial' || shell.transport === 'tcp';
@@ -104,7 +109,8 @@ export function DiagnosticsScreen() {
     dim(why[kind] ? `not here: ${why[kind]}` : what),
   ];
   return (
-    <box style={{ flexDirection: 'column' }}>
+    // flexShrink 0: on a screen shorter than this (80×24 with two problems) the bottom is cut off, not printed over.
+    <box style={{ flexDirection: 'column', flexShrink: 0 }}>
       <Heading
         title="HEALTH"
         right={[
@@ -198,6 +204,20 @@ export function DiagnosticsScreen() {
           ),
         ]}
       />
+      {flags.includes('i2cParked') ? (
+        <Line
+          segs={[
+            ''.padEnd(16),
+            {
+              t: `${MARK.error} bus parked: ${typeof v.i2cLines === 'number' ? i2cLinesText(v.i2cLines) : 'cause not read yet'}`,
+              fg: C.red,
+            },
+            dim(' · retried after 10 s … 5 min'),
+          ]}
+        />
+      ) : flags.includes('i2cOff') ? (
+        <Line segs={[''.padEnd(16), dim(`${MARK.off} I2C off in 6 Settings: hour meter only`)]} />
+      ) : null}
       <Blank />
       <Heading title="RECOVERY" right={[dim('each one says what it does and asks first')]} />
       <Line segs={recovery('b', 'reboot', 'Reboot', 'saves the counters, then restarts')} />

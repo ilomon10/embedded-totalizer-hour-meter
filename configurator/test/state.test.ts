@@ -58,6 +58,58 @@ test('events are logged in plain language', () => {
   assertMatch(s.log[1].text, /Failed/);
 });
 
+test('the I2C lines held low belong to the parked bus: a full status without them clears the old ones', () => {
+  const frame = (msgType: number, values: Record<string, number>) => ({
+    msgType,
+    seq: 1,
+    deviceId: 1,
+    timestamp: 0,
+    values,
+  });
+  let s = initialState('/dev/ttyUSB0', false);
+  // A full status while the bus is parked carries tag 64; a TELEMETRY frame never does.
+  s = applyMessage(s, frame(4, { statusFlags: 1 << 20, devices: 0, i2cLines: 1 }), 1);
+  s = applyMessage(s, frame(1, { statusFlags: 1 << 20, runHours: 5 }), 2);
+  assertEquals(s.values.i2cLines, 1);
+  // The bus is back: the next full status has no tag 64, so the old lines are gone.
+  s = applyMessage(s, frame(4, { statusFlags: 0, devices: 0b0111 }), 3);
+  assertEquals(s.values.i2cLines, undefined);
+  assertEquals('i2cLines' in s.values, false);
+  // Parked again: the lines it finds now.
+  s = applyMessage(s, frame(4, { statusFlags: 1 << 20, devices: 0, i2cLines: 0 }), 4);
+  assertEquals(s.values.i2cLines, 0);
+});
+
+test('events say why no module answers: a parked bus with its lines, or I2C off', () => {
+  const event = (kind: number, values: Record<string, number>) => ({
+    msgType: 2,
+    seq: 1,
+    deviceId: 1,
+    timestamp: 0,
+    values: { eventKind: kind, ...values },
+  });
+  const s0 = initialState('x', true);
+  const parked = applyMessage(s0, event(3, { devices: 0, statusFlags: 1 << 20, i2cLines: 3 }), 1);
+  assertEquals(parked.log[0], {
+    atMs: 1,
+    level: 'warn',
+    text: 'modules changed: EEPROM no, RTC no, IMU no, MAG no · I2C bus parked (SDA and SCL held low)',
+  });
+  // The lines may not have come yet.
+  assertMatch(applyMessage(s0, event(3, { devices: 0, statusFlags: 1 << 20 }), 1).log[0].text, /no · I2C bus parked$/);
+  assertMatch(applyMessage(s0, event(3, { devices: 0, statusFlags: 1 << 21 }), 1).log[0].text, /no · I2C off$/);
+  // A boot with the bus parked is worth a warning; with I2C off it is only a boot.
+  const boot = (statusFlags: number) => applyMessage(s0, event(1, { resetReason: 1, statusFlags }), 1).log[0];
+  assertEquals(boot(1 << 20), { atMs: 1, level: 'warn', text: 'device booted (power-on) · I2C bus parked' });
+  assertEquals(boot(1 << 21), { atMs: 1, level: 'info', text: 'device booted (power-on) · I2C off' });
+  assertEquals(boot(0).text, 'device booted (power-on)');
+  // No change to the plain events.
+  assertMatch(
+    applyMessage(s0, event(3, { devices: 0b0101, statusFlags: 0 }), 1).log[0].text,
+    /EEPROM yes, RTC no, IMU yes, MAG no$/,
+  );
+});
+
 test('helpers', () => {
   assertEquals(formatFirmware(0x00020200), '2.2.0');
   assertEquals(

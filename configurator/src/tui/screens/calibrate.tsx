@@ -4,6 +4,7 @@
 import { useEffect } from 'react';
 
 import { num, progressBar } from '../model/format.ts';
+import { i2cIdleReason } from '../model/health.ts';
 import { activeFlags } from '../state.ts';
 import { charOf, takeIntent, useNow, useRefState, useScreenKeys, useShell, useUi } from '../shell-context.tsx';
 import { C, MARK } from '../theme.ts';
@@ -20,6 +21,7 @@ export function CalibrateScreen() {
   const v = ui.device.values;
   const flags = activeFlags(ui.device);
   const known = v.statusFlags !== undefined;
+  const idle = i2cIdleReason(flags); // the bus is off or parked: no module answers, fitted or not
   const imu = known && !flags.includes('imuMissing');
   const mag = known && imu && !flags.includes('magMissing');
   const level =
@@ -53,7 +55,7 @@ export function CalibrateScreen() {
     !known
       ? dim('reading…')
       : missing
-        ? dim('not fitted')
+        ? dim(idle ? 'not in use' : 'not fitted')
         : flags.includes(notCal)
           ? { t: `${MARK.error} not calibrated`, fg: C.red }
           : ok(`${MARK.ok} calibrated`);
@@ -152,7 +154,13 @@ export function CalibrateScreen() {
       <Blank />
       {title(2, 'COMPASS (magnetometer)', '20 s')}
       {!mag && known ? (
-        <Line segs={[dim('   Not available: no compass fitted (normal on MPU-6500 boards).')]} />
+        <Line
+          segs={[
+            dim(
+              idle ? `   Not available: ${idle}.` : '   Not available: no compass fitted (normal on MPU-6500 boards).',
+            ),
+          ]}
+        />
       ) : (
         <>
           <Line segs={[dim('   Turn the board slowly through every direction, away from steel.')]} />

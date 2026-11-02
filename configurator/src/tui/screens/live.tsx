@@ -18,6 +18,7 @@ import {
   plotSeries,
   timeAxis,
 } from '../model/plot.ts';
+import { pulseInputOff } from '../model/settings.ts';
 import { activeFlags } from '../state.ts';
 import { charOf, useNow, useScreenKeys, useShell, useUi } from '../shell-context.tsx';
 import { C, MARK } from '../theme.ts';
@@ -239,12 +240,21 @@ export function LiveScreen() {
     return ' '.repeat(left) + text + ' '.repeat(Math.max(0, GAUGE.slot - n - left));
   };
 
-  const pulseLines: Seg[][] = [
-    [`Total   ${String(v.totalCount ?? '–')} pulses`],
-    [`        = ${num(v.totalUnits)} units`],
-    ['Rate    ', rate === undefined ? dim('–') : `${rate.toFixed(1)} pulses/s`],
-    [dim(pulsesSince === undefined ? '' : `+${pulsesSince} pulses since ${clock(since)}`)],
-  ];
+  // With the pulse input off nothing counts, so there is nothing to watch: say what it holds and where to turn it on.
+  const pulseOff = pulseInputOff(s);
+  const pulseLines: Seg[][] = pulseOff
+    ? [
+        ['Status  ', { t: `${MARK.off} switched off`, fg: C.fg }],
+        [dim('        GPIO26 is ignored')],
+        [dim(`        total kept: ${String(v.totalCount ?? '–')} pulses`)],
+        [dim('        turn on in 6 Settings')],
+      ]
+    : [
+        [`Total   ${String(v.totalCount ?? '–')} pulses`],
+        [`        = ${num(v.totalUnits)} units`],
+        ['Rate    ', rate === undefined ? dim('–') : `${rate.toFixed(1)} pulses/s`],
+        [dim(pulsesSince === undefined ? '' : `+${pulsesSince} pulses since ${clock(since)}`)],
+      ];
 
   return (
     <box style={{ flexDirection: 'column' }}>
@@ -299,10 +309,14 @@ export function LiveScreen() {
         <>
           <Heading title="PULSE INPUT" />
           <Line
-            segs={[
-              `${String(v.totalCount ?? '–')} pulses = ${num(v.totalUnits)} units · `,
-              rate === undefined ? dim('–') : `${rate.toFixed(1)} pulses/s`,
-            ]}
+            segs={
+              pulseOff
+                ? [`${MARK.off} switched off: GPIO26 is ignored, total kept ${String(v.totalCount ?? '–')} pulses`]
+                : [
+                    `${String(v.totalCount ?? '–')} pulses = ${num(v.totalUnits)} units · `,
+                    rate === undefined ? dim('–') : `${rate.toFixed(1)} pulses/s`,
+                  ]
+            }
           />
           <Line segs={pulseLines[3]} />
           <Line segs={[bold('ATTITUDE  ', C.dim), ...attitudeText]} />

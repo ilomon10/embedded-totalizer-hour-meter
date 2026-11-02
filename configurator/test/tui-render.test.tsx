@@ -2,6 +2,7 @@
 // menu, a screen change, a dialog that refuses an empty value, the narrow layout, the connect screen, and a firmware
 // update's checklist through test/fake-rom.ts.
 import { test } from 'bun:test';
+import { EventEmitter } from 'node:events';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -15,11 +16,12 @@ import { Connection } from '../src/connection.ts';
 import { createDemoLink } from '../src/demo.ts';
 import { DeviceClient } from '../src/device.ts';
 import { OP } from '../src/esp-rom.ts';
-import { TuiController } from '../src/tui/controller.ts';
+import { type Client, type Link, TuiController } from '../src/tui/controller.ts';
 import { type FirmwareActions, firmwareActions } from '../src/tui/firmware-actions.ts';
 import { ConnectScreen } from '../src/tui/screens/connect.tsx';
 import { SCREEN_HELP, Shell } from '../src/tui/shell.tsx';
 import { initialState } from '../src/tui/state.ts';
+import { MSG, STATUS_FLAGS } from '../src/tags.ts';
 
 // The screens update from a live device, outside React's act(): let React schedule those updates as it does in the
 // app (testRender turns act mode on).
@@ -74,7 +76,7 @@ async function demoShell(width: number, height: number) {
       onSwitchPort={() => {}}
       onQuit={() => {}}
       autoTimeSync
-      toolVersion="2.0.0"
+      toolVersion="2.1.0"
     />,
     { width, height },
   );
@@ -92,7 +94,7 @@ test('the shell at 100×30: header, grouped menu, Overview with the counters and
   const s = await demoShell(100, 30);
   try {
     const frame = await frameWith(s, (f) => f.includes('1250.') && f.includes('NEEDS ATTENTION'));
-    assertMatch(frame, /HOUR METER │ 1A2B3C4D │ fw 2\.6\.0/);
+    assertMatch(frame, /HOUR METER │ 1A2B3C4D │ fw \d+\.\d+\.\d+/);
     for (const text of [
       'MAINTAIN',
       'SET UP',
@@ -276,7 +278,7 @@ test('the connect screen lists the ports and marks an ESP32 board', async () => 
   ];
   const s = await testRender(
     <ConnectScreen
-      version="2.0.0"
+      version="2.1.0"
       list={() => Promise.resolve(ports)}
       open={() => Promise.reject(new Error('not in this test'))}
       problem={() => Promise.resolve('')}
@@ -290,9 +292,158 @@ test('the connect screen lists the ports and marks an ESP32 board', async () => 
     const frame = await frameWith(s, (f) => f.includes('/dev/ttyUSB0'));
     assertMatch(frame, /▸ \/dev\/ttyUSB0\s+Silicon Labs CP2102 .* · ESP32 board/);
     assert(frame.includes('Demo device'));
-    assert(frame.includes('configurator 2.0.0'));
+    assert(frame.includes('configurator 2.1.0'));
   } finally {
     s.renderer.destroy();
+  }
+});
+
+/** The shell on a fake device that sends only the frames the test hands to `send`: for the states the demo device
+ * does not show (a parked I2C bus, I2C off, the pulse input off). Its commands are all answered Ok. */
+async function fakeShell(width: number, height: number) {
+  const client = new EventEmitter() as EventEmitter & Client;
+  client.request = () =>
+    Promise.resolve({ msgType: MSG.ACK, seq: 1, deviceId: 1, timestamp: 0, values: { ackStatus: 0 } });
+  const link = Object.assign(new EventEmitter(), {
+    client,
+    state: { kind: 'connected' as const },
+    port: '/dev/ttyUSB0',
+    demo: false,
+  }) as unknown as Link;
+  const cache = await tempCache();
+  const ctrl = new TuiController({ conn: link, initial: initialState('/dev/ttyUSB0', false), firmware: offline });
+  const setup = await testRender(
+    <Shell
+      ctrl={ctrl}
+      transport="serial"
+      canSwitchPort={false}
+      onSwitchPort={() => {}}
+      onQuit={() => {}}
+      autoTimeSync
+      toolVersion="2.1.0"
+    />,
+    { width, height },
+  );
+  liveUpdates();
+  ctrl.start(); // after liveUpdates(): the first reads of the device update the screen outside act()
+  /** One frame from the device; `flags` are status flags by name. */
+  const send = (values: Record<string, number | boolean> = {}, flags: string[] = []) =>
+    client.emit('frame', {
+      msgType: MSG.TELEMETRY,
+      seq: 1,
+      deviceId: 1,
+      timestamp: 0,
+      values: {
+        runHours: 12.5,
+        runSeconds: 45_000,
+        totalCount: 15_017,
+        totalUnits: 15_017,
+        alternator: false,
+        altInput: false,
+        timeValid: true,
+        fwVersion: 0x00020700,
+        statusFlags: flags.reduce((n, f) => n | (1 << STATUS_FLAGS.indexOf(f)), 0),
+        ...values,
+      },
+    });
+  const close = async () => {
+    setup.renderer.destroy();
+    ctrl.stop();
+    await cache.restore();
+  };
+  return { ...setup, send, close };
+}
+
+/** What a unit reports while no module answers: each one missing, and the time kept in RAM only. */
+const NO_MODULES = ['eepromMissing', 'rtcMissing', 'imuMissing', 'magMissing', 'imuNotCalibrated', 'timeNotBackedUp'];
+
+test('a parked I2C bus: one fault on the Overview and in Diagnostics, with the lines it found held low', async () => {
+  const s = await fakeShell(100, 30);
+  try {
+    s.send({ devices: 0, i2cLines: 1 }, [...NO_MODULES, 'i2cParked', 'i2cErrors']);
+    const overview = await frameWith(s, (f) => f.includes('I2C bus parked'));
+    assertMatch(overview, /✖ I2C bus parked\s+SDA held low\. .*→ 8 Diagnostics/);
+    assert(overview.includes('▲ Time not backed up'), 'the time is still worth a warning');
+    for (const noise of ['No RTC', 'No EEPROM', 'IMU not calibrated', 'I2C bus errors']) {
+      assert(!overview.includes(noise), `"${noise}" is no problem of its own while the bus is parked`);
+    }
+    assertMatch(overview, /Modules\s+○ EEPROM\s+○ RTC\s+○ IMU\s+○ compass\s+· I2C bus parked/);
+    assertMatch(overview, /NEEDS ATTENTION\s+2 /);
+    await s.mockInput.typeText('8');
+    const diagnostics = await frameWith(s, (f) => f.includes('RESTARTS') && f.includes('bus parked'));
+    assertMatch(diagnostics, /✖ bus parked: SDA held low · retried after 10 s … 5 min/);
+    assert(diagnostics.includes('Unplug the modules one at a time'), 'the fix');
+    assert(diagnostics.includes('0x69'), 'the MPU9250 address');
+    assert(diagnostics.includes('▲ Time not backed up'), 'the time is a problem of its own');
+    // The lines can change at the next full status; and the bus can come back.
+    s.send({ devices: 0, i2cLines: 0 }, [...NO_MODULES, 'i2cParked']);
+    await frameWith(s, (f) => f.includes('bus parked: both lines free but transfers time out'));
+    s.send({ devices: 0b0111 }, ['magMissing']);
+    await frameWith(s, (f) => !f.includes('bus parked') && f.includes('I2C bus'));
+  } finally {
+    await s.close();
+  }
+});
+
+test('8 Diagnostics at 80×24 with a parked bus: the bottom is cut off, nothing is printed over', async () => {
+  const s = await fakeShell(80, 24);
+  try {
+    s.send({ devices: 0, i2cLines: 0 }, [...NO_MODULES, 'i2cParked', 'i2cErrors']);
+    await frameWith(s, (f) => f.includes('I2C bus parked'));
+    await s.mockInput.typeText('8');
+    const frame = await frameWith(s, (f) => f.includes('RESTARTS') && f.includes('BUS & LINK'));
+    assertMatch(frame, /✖ I2C bus parked\s+Both lines free but transfers ti… → 8 Diagnostics/);
+    assertMatch(frame, /▲ Time not backed up\s+The time is kept in RAM only and… → 8 Diagnostics/);
+    assertMatch(frame, /Safe mode\s+off\s+│/);
+    assertMatch(frame, /✖ bus parked: both lines free but transfers time out/);
+  } finally {
+    await s.close();
+  }
+});
+
+test('I2C off and the pulse input off: the screens say so, and the missing modules are no problem', async () => {
+  const s = await fakeShell(100, 30);
+  try {
+    s.send({ devices: 0, i2c: false, pulseInput: false }, [...NO_MODULES, 'i2cOff']);
+    const overview = await frameWith(s, (f) => f.includes('15017 pulses kept'));
+    assertMatch(overview, /TOTALIZER\s+ENGINE\s*│\n.*\s+off\s+○ stopped/); // the value column says "off", not "N units"
+    assert(overview.includes('15017 pulses kept'), 'the value it holds');
+    assert(!overview.includes('15017.00 units'), 'not shown as counting');
+    assertMatch(overview, /Modules\s+○ EEPROM\s+○ RTC\s+○ IMU\s+○ compass\s+· I2C off/);
+    assert(!overview.includes('No RTC'), 'I2C off is no fault');
+    assertMatch(overview, /▲ Time not backed up/);
+    assertMatch(overview, /NEEDS ATTENTION\s+1 /);
+
+    await s.mockInput.typeText('2');
+    await frameWith(s, (f) => f.includes('15017 pulses · pulse input off'));
+    await s.mockInput.typeText('5');
+    const live = await frameWith(s, (f) => f.includes('PULSE INPUT') && f.includes('GPIO26 is ignored'));
+    assertMatch(live, /Status\s+○ switched off/);
+    assert(live.includes('total kept: 15017 pulses') && live.includes('turn on in 6 Settings'));
+    assert(!live.includes('Rate'), 'no rate to show');
+    await s.mockInput.typeText('8');
+    const diagnostics = await frameWith(s, (f) => f.includes('I2C off in 6 Settings: hour meter only'));
+    assert(!diagnostics.includes('bus parked'));
+    await s.mockInput.typeText('1');
+    s.send({ pulseInput: true, i2c: true }, ['magMissing']); // both on again
+    const back = await frameWith(s, (f) => f.includes('15017.00 units'));
+    assert(!back.includes('pulses kept') && !back.includes('· I2C off'));
+  } finally {
+    await s.close();
+  }
+});
+
+test('6 Settings lists the I2C modules and the pulse input, on by default', async () => {
+  const s = await fakeShell(100, 30);
+  try {
+    s.send({ i2c: true, pulseInput: false }, ['magMissing']);
+    await frameWith(s, (f) => f.includes('12.50 h'));
+    await s.mockInput.typeText('6');
+    const settings = await frameWith(s, (f) => f.includes('TOTALIZER') && f.includes('SAVING & CLOCK'));
+    assertMatch(settings, /Pulse input\s+off\s+default on/);
+    assertMatch(settings, /I2C modules\s+on\s+default on/);
+  } finally {
+    await s.close();
   }
 });
 
@@ -318,7 +469,7 @@ async function boardShell(rom: FakeRomOptions = {}) {
       onSwitchPort={() => {}}
       onQuit={() => {}}
       autoTimeSync
-      toolVersion="2.0.0"
+      toolVersion="2.1.0"
     />,
     { width: 100, height: 30 },
   );
