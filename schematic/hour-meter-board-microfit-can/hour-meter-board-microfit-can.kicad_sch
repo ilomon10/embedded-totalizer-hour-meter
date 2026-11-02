@@ -1,0 +1,1916 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "59d580f2-180f-4c52-8215-2508c8a389e3")
+	(paper "A2")
+	(lib_symbols)
+	(text "HOUR METER main board, Micro-Fit harness + CAN + RS232 variant (chip-down, JLCPCB in-stock parts)\nOne sheet per module: Power input, Opto inputs (817 2ch), RS485 (THVD2410), ESP32 core + USB (DevKitC), RTC (DS3231), EEPROM (AT24C256, SOIC-8),\nIMU (MPU-6500 + LIS3MDL), Ports (GPS, Qwiic, +5 V out, LEDs), IO (AIN1, DOUT1), CAN (TJA1051T/3), RS232 (MAX13223E) and Harness (J1 2x8, every field wire).\nSheet pins join by net name (labels at every pin). +5V, +3V3 and GND are global power symbols.\nThe vehicle supply (9-30 V) enters on J1 and feeds the on-board LM2596 5 V stage on the Power input sheet.\nReference designators are numbered per sheet: 1xx power, 2xx core, 3xx opto, 4xx RTC, 5xx EEPROM, 6xx IMU, 7xx RS485, 8xx ports, 9xx IO, 10xx CAN, 11xx RS232, J1 harness."
+		(at 40 14 0)
+		(effects
+			(font
+				(size 1.8 1.8)
+			)
+			(justify left top)
+		)
+		(uuid "921dad1a-0d39-422e-bfcb-b5561974503d")
+	)
+	(label "GPS_PPS"
+		(at 310 197.7 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "1c8d657f-9f88-4029-a587-ffd902640131")
+	)
+	(label "DIN1_IN_N"
+		(at 110 102.54 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "2709fc1f-b6a3-4c5d-9bb0-ba181b7e9c20")
+	)
+	(label "I2C_SDA"
+		(at 310 45.08 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "27856546-f639-405b-a182-85bac9f42b2e")
+	)
+	(label "RS485_RX"
+		(at 175 88.26 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "34e372e0-47f1-4c1e-9496-93d049e5c386")
+	)
+	(label "DIN2_IN_N"
+		(at 110 105.08 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "41ef21b6-0771-4403-9f1f-9eaaee5981dd")
+	)
+	(label "GPS_TXD"
+		(at 175 90.8 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "429b4f54-dd02-41cc-b811-6fd6339024c3")
+	)
+	(label "EXP_IO18"
+		(at 310 212.94 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "48703b21-b180-4934-acf0-c9330b0aebc2")
+	)
+	(label "I2C_SCL"
+		(at 310 202.78 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "53ea68d0-8dda-4854-802f-6ec6be5942e6")
+	)
+	(label "EXP_IO18"
+		(at 175 60.32 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "582d39b0-2d3b-43b5-aaf3-a9ca416fecec")
+	)
+	(label "UART2_RX"
+		(at 175 55.24 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "607a9465-3dd3-4435-97f7-0e92bdf4736b")
+	)
+	(label "EXP_IO5"
+		(at 310 205.32 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "620de15f-a010-4cc7-b6fa-7e0af671eb6e")
+	)
+	(label "GPS_RXD"
+		(at 175 80.64 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "66a001e1-a1dc-4080-8efc-02aff673b1b5")
+	)
+	(label "I2C_SCL"
+		(at 110 217.62 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "6842d008-e561-4320-81fa-acd2885ce52b")
+	)
+	(label "IMU_INT"
+		(at 310 142.62 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "6a75852d-663e-4adb-afde-aa72436010d2")
+	)
+	(label "RS485_TX"
+		(at 110 167.62 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "6c4a232f-5cb8-4e93-8d1c-f0ad5fdd46a3")
+	)
+	(label "EXP_IO19"
+		(at 310 207.86 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "6ed39c24-5cdc-454b-93b1-caeefbce3f8b")
+	)
+	(label "RTC_INT"
+		(at 175 47.62 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "796e7962-c4d2-4bde-872d-45d9ce8394ee")
+	)
+	(label "DIN2_IN_N"
+		(at 175 75.56 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "82a3ce3c-cb8a-4270-ab9a-49f772c82f35")
+	)
+	(label "RS485_TX"
+		(at 175 42.54 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "86316527-fbfd-47ea-96d5-a39808eba995")
+	)
+	(label "IMU_INT"
+		(at 175 50.16 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "86d8a5e7-ff93-47fe-b107-9d66128db43b")
+	)
+	(label "VIN_SENSE"
+		(at 110 42.54 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "96f65537-7caf-4237-abd3-321fd7cf967b")
+	)
+	(label "I2C_SDA"
+		(at 175 65.4 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "9c625a8a-994d-496f-a9ae-d648ff32e94f")
+	)
+	(label "DOUT1_CTRL"
+		(at 110 212.54 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a1364f8d-2ef2-4305-995f-42b9f8b42add")
+	)
+	(label "UART2_TX"
+		(at 175 57.78 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "a1795d03-4e04-48ba-8726-543692b70803")
+	)
+	(label "VIN_SENSE"
+		(at 175 85.72 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "a4b5fc32-dfbb-4cbe-8c5b-cf485a5f2161")
+	)
+	(label "DIN1_IN_N"
+		(at 175 78.1 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "a5b5572b-bbdc-49cf-8199-92316562dde1")
+	)
+	(label "I2C_SCL"
+		(at 175 67.94 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "a87980e8-346e-4494-b0cd-39ecd4d3f88d")
+	)
+	(label "I2C_SCL"
+		(at 310 42.54 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "ac0a679d-f516-4c2f-8401-2227de069adc")
+	)
+	(label "EXP_IO19"
+		(at 175 62.86 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "b022efa1-7f19-4904-a5a6-f000e537efb7")
+	)
+	(label "GPS_TXD"
+		(at 310 192.62 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "b3db86bd-88de-4ed6-a472-dfe1d53a80e5")
+	)
+	(label "I2C_SDA"
+		(at 110 215.08 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b857cf47-236e-46c7-be42-98ef3ba37ae4")
+	)
+	(label "RTC_INT"
+		(at 310 47.62 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "ba000087-1b3e-4005-ac27-e5d3750d9188")
+	)
+	(label "I2C_SCL"
+		(at 310 137.54 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "c3714148-478d-4d70-b408-4f91bf24c9c6")
+	)
+	(label "I2C_SDA"
+		(at 310 200.24 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "c3e79cdd-5ce0-45f3-9b1e-04c6941a9c8e")
+	)
+	(label "I2C_SCL"
+		(at 310 95.08 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "cd38d5ef-c921-4354-ba19-35aeba674ca1")
+	)
+	(label "GPS_PPS"
+		(at 175 93.34 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "df3f1871-f6e0-4e98-9dd9-50dc914c79f1")
+	)
+	(label "RS485_DE"
+		(at 110 165.08 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "df62d4f1-2f32-4d22-8df3-c5b9470e7662")
+	)
+	(label "RS485_DE"
+		(at 175 73.02 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "dfce459a-a1de-43fc-81cd-029eb180ebe8")
+	)
+	(label "RS485_RX"
+		(at 110 162.54 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ea3450eb-523a-4fa2-9334-cef1b5914641")
+	)
+	(label "EXP_IO5"
+		(at 175 45.08 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "ea9ad486-5576-4a62-86d2-a69893b2f92d")
+	)
+	(label "I2C_SDA"
+		(at 310 92.54 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "edab3931-2cb1-4ad2-8b11-a45674606a49")
+	)
+	(label "GPS_RXD"
+		(at 310 195.16 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "eea2b3ac-c162-4dbe-9d2c-06e84cac90ed")
+	)
+	(label "I2C_SDA"
+		(at 310 140.08 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "f3f5cb04-3476-4a6b-84e1-b359c03f00da")
+	)
+	(label "DOUT1_CTRL"
+		(at 175 70.48 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "f4e8c94f-edf7-46fd-b75f-83a3fc11556a")
+	)
+	(label "VIN_IN"
+		(at 40 42.54 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "d3a83d80-79a6-44de-bd7a-b362e7fe57cb")
+	)
+	(label "DIN1_RAW"
+		(at 40 102.54 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "2b477b99-8cc8-4664-a58f-42efe72b60ce")
+	)
+	(label "DIN2_RAW"
+		(at 40 105.08 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "908f253c-7ac7-4dc7-9c93-5a50488f8883")
+	)
+	(label "VEH_GND"
+		(at 40 107.62 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "f3ac079a-1260-4935-a343-a5b171fac41a")
+	)
+	(label "RS485_A"
+		(at 40 162.54 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "de700b82-28bf-43ba-a25e-faf9ccd54dfc")
+	)
+	(label "RS485_B"
+		(at 40 165.08 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "82be06ab-1238-470f-b28d-20f0422504b8")
+	)
+	(label "AIN1_RAW"
+		(at 40 212.54 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "a8a980a0-d8ba-4267-beb7-03e24d1af904")
+	)
+	(label "DOUT1"
+		(at 40 215.08 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "6f3c425d-7f6c-4527-b374-ac3b15dff79f")
+	)
+	(label "RS485_A"
+		(at 110 252.54 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "d4bd8f48-978f-41e4-a865-8f3424c9d3d6")
+	)
+	(label "RS485_B"
+		(at 110 260.16 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "4b457d95-4eb8-4816-a501-f052f544b7ca")
+	)
+	(label "VEH_GND"
+		(at 110 262.7 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "77fb7e2d-f0e4-437f-82f3-0c3d922249c6")
+	)
+	(label "VIN_IN"
+		(at 110 265.24 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9dc25032-e4bd-49e8-ba2d-eddcdfa5ee98")
+	)
+	(label "AIN1_RAW"
+		(at 110 267.78 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "7995deec-ab54-4cc4-957d-92f920d7d654")
+	)
+	(label "DOUT1"
+		(at 110 270.32 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "89c038a4-546e-45b8-8418-a8a8c6fff1ca")
+	)
+	(label "DIN1_RAW"
+		(at 110 275.4 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "bc00852f-4816-4311-9e9c-490ddf54fb0c")
+	)
+	(label "DIN2_RAW"
+		(at 110 277.94 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "7df313a3-3c87-4e2d-a22a-7f11ca6b0bfa")
+	)
+	(label "CAN_RX"
+		(at 175 52.7 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "69060b2d-2fc0-4301-931b-6255b7390bfe")
+	)
+	(label "CAN_TX"
+		(at 175 83.18 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "4ebbab9e-850d-4186-9519-c237a69b20b2")
+	)
+	(label "SENSOR_5V"
+		(at 380 187.54 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "adb706de-30b0-42bf-bdc4-768419caae19")
+	)
+	(label "RS232_RXD"
+		(at 110 280.48 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "57a874e6-64f5-4d20-bbb4-20c0d6c2cb4f")
+	)
+	(label "RS232_TXD"
+		(at 110 283.02 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "baed8265-ed88-441f-a24f-7f0c79522323")
+	)
+	(label "SENSOR_5V"
+		(at 110 285.56 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "65ceef36-4bc5-48b7-87cf-11b350052f44")
+	)
+	(label "CAN_H"
+		(at 110 288.1 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "95458371-2173-4a17-b716-8be1f94b6baa")
+	)
+	(label "CAN_L"
+		(at 110 290.64 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b80a6154-dd02-4d7d-adcb-bddbbe28a5a5")
+	)
+	(label "CAN_TX"
+		(at 175 272.54 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "9eac8a9a-2b8d-4c70-9cf4-7f7cb5a20a8d")
+	)
+	(label "CAN_RX"
+		(at 175 275.08 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "e1ced863-0790-4a5b-85e7-72b0aa0f7688")
+	)
+	(label "CAN_H"
+		(at 175 277.62 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "9c410a91-c03b-4222-8c5e-18c8148a4d26")
+	)
+	(label "CAN_L"
+		(at 175 280.16 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "405e59ec-baa4-49c0-8992-f5b9e87169c7")
+	)
+	(label "UART2_TX"
+		(at 310 272.54 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "a6245669-3b75-4ead-9503-dc23390f1073")
+	)
+	(label "UART2_RX"
+		(at 310 275.08 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "81a21768-e5f9-426a-86e8-24d5868c5da2")
+	)
+	(label "RS232_TXD"
+		(at 310 277.62 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "6ab17831-a856-4571-9354-725b5834a423")
+	)
+	(label "RS232_RXD"
+		(at 310 280.16 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "49e084ba-49ac-4d40-b3b6-43412764b73a")
+	)
+	(sheet
+		(at 310 135)
+		(size 70 30)
+		(fields_autoplaced)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "00a030f7-5f36-4da4-aa44-fe32bff03b1e")
+		(property "Sheetname" "IMU (MPU9250 module -> MPU-6500 + LIS3MDL)"
+			(at 310 134.365 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "imu.kicad_sch"
+			(at 310 165.635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "I2C_SCL" bidirectional
+			(at 310 137.54 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "566bc20b-a555-435d-ba5f-f302ecaf3122")
+		)
+		(pin "I2C_SDA" bidirectional
+			(at 310 140.08 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "71892b1d-f3e1-47aa-a9f0-8056297d1d38")
+		)
+		(pin "IMU_INT" output
+			(at 310 142.62 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "359e6461-68fd-4866-bf9c-6ec2c97530dd")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3"
+					(page "8")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 40 210)
+		(size 70 30)
+		(fields_autoplaced)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "166e37c0-a201-49e9-b0e9-66d36d310b1a")
+		(property "Sheetname" "IO (AIN1, DOUT1)"
+			(at 40 209.365 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "io.kicad_sch"
+			(at 40 240.635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "DOUT1_CTRL" input
+			(at 110 212.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+			(uuid "5ad8fd81-914a-404e-91f6-5abdc65fa104")
+		)
+		(pin "I2C_SDA" bidirectional
+			(at 110 215.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+			(uuid "46f3da23-e924-4381-96e7-f3bc7032ca61")
+		)
+		(pin "I2C_SCL" bidirectional
+			(at 110 217.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+			(uuid "6eed6fe7-5bf7-49bf-9f2d-846aeafafcda")
+		)
+		(pin "AIN1_RAW" passive
+			(at 40 212.54 180)
+			(uuid "d9f917b3-425f-4c7d-aac3-b86962207b81")
+		)
+		(pin "DOUT1" passive
+			(at 40 215.08 180)
+			(uuid "bb8f6dec-872b-4580-9d3e-76888adf24a9")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3"
+					(page "10")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 310 90)
+		(size 70 25)
+		(fields_autoplaced)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "623e21bd-4470-413b-8f4f-acd1ade828e3")
+		(property "Sheetname" "EEPROM (AT24C256 module)"
+			(at 310 89.365 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "eeprom-at24c256.kicad_sch"
+			(at 310 115.635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "I2C_SDA" bidirectional
+			(at 310 92.54 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "c054e2c4-fefe-4ad7-9666-431ebc99f270")
+		)
+		(pin "I2C_SCL" bidirectional
+			(at 310 95.08 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "d9437973-3b84-41bd-ac2b-39c619712d8c")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3"
+					(page "7")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 310 40)
+		(size 70 30)
+		(fields_autoplaced)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "64abba49-fbe3-4084-a695-4fbaa01e7d57")
+		(property "Sheetname" "RTC (DS3231 module)"
+			(at 310 39.365 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "rtc-ds3231.kicad_sch"
+			(at 310 70.635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "I2C_SCL" bidirectional
+			(at 310 42.54 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "56c09dd2-167f-4a54-9355-6f4364471a8c")
+		)
+		(pin "I2C_SDA" bidirectional
+			(at 310 45.08 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "62603544-9888-411a-8b70-6867a7593418")
+		)
+		(pin "RTC_INT" output
+			(at 310 47.62 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "f9ec1e99-ee89-477f-814e-93e4830df67f")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3"
+					(page "6")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 40 40)
+		(size 70 30)
+		(fields_autoplaced)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "7d36e08f-90ac-4d15-b354-173e665395cb")
+		(property "Sheetname" "Power input (5 V + PSU header)"
+			(at 40 39.365 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "power-input.kicad_sch"
+			(at 40 70.635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "VIN_SENSE" output
+			(at 110 42.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+			(uuid "5d10cfde-69ab-4b6c-bfa6-76312aab06e5")
+		)
+		(pin "VIN_IN" passive
+			(at 40 42.54 180)
+			(uuid "c1c0a9c3-4941-4fc8-9bf1-d9fc6c5f0b68")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 175 40)
+		(size 70 210)
+		(fields_autoplaced)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "976fcd1c-d6b8-4226-8ec0-b68e789d78e6")
+		(property "Sheetname" "ESP32 core + USB (DevKitC)"
+			(at 175 39.365 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "esp32-core.kicad_sch"
+			(at 175 250.635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "RS485_TX" output
+			(at 175 42.54 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "42e42583-6d9c-4910-820d-47a9ece2dbe7")
+		)
+		(pin "EXP_IO5" bidirectional
+			(at 175 45.08 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "5e3a51b6-f61f-4c5d-a419-35dc22b889d5")
+		)
+		(pin "RTC_INT" input
+			(at 175 47.62 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "add223f8-430d-48bc-8cd3-32b11c080e0b")
+		)
+		(pin "IMU_INT" input
+			(at 175 50.16 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "1493b649-5398-40c4-aed4-a007c1bd8027")
+		)
+		(pin "CAN_RX" input
+			(at 175 52.7 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "54c54cfe-d4aa-495b-a216-6f7ff317b900")
+		)
+		(pin "UART2_RX" input
+			(at 175 55.24 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "4cbae569-8488-4236-860e-5df1cac9be0b")
+		)
+		(pin "UART2_TX" output
+			(at 175 57.78 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "1f663636-59f4-46ec-8896-5a0965c54019")
+		)
+		(pin "EXP_IO18" bidirectional
+			(at 175 60.32 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "458c5b5e-df9f-41af-956b-2a51cfce35d8")
+		)
+		(pin "EXP_IO19" bidirectional
+			(at 175 62.86 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "14a35488-f883-49c6-a5a7-0e2896006bf8")
+		)
+		(pin "I2C_SDA" bidirectional
+			(at 175 65.4 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "050bdf4d-b967-4c83-b2c1-e043e7460bf5")
+		)
+		(pin "I2C_SCL" bidirectional
+			(at 175 67.94 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "c65d8edf-f5ba-41de-be96-2663bc66ac56")
+		)
+		(pin "DOUT1_CTRL" output
+			(at 175 70.48 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "8a435a1b-b7aa-4c09-9b58-a6229a8ae0d8")
+		)
+		(pin "RS485_DE" output
+			(at 175 73.02 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "b9e38551-6cbe-46a9-97ba-e7d277be8488")
+		)
+		(pin "DIN2_IN_N" input
+			(at 175 75.56 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "676e17b5-98a8-41fc-a9e4-71f770ecdff6")
+		)
+		(pin "DIN1_IN_N" input
+			(at 175 78.1 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "5e30a502-96c2-4ef9-b767-df0b53b1d57e")
+		)
+		(pin "GPS_RXD" output
+			(at 175 80.64 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "556ab32d-0093-4683-b587-4406c54b27a4")
+		)
+		(pin "CAN_TX" output
+			(at 175 83.18 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "77f672c9-2482-4cb0-90c9-90dd74d81b90")
+		)
+		(pin "VIN_SENSE" input
+			(at 175 85.72 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "c019762a-8960-4304-95b8-3af5ab988465")
+		)
+		(pin "RS485_RX" input
+			(at 175 88.26 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "fcd2a3c3-b4e5-4051-ae2e-3da1b63cfeb6")
+		)
+		(pin "GPS_TXD" input
+			(at 175 90.8 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "8d21d5ab-ccd0-4e70-95d1-b8d1a512b57d")
+		)
+		(pin "GPS_PPS" input
+			(at 175 93.34 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "328dc3d1-5801-402d-acab-2be5c83e5225")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 40 100)
+		(size 70 30)
+		(fields_autoplaced)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "9e687be1-96a8-44c3-91cc-6380e7a63011")
+		(property "Sheetname" "Opto inputs (817 module 2ch)"
+			(at 40 99.365 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "opto-inputs.kicad_sch"
+			(at 40 130.635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "DIN1_IN_N" output
+			(at 110 102.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+			(uuid "829b58bd-ede8-4b0a-920b-6af0af43d3d8")
+		)
+		(pin "DIN2_IN_N" output
+			(at 110 105.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+			(uuid "5390dbb5-bbf7-40df-abde-3e6a2db357d0")
+		)
+		(pin "DIN1_RAW" passive
+			(at 40 102.54 180)
+			(uuid "9deaa171-e527-4950-8160-20e85e8b38bb")
+		)
+		(pin "DIN2_RAW" passive
+			(at 40 105.08 180)
+			(uuid "7ae78fb5-a52e-4f3a-9383-69b3f18b102e")
+		)
+		(pin "VEH_GND" passive
+			(at 40 107.62 180)
+			(uuid "5ddfb7a2-3607-407c-a39e-ebce86f04147")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 40 160)
+		(size 70 35)
+		(fields_autoplaced)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "da8532f2-696e-47f1-98b9-1159d60c743e")
+		(property "Sheetname" "RS485 (MAX485 module)"
+			(at 40 159.365 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "rs485.kicad_sch"
+			(at 40 195.635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "RS485_RX" output
+			(at 110 162.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+			(uuid "92468e17-06c1-4349-8d10-49d3b2a148c8")
+		)
+		(pin "RS485_DE" input
+			(at 110 165.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+			(uuid "36695fa8-7f17-46a2-be77-1337573392a6")
+		)
+		(pin "RS485_TX" input
+			(at 110 167.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+			(uuid "e68a226b-708b-4071-9494-9853214c3c10")
+		)
+		(pin "RS485_A" passive
+			(at 40 162.54 180)
+			(uuid "7b9dab22-9356-4a4d-8c8a-417cdec53a48")
+		)
+		(pin "RS485_B" passive
+			(at 40 165.08 180)
+			(uuid "23da8dff-cc0b-4ea2-aa89-22a144e9c3e6")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 310 185)
+		(size 70 65)
+		(fields_autoplaced)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "e086c105-532c-435e-9693-a6b914df94a2")
+		(property "Sheetname" "Ports (UART, GPS, Qwiic, expansion)"
+			(at 310 184.365 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "ports.kicad_sch"
+			(at 310 250.635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "GPS_TXD" output
+			(at 310 192.62 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "9a7d4980-f4d1-4d07-8b22-027fb37e8047")
+		)
+		(pin "GPS_RXD" input
+			(at 310 195.16 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "1318ba3b-f395-4d10-b439-63f33bd0a9e8")
+		)
+		(pin "GPS_PPS" output
+			(at 310 197.7 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "df0e1e8b-46b1-4704-ac47-9ba3970c2d80")
+		)
+		(pin "I2C_SDA" bidirectional
+			(at 310 200.24 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "8139cd12-5462-4a32-96a9-844375237372")
+		)
+		(pin "I2C_SCL" bidirectional
+			(at 310 202.78 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "c31a9512-44be-4de1-b8d0-c4ebff68b73e")
+		)
+		(pin "EXP_IO5" bidirectional
+			(at 310 205.32 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "c1a4a119-ead2-4296-873c-512c8d73c0b3")
+		)
+		(pin "EXP_IO19" bidirectional
+			(at 310 207.86 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "7aab1c2a-9aa0-4f6a-a4eb-8b4c226c2c09")
+		)
+		(pin "EXP_IO18" bidirectional
+			(at 310 212.94 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "bb7dd39d-b8a3-446c-965f-c678370a85f3")
+		)
+		(pin "SENSOR_5V" passive
+			(at 380 187.54 0)
+			(uuid "3ef7da82-1305-432c-98d8-964361f5a375")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3"
+					(page "9")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 40 250)
+		(size 70 46)
+		(fields_autoplaced)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0)
+		)
+		(uuid "9a48a96f-5b9f-4aba-95d4-d5176982007e")
+		(property "Sheetname" "Harness (J1 Micro-Fit 2x8)"
+			(at 40 249.365 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "harness.kicad_sch"
+			(at 40 283.635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "RS485_A" passive
+			(at 110 252.54 0)
+			(uuid "b95fafd3-6eb8-4f2b-b313-7f3429650d00")
+		)
+		(pin "RS485_B" passive
+			(at 110 260.16 0)
+			(uuid "9d61817d-e8dd-426f-9dc3-0ae4e0446f12")
+		)
+		(pin "VEH_GND" passive
+			(at 110 262.7 0)
+			(uuid "36ecf7a1-80a6-4b48-b4b4-d943561ff773")
+		)
+		(pin "VIN_IN" passive
+			(at 110 265.24 0)
+			(uuid "f40e57ee-c8eb-4d60-9d5c-76e71aa53745")
+		)
+		(pin "AIN1_RAW" passive
+			(at 110 267.78 0)
+			(uuid "8c9ed990-f02d-4ce9-8397-b25431371e0e")
+		)
+		(pin "DOUT1" passive
+			(at 110 270.32 0)
+			(uuid "ffd7aa07-5109-475d-8f2c-b6d1474ac599")
+		)
+		(pin "DIN1_RAW" passive
+			(at 110 275.4 0)
+			(uuid "660dead2-13ce-44c4-ab3d-5100dce3a433")
+		)
+		(pin "DIN2_RAW" passive
+			(at 110 277.94 0)
+			(uuid "001a44db-be67-484e-a77f-3111fbfd4d53")
+		)
+		(pin "RS232_RXD" passive
+			(at 110 280.48 0)
+			(uuid "6bba7758-22a2-42c0-a389-64713eba6402")
+		)
+		(pin "RS232_TXD" passive
+			(at 110 283.02 0)
+			(uuid "8c28022c-d4e9-42bf-b01a-1077c94a2c87")
+		)
+		(pin "SENSOR_5V" passive
+			(at 110 285.56 0)
+			(uuid "04a3702f-b0f2-4ae3-9f5a-a4184b2ff931")
+		)
+		(pin "CAN_H" passive
+			(at 110 288.1 0)
+			(uuid "fbbf83d8-84be-4ed7-8aa8-89a934b989ee")
+		)
+		(pin "CAN_L" passive
+			(at 110 290.64 0)
+			(uuid "2bfc995b-fc97-42fb-a853-67b254ab6e6c")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3"
+					(page "11")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 175 270)
+		(size 70 25)
+		(fields_autoplaced)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0)
+		)
+		(uuid "b758df76-eed6-4e48-9a5e-fd450784ea02")
+		(property "Sheetname" "CAN (TJA1051T/3)"
+			(at 175 269.365 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "can.kicad_sch"
+			(at 175 295.635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "CAN_TX" input
+			(at 175 272.54 180)
+			(uuid "520ed6f9-2641-44b1-8712-435cf434ae3a")
+		)
+		(pin "CAN_RX" output
+			(at 175 275.08 180)
+			(uuid "266ee7f4-6513-4766-9952-a2fcd9e50b05")
+		)
+		(pin "CAN_H" passive
+			(at 175 277.62 180)
+			(uuid "58956bc5-fc62-42ba-bffb-b92231f03eca")
+		)
+		(pin "CAN_L" passive
+			(at 175 280.16 180)
+			(uuid "ff158d6c-1ef5-4aeb-b7d7-fbcc3328b75c")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3"
+					(page "12")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 310 270)
+		(size 70 25)
+		(fields_autoplaced)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0)
+		)
+		(uuid "e078d472-e35c-4dd1-9d10-b940cfa02d24")
+		(property "Sheetname" "RS232 (MAX13223E)"
+			(at 310 269.365 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "rs232.kicad_sch"
+			(at 310 295.635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "UART2_TX" input
+			(at 310 272.54 180)
+			(uuid "49cab308-9be1-444c-b58d-6ac344872d9a")
+		)
+		(pin "UART2_RX" output
+			(at 310 275.08 180)
+			(uuid "30985656-2246-4d6a-8185-6125e6209ad0")
+		)
+		(pin "RS232_TXD" passive
+			(at 310 277.62 180)
+			(uuid "d8fa2c6e-af91-4459-b16d-0a46c06b15c5")
+		)
+		(pin "RS232_RXD" passive
+			(at 310 280.16 180)
+			(uuid "c59e24ab-cb46-4ba5-9efd-a39723951dde")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3"
+					(page "13")
+				)
+			)
+		)
+	)
+	(embedded_fonts no)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+)
