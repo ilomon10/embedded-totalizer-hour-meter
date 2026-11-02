@@ -32,11 +32,17 @@ test('control messages drive the device', () => {
   apply({ type: 'faults', patch: { corruptEvery: 3 } });
   apply({ type: 'counters', runSeconds: 7200 });
   apply({ type: 'calibration', flags: 3 });
+  apply({ type: 'bus-fault', patch: { sclLow: true } });
   assertEquals(device.snapshot().values.motion.rollDeg, 15);
   assertEquals(device.isFitted(0x04) || device.isFitted(0x08), false);
   assertEquals(faults.get().corruptEvery, 3);
   assertEquals(device.hourMeter().runSeconds, 7200);
   assertEquals(device.snapshot().calibrationFlags, 3);
+  assertEquals(device.snapshot().busFault, { sdaLow: false, sclLow: true, timeouts: false });
+  run(10); // the bus is parked at the next poll
+  assertEquals([device.status().devices, device.status().i2cLines], [0, 2]);
+  apply({ type: 'bus-fault', patch: { sclLow: false } });
+  assertEquals(device.snapshot().busFault.sclLow, false);
   apply({ type: 'power', action: 'watchdog' });
   run(10);
   assertEquals(lastOf(MSG.EVENT)?.values.resetReason, 6);

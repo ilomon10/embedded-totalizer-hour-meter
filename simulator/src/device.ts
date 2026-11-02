@@ -1,12 +1,15 @@
 // device.ts: the simulated hour meter. It mirrors esp32/src/Application.cpp:
 // the same scheduler (telemetry, IMU stream, presence check every 2 s), the same
 // command pipeline (duplicate replay -> Bluetooth gate -> validate all -> apply
-// settings -> run actions -> ACK) and the same status flags.
+// settings -> run actions -> ACK) and the same status flags. The I2C bus is
+// supervised like the firmware does (bus-guard.ts): a bus that stays bad is parked,
+// never a reason to restart.
 //
 // No I/O: frames go out through the `send` callback, bytes come in through
 // onCommand(), and time comes from the injected Clock. main.ts wires it to a
 // transport; the tests drive it with a FakeClock.
 import { AccessGate } from './access-gate.ts';
+import { BusGuard } from './bus-guard.ts';
 import type { Clock } from './clock.ts';
 import { CMD, isSettingTag, readUint, validateCommand } from './commands.ts';
 import {
@@ -44,7 +47,7 @@ import { RunConfirm } from './run-confirm.ts';
 import type { VehicleSim } from './vehicle/sim.ts';
 import { Ack, codec, type DecodedMessage, Device, Flag, frameBytes, type Message, MSG } from './protocol.ts';
 
-/** Factory defaults, esp32/lib/Storage/src/Settings.cpp (tag order 110..129). */
+/** Factory defaults, esp32/lib/Storage/src/Settings.cpp (table order: tags 110..129, then 150 and 151). */
 export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
   telemetryIntervalMs: 1000,
   imuSampleHz: 100,
@@ -66,6 +69,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
   bluetooth: false,
   btPin: 1234,
   runVibMinMg: 0,
+  i2c: true,
+  pulseInput: true,
 });
 
 /** esp_reset_reason_t values the simulator uses (tag 58). */
@@ -75,7 +80,7 @@ export const ResetReason = Object.freeze({ powerOn: 1, software: 3, taskWatchdog
 export const LastCause = Object.freeze({
   none: 0,
   watchdog: 1,
-  i2cStuck: 2,
+  i2cStuck: 2, // firmware <= 2.6.0 only: 2.7.0 parks a bad bus instead, so the simulator never sends it
   usbStalled: 3,
   panicSignal: 4,
   rebootCommand: 5,
@@ -88,6 +93,16 @@ export interface RestartInfo {
   reason: number;
   cause: number;
   stage: number;
+}
+
+/** What can be wrong on the I2C bus, and what `i2cLines` (tag 64) reports while the firmware has parked it. */
+export interface BusFault {
+  /** A module or a short holds SDA low (i2cLines bit 0). */
+  sdaLow: boolean;
+  /** A module or a short holds SCL low (i2cLines bit 1). */
+  sclLow: boolean;
+  /** Both lines are free but every transfer times out (a module that hangs, noise): i2cLines 0. */
+  timeouts: boolean;
 }
 
 const PRESENCE_PERIOD_MS = 2000;
@@ -124,8 +139,10 @@ export interface DeviceOptions {
   btPin: number;
   /** Random source for sensor noise (seeded by main.ts). */
   random: () => number;
-  /** First boot after 3 unplanned restarts: no I2C at all (safe-mode scenario). */
+  /** First boot after 3 unplanned restarts (watchdog, crash, USB stall): no I2C at all (safe-mode scenario). */
   safeMode?: boolean;
+  /** What a module or a short does to the I2C bus from power-on (i2c-parked scenario); the web UI changes it live. */
+  busFault?: Partial<BusFault>;
   /** false: no "hmdata" partition (an old partition table): flashStoreMissing, the EEPROM is the only store. */
   flashStore?: boolean;
   /** The flash copy is empty: the first boot after updating to 2.6.0 (the EEPROM's values move to the flash). */
@@ -171,6 +188,10 @@ export class SimDevice {
   private devices = 0;
   private fitted: number;
   private misses = new Map<number, number>();
+  private busFault: BusFault;
+  private guard = new BusGuard(); // firmware busGuard_: parks the bus when it stays bad, retries it later
+  private linesLow = 0; // firmware bus_.linesLow(): the lines the last bus recovery found held low
+  private devicesChanged = false; // the modules changed: reported by an EVENT at the next poll
   // Firmware 2.6.0 keeps the counters twice (StorageMirror.h): the ESP32's flash is the main store, the EEPROM a copy.
   private stored: Stored; // the EEPROM's copy
   private readonly flashAvailable: boolean; // false without the "hmdata" partition
@@ -209,6 +230,7 @@ export class SimDevice {
     private readonly send: SendFn,
   ) {
     this.fitted = opts.fitted;
+    this.busFault = { sdaLow: false, sclLow: false, timeouts: false, ...opts.busFault };
     this.rtcHasTime = (opts.fitted & Device.rtc) !== 0 && opts.rtcBattery;
     this.stored = {
       runSeconds: opts.runSeconds,
@@ -283,7 +305,7 @@ export class SimDevice {
     this.hung = false;
     this.seq = 0;
     this.bootFlags = this.safeMode ? Flag.safeMode : 0;
-    this.devices = this.safeMode ? 0 : this.fitted; // safe mode never touches I2C
+    this.bootBus(nowMs);
     this.misses.clear();
     this.calib = null;
     this.rebootAtMs = null;
@@ -300,14 +322,26 @@ export class SimDevice {
     this.emit(buildBootEvent(this.hourMeter(), this.status()), true);
   }
 
+  // Firmware setup(): the bus starts unless safe mode or the `i2c` setting say no. A line held low parks it (retried
+  // after BusGuard's pause); the modules that answer are attached at boot, none while the transfers time out.
+  private bootBus(nowMs: number): void {
+    this.guard = new BusGuard();
+    this.linesLow = 0;
+    this.devicesChanged = false;
+    this.devices = 0;
+    if (!this.i2cWanted()) return;
+    if (!this.startBus()) this.guard.parked(nowMs);
+    else if (!this.busFault.timeouts) this.devices = this.fitted;
+  }
+
   private bootTime(nowMs: number, powerCut: boolean): void {
-    const hasRtc = (this.fitted & Device.rtc) !== 0;
-    if (hasRtc && powerCut && !this.current.rtc.battery) {
-      // The journal says the last save had a valid time (a used machine), so the loss is reported.
-      this.bootFlags |= Flag.rtcBatteryLost;
+    const rtcRead = (this.devices & Device.rtc) !== 0; // the RTC is read at boot only while the bus is in use
+    if ((this.fitted & Device.rtc) !== 0 && powerCut && !this.current.rtc.battery) {
       this.rtcHasTime = false;
+      // The journal says the last save had a valid time (a used machine), so the loss is reported.
+      if (rtcRead) this.bootFlags |= Flag.rtcBatteryLost;
     }
-    if (hasRtc && this.rtcHasTime) {
+    if (rtcRead && this.rtcHasTime) {
       const epoch = this.time.valid ? this.epochNow(nowMs) : this.clock.hostEpochS();
       this.time = { valid: true, epochAtSync: epoch, syncMs: nowMs, backedUp: true };
     } else {
@@ -434,6 +468,7 @@ export class SimDevice {
       calibrationFlags: this.cal.flags,
       calibrating: this.calib !== null,
       fitted: this.fitted,
+      busFault: { ...this.busFault },
       inputs: this.inputState,
       values: this.current,
       liveData: this.liveDataAllowed(),
@@ -481,6 +516,12 @@ export class SimDevice {
     return (this.fitted & bit) !== 0;
   }
 
+  /** A module or a short pulls a bus line low, or the transfers time out. The device notices at its next bus check. */
+  setBusFault(patch: Partial<BusFault>): void {
+    const next = { ...this.busFault, ...patch };
+    this.busFault = { sdaLow: Boolean(next.sdaLow), sclLow: Boolean(next.sclLow), timeouts: Boolean(next.timeouts) };
+  }
+
   /** A new client opened the port (TCP connect, tty open). Bluetooth sessions start locked. */
   clientConnected(): void {
     this.gate.lock();
@@ -498,7 +539,11 @@ export class SimDevice {
     this.current = this.computeInputs(nowMs);
     this.runInputs(nowMs);
     this.runCalibration(nowMs);
-    if (!this.safeMode && nowMs >= this.due.presence) this.runPresence(nowMs);
+    this.superviseBus(nowMs);
+    if (this.devicesChanged) {
+      this.devicesChanged = false; // after the ACK of the command that caused it, like the firmware's devicesChanged_
+      this.emit(buildDevicesChangedEvent(this.status()), true);
+    }
     if (nowMs >= this.due.stream) this.runStream(nowMs);
     if (nowMs >= this.due.telemetry) this.runTelemetry(nowMs);
   }
@@ -512,16 +557,21 @@ export class SimDevice {
       this.current.vibration.rmsMg,
       Number(this.settings.runVibMinMg),
     );
+    const countPulses = Boolean(this.settings.pulseInput);
+    if (!countPulses) this.pulseRemainder = 0; // GPIO26 is ignored: pulses not collected yet are dropped
     if (this.current.engine.running && confirmed && elapsedMs > 0) {
       this.runMsRemainder += elapsedMs;
       const whole = Math.floor(this.runMsRemainder / 1000);
       this.runSeconds = (this.runSeconds + whole) >>> 0;
       this.runMsRemainder -= whole * 1000;
-      // Counted in pulse-milliseconds so 0.1-pulse steps cannot drift (exact for whole and half rates).
-      this.pulseRemainder += elapsedMs * Math.max(0, this.current.pulses.perSecond);
-      const pulses = Math.floor(this.pulseRemainder / 1000);
-      this.totalCount = (this.totalCount + pulses) >>> 0;
-      this.pulseRemainder -= pulses * 1000;
+      let pulses = 0;
+      if (countPulses) {
+        // Counted in pulse-milliseconds so 0.1-pulse steps cannot drift (exact for whole and half rates).
+        this.pulseRemainder += elapsedMs * Math.max(0, this.current.pulses.perSecond);
+        pulses = Math.floor(this.pulseRemainder / 1000);
+        this.totalCount = (this.totalCount + pulses) >>> 0;
+        this.pulseRemainder -= pulses * 1000;
+      }
       this.dirty = this.dirty || whole > 0 || pulses > 0;
     }
     if (this.dirty && nowMs - this.lastPersistMs >= Number(this.settings.persistIntervalS) * 1000) {
@@ -551,29 +601,120 @@ export class SimDevice {
     this.lastPersistMs = nowMs;
   }
 
+  // ---------------------------------------------------------------- I2C bus ----
+  // In use (presence check every 2 s), parked after trouble (BusGuard: tried again after a growing pause), or off
+  // (safe mode, `i2c` setting). Parked or off, every module counts as missing and the hour meter runs on the flash.
+
+  /** The bus may be used: not in safe mode, and the `i2c` setting is on (firmware i2cWanted). */
+  private i2cWanted(): boolean {
+    return !this.safeMode && Boolean(this.settings.i2c);
+  }
+
+  private heldLines(): number {
+    return (this.busFault.sdaLow ? 1 : 0) | (this.busFault.sclLow ? 2 : 0);
+  }
+
+  /** No line held and no timeouts: a module that is fitted answers its address. */
+  private busWorks(): boolean {
+    return this.heldLines() === 0 && !this.busFault.timeouts;
+  }
+
+  // Firmware bus_.begin(): a bus recovery reads the lines; one held low keeps the bus parked.
+  private startBus(): boolean {
+    this.linesLow = this.heldLines();
+    return this.linesLow === 0;
+  }
+
+  // Firmware superviseBus. A line held low is found by a bus recovery, which the IMU's reads and an EEPROM save run
+  // when they fail; the firmware has neither without an IMU and parks after 5 s of failures, the simulator at once.
+  private superviseBus(nowMs: number): void {
+    if (!this.i2cWanted()) return;
+    if (this.guard.isParked()) return this.retryBus(nowMs);
+    if (nowMs >= this.due.presence) this.runPresence(nowMs);
+    const held = this.heldLines();
+    if (held !== 0) this.linesLow = held;
+    if (this.guard.shouldPark(nowMs, !this.busWorks(), held !== 0)) this.parkBus(nowMs);
+  }
+
+  // After BusGuard's pause: free lines put the bus back in use (the next presence check re-attaches the modules),
+  // a line still held low keeps it parked for twice as long.
+  private retryBus(nowMs: number): void {
+    if (!this.guard.retryDue(nowMs)) return;
+    if (this.startBus()) this.guard.resumed(nowMs);
+    else this.guard.retryFailed(nowMs);
+  }
+
+  // The bus kept failing (or a line is held low): stop using it instead of restarting, which could not fix a module
+  // or a short anyway.
+  private parkBus(nowMs: number): void {
+    this.guard.parked(nowMs);
+    this.dropModules();
+  }
+
+  // Firmware applyI2cMode: the `i2c` setting (or safe mode) applied to the bus. Off drops every module and forgets the
+  // pause history; on starts the bus as at boot, and the modules attach at the next presence check.
+  private applyI2cMode(nowMs: number): void {
+    if (!this.i2cWanted()) {
+      this.guard.reset();
+      this.dropModules();
+    } else if (!this.startBus()) {
+      this.guard.parked(nowMs);
+    }
+  }
+
+  // Every module counts as missing: the counters and settings go on in the flash, the time in RAM.
+  private dropModules(): void {
+    const before = this.devices;
+    this.misses.clear();
+    if ((this.devices & Device.rtc) !== 0) this.loseRtc();
+    this.devices &= ~(Device.eeprom | Device.imu | Device.mag);
+    this.calib = null;
+    if (this.devices !== before) this.devicesChanged = true;
+  }
+
+  // Firmware loseRtc: the time stays, but in RAM only (timeNotBackedUp).
+  private loseRtc(): void {
+    this.devices &= ~Device.rtc;
+    if (this.time.valid) this.time = { ...this.time, backedUp: false };
+  }
+
+  // Firmware attachRtc + syncRtc: the RTC's time is the device's time again; an RTC without one gets the RAM time.
+  private attachRtc(nowMs: number): void {
+    this.devices |= Device.rtc;
+    if (this.time.valid) {
+      this.time = { ...this.time, backedUp: true };
+      this.rtcHasTime = true;
+    } else if (this.rtcHasTime) {
+      this.time = { valid: true, epochAtSync: this.clock.hostEpochS(), syncMs: nowMs, backedUp: true };
+    }
+  }
+
   private runPresence(nowMs: number): void {
     this.due.presence = nowMs + PRESENCE_PERIOD_MS;
     const before = this.devices;
-    for (const bit of MODULES) this.checkModule(bit);
+    for (const bit of MODULES) this.checkModule(bit, nowMs);
     if (this.devices === before) return;
     if ((this.devices & Device.imu) !== 0 && (before & Device.imu) === 0) this.imuSinceMs = nowMs;
     if ((this.devices & Device.eeprom) !== 0 && (before & Device.eeprom) === 0) this.onEepromArrived(nowMs);
     if ((this.devices & Device.imu) === 0) this.calib = null;
-    this.emit(buildDevicesChangedEvent(this.status()), true);
+    this.devicesChanged = true;
   }
 
   // A present module is LOST after 3 failed checks; a missing one is attached at the first answer.
-  private checkModule(bit: number): void {
-    const answers = (this.fitted & bit) !== 0;
+  private checkModule(bit: number, nowMs: number): void {
+    const answers = (this.fitted & bit) !== 0 && this.busWorks();
     if ((this.devices & bit) === 0) {
-      if (answers) this.devices |= bit;
+      if (!answers) return;
+      if (bit === Device.rtc) this.attachRtc(nowMs);
+      else this.devices |= bit;
       return;
     }
     const misses = answers ? 0 : (this.misses.get(bit) ?? 0) + 1;
     this.misses.set(bit, misses);
     if (misses >= LOST_AFTER_MISSES) {
-      this.devices &= ~bit;
       this.misses.set(bit, 0);
+      if (bit === Device.rtc) this.loseRtc();
+      else this.devices &= ~bit;
     }
   }
 
@@ -655,10 +796,12 @@ export class SimDevice {
     this.settingsNotSaved = !this.anyStore(); // firmware 2.6.0: saved in flash even without an EEPROM
     const streamChanged = next.imuStreamHz !== this.settings.imuStreamHz;
     const telemetryChanged = next.telemetryIntervalMs !== this.settings.telemetryIntervalMs;
+    const i2cChanged = next.i2c !== this.settings.i2c;
     this.settings = next;
     if (this.opts.bluetoothSession) this.settings.bluetooth = true; // the simulated client is on Bluetooth
     if (telemetryChanged) this.due.telemetry = nowMs + this.telemetryPeriodMs();
     if (streamChanged) this.due.stream = nowMs + this.streamPeriodMs();
+    if (i2cChanged) this.applyI2cMode(nowMs); // after the save: it went to the EEPROM too, if one was there
   }
 
   // Firmware runActions: presets in one frame are one EEPROM write; other actions run in order.
@@ -761,6 +904,9 @@ export class SimDevice {
     if ((this.cal.flags & 1) === 0) f |= Flag.imuNotCalibrated;
     if (has(Device.mag) && (this.cal.flags & 2) === 0) f |= Flag.magNotCalibrated;
     if (this.calib) f |= Flag.calibrating;
+    const parked = this.guard.isParked();
+    if (parked) f |= Flag.i2cParked;
+    if (!this.settings.i2c) f |= Flag.i2cOff;
     const { errors, flags, rtc } = this.current;
     if (errors.i2cErrors > 0) f |= Flag.i2cErrors;
     if (flags.storageError) f |= Flag.storageError;
@@ -779,6 +925,8 @@ export class SimDevice {
       btState: this.btState(),
       lastCause: this.lastCause,
       lastStage: this.lastStage,
+      i2cParked: parked,
+      i2cLines: parked ? this.linesLow : 0,
       rtcTempValid: has(Device.rtc),
       rtcTempQuarterC: Math.max(-32768, Math.min(32767, Math.round(rtc.tempC * 4))), // x0.25 C
       flags: f >>> 0,
@@ -847,6 +995,8 @@ export interface SimSnapshot {
   calibrating: boolean;
   /** Modules physically plugged in (Device bits); status.devices is what the firmware has detected. */
   fitted: number;
+  /** What is wrong on the I2C bus right now. */
+  busFault: BusFault;
   inputs: Inputs;
   /** This moment's values, auto or manual. */
   values: InputValues;

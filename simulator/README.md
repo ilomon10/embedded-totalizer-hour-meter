@@ -1,6 +1,6 @@
 # Hour meter simulator
 
-**A fake hour-meter device on a virtual serial port.** It speaks the real protocol (SensorFrame v1, firmware 2.6.0): it sends TELEMETRY, IMU stream and EVENT frames and answers your COMMANDs with the same ACKs, error codes and quirks as the firmware. Use it to write and test a driver without the hardware.
+**A fake hour-meter device on a virtual serial port.** It speaks the real protocol (SensorFrame v1, firmware 2.7.0): it sends TELEMETRY, IMU stream and EVENT frames and answers your COMMANDs with the same ACKs, error codes and quirks as the firmware. Use it to write and test a driver without the hardware.
 
 ```bash
 cd simulator
@@ -40,11 +40,12 @@ On Windows there is no socat: use `hour-meter-sim.exe --tcp 5555`, or pair it wi
 | **Timing** | TELEMETRY every `telemetryIntervalMs`, IMU stream at `imuStreamHz`, module checks every 2 s, calibration 5 s (IMU) / 20 s (magnetometer) |
 | **Commands** | All-or-nothing validation, `rejectedTag`, setting ranges and the `imuStreamHz ≤ imuSampleHz` rule, `resetCounters` magic, `get=1…4`, a retried `seq` within 10 s replays the ACK, reboot 100 ms after the ACK (boot EVENT `lastCause` 5, `lastStage` 8) |
 | **Panic signal** | 64 `0x00` bytes in a row on a wired link (tty, TCP, stdio) restart the device at once, with no ACK: next boot EVENT has `resetReason` 3, `lastCause` 4, `lastStage` 8, counters saved first. A `--bt` session ignores it. The web *Panic signal* button does the same |
-| **Restart cause** | The full status block (boot EVENT, `get=3`) carries `lastCause` (tag 62: 0 none, 1 watchdog, 2 i2cStuck, 3 usbStalled, 4 panicSignal, 5 rebootCommand, 6 crash) and `lastStage` (tag 63), 0/0 at power-on. Flag bit 18 is `safeMode` |
+| **Restart cause** | The full status block (boot EVENT, `get=3`) carries `lastCause` (tag 62: 0 none, 1 watchdog, 2 i2cStuck, 3 usbStalled, 4 panicSignal, 5 rebootCommand, 6 crash) and `lastStage` (tag 63), 0/0 at power-on. `i2cStuck` is firmware 2.6.0 and older only: the simulator never sends it. Flag bit 18 is `safeMode`, entered only after watchdog, crash or USB-stall restarts |
+| **I2C bus** | Supervised like firmware 2.7.0: a line held low, or transfers that keep timing out for 5 s, **park** the bus. Every module counts as missing (`devices` 0, EVENT kind 3), flag 20 `i2cParked` is set and `i2cLines` (tag 64: 1 SDA, 2 SCL, 3 both, 0 lines free but timeouts) ends the full status block. The bus is tried again after 10 s, 20 s, 40 s … up to 5 min (10 s again after 10 good minutes); the modules re-attach once the fault is gone. The device never restarts for it and the hour meter keeps counting. `i2c` (tag 150) off drops the modules for good (flag 21 `i2cOff`, no I2C even at boot), `pulseInput` (tag 151) off stops the totalizer |
 | **Port open** | Opening the tty reboots the device (boot EVENT, `seq` back to 0), like an ESP32 DevKit whose DTR line resets it. `--no-reset` turns this off |
 | **State** | The engine runs 40 s on / 40 s off, the hour meter and totalizer count up, and counters are saved every `persistIntervalS`, to the flash copy and the EEPROM (firmware 2.6.0). Settings and time persist across reboots, as with the stores and the RTC |
 | **Values** | Each sensor animates by itself (engine cycle, gentle tilt, engine vibration, noise) until you set it in the [web UI](#web-ui) |
-| **Not simulated** | Real sensor physics, the UART pins (the simulated port is the USB port) |
+| **Not simulated** | Real sensor physics, the UART pins (the simulated port is the USB port), the electrical side of the I2C bus: a held line parks the bus at once, where a real device without an IMU can take up to 5 s to notice it, and `i2cErrors` stays what you set |
 
 ## Web UI
 
@@ -55,7 +56,7 @@ On Windows there is no socat: use `hour-meter-sim.exe --tcp 5555`, or pair it wi
 - **Every value the device sends:** engine and pulse rate, run hours and totalizer, roll/pitch/heading, vibration, raw and filtered accel/gyro/mag, RTC temperature and backup battery, I2C errors and overruns, the extra status flags (`imuStuck`, `imuSaturated`, `storageError`, `eepromFormatted`), and IMU/magnetometer calibration.
 - **Auto or manual, per group:** a group animates by itself (`auto`) until you touch one of its controls, then holds your values (`manual`). Click *manual · back to auto* to release it. Touching one value keeps the rest of the group where it was.
 - **Modules:** plug and unplug the EEPROM, RTC, IMU and magnetometer. "Detected" follows the firmware's timing: lost after 3 missed checks (~6 s), found within 2 s, with EVENT kind 3.
-- **Faults and power:** line noise and frame corruption (changed live; `--scenario noise/corrupt` set the starting values), reboot, watchdog reset (`lastCause` 1), panic signal, freeze (a hung MCU), power cycle.
+- **Faults and power:** line noise and frame corruption (changed live; `--scenario noise/corrupt` set the starting values), a bad I2C bus (*SDA held low*, *SCL held low*, *Transfers time out*: the bus is parked, then comes back after the retry that finds it free; `--scenario i2c-parked` starts with SDA held), reboot, watchdog reset (`lastCause` 1), panic signal, freeze (a hung MCU), power cycle.
 - **Read-only views:** the settings the host wrote, the `statusFlags` word the host receives, and a frame log of everything sent and received (filter by type, pause, clear).
 
 The values reach the wire exactly as the firmware would encode them: set roll to 15° and the host decodes `roll 15°`.
@@ -159,7 +160,7 @@ bun run start --scenario no-rtc-battery --scenario corrupt=5
 
 | Scenario | What happens | What your driver should do |
 |---|---|---|
-| `engine-cycle[=onS,offS]` | Alternator on/off cycle (the default, 40,40) | Show `alternator`; run hours only grow while on. `altInput` (tag 10) is the raw input; `alternator` (tag 3) is what counts (input on and, if `runVibMinMg` > 0, vibration confirmed) |
+| `engine-cycle[=onS,offS]` | Alternator on/off cycle (the default, 40,40) | Show `alternator`; run hours only grow while on. `altInput` (tag 10) is the engine-running input (its level says running, or it toggles); `alternator` (tag 3) is what counts (input on and, if `runVibMinMg` > 0, vibration confirmed) |
 | `acc-wire` | Models the wrong wiring: the engine input is ON whenever the key is on (always), but the engine really runs only from 20 s to 80 s of every 120 s; vibration RMS 8-12 mg when stopped, 40-80 mg when running. TELEMETRY shows `altInput` true while `alternator` is false during the off phase | Without `runVibMinMg` the run hours grow the whole time (the bug). With `hour-meter set runVibMinMg=30` they grow only while the engine runs; `alternator` = counting, `altInput` = raw input |
 | `no-rtc-battery` | Time lost at power-on: `timeValid` false, `rtcBatteryLost` + `timeInvalid`, header timestamp = uptime | Send `setTime` (UTC) |
 | `no-rtc` | No RTC: `rtcMissing`; after `setTime`, `timeNotBackedUp` | Send `setTime` after every boot |
@@ -169,7 +170,8 @@ bun run start --scenario no-rtc-battery --scenario corrupt=5
 | `module-flap[=module,periodS]` | Unplug/replug `imu` (default), `eeprom` or `rtc` every period (default 30 s) → EVENT kind 3. Lost after 3 missed checks (~6 s), so shorter periods are ignored, as on the device | Update the module list on EVENT kind 3 |
 | `reboot[=periodS]` | Watchdog reset every period (default 120 s): boot EVENT, `resetReason` 6, `lastCause` 1, `lastStage` 7, `seq` restarts at 0 | Log unexpected reboots; don't treat a `seq` jump as lost frames |
 | `hang[=afterS]` | Frozen MCU after afterS (default 30 s): sends nothing, ignores commands. Only the panic signal (64 zero bytes) or a restart/power cycle from the web UI ends it; the panic signal is honoured because a real watchdog would reboot the device anyway | Time out, then send the panic signal and wait for the boot EVENT (`lastCause` 4) |
-| `safe-mode` | Boots as after 3 unplanned restarts: `devices` 0, `eepromMissing`/`rtcMissing`/`imuMissing`/`magMissing` + `safeMode` (flag 18), counters and settings from the flash copy, no IMU stream; `lastCause` 1, `lastStage` 7. A power cycle, `reboot` or the panic signal leaves it | Show a "safe mode" banner; don't treat missing modules as hardware faults |
+| `i2c-parked[=releaseS]` | A module holds SDA low from power-on: the bus is parked at boot (`devices` 0, `eepromMissing`/`rtcMissing`/`imuMissing`/`magMissing` + `timeInvalid` + `i2cParked`, flag 20, and `i2cLines` 1 as the last record of the boot EVENT), no IMU stream, the hour meter still counts. Retried after 10 s, 20 s, 40 s … up to 5 min, never a restart. With `releaseS` the module lets go after that many seconds (without it: never; flip *SDA held low* in the web UI's Faults panel). At the next retry the bus resumes and the modules re-attach (EVENT kind 3, flag 20 and tag 64 gone) | Show `i2cParked` and `i2cLines` (check the wiring and the modules); keep reading the counters; don't treat a parked bus as a reason to restart the device |
+| `safe-mode` | Boots as after 3 unplanned restarts in a row (watchdog, crash, USB stall; I2C trouble never counts): `devices` 0, `eepromMissing`/`rtcMissing`/`imuMissing`/`magMissing` + `timeInvalid` + `safeMode` (flag 18), counters and settings from the flash copy, no IMU stream; `lastCause` 1, `lastStage` 7. The `i2c` setting cannot start the bus here. A power cycle, `reboot` or the panic signal leaves it | Show a "safe mode" banner; don't treat missing modules as hardware faults |
 | `noise[=p]` | Random junk bytes (zeros included) before a fraction `p` of frames (default 0.2) | Drop bad frames, resync on the next `0x00` |
 | `corrupt[=N]` | One byte flipped in 1 of N frames (default 10) → CRC / COBS errors | Count and drop; never crash |
 
@@ -201,10 +203,11 @@ bun run start --stdio | xxd       # raw frames on stdout, logs on stderr
 
 ```bash
 bun install            # once
-bun run test           # 70 tests: firmware golden frames, catalog dumps, command rules, Bluetooth lock,
+bun run test           # 86 tests: firmware golden frames, catalog dumps, command rules, Bluetooth lock,
                        #   inputs (auto/manual), live faults, web server + WebSocket, attitude round trips,
                        #   vehicle physics, the firmware filter port, route following, track parsing,
-                       #   dead reckoning (truck) and the strapdown INS (plane)
+                       #   dead reckoning (truck) and the strapdown INS (plane), the I2C bus guard (parking,
+                       #   backoff, recovery), the i2c and pulseInput settings
 bun check              # type-check (simulator + web UI)
 bun run web:build      # build the web UI into web/dist (needed once before `start --web` from source)
 bun run web:dev        # web UI with hot reload, talking to `bun run start --web 8080`
@@ -223,11 +226,12 @@ simulator/
 │   ├── protocol.ts       the only bridge to ../sensorframe/js (codec) and ../configurator/src/tags.ts (tag table)
 │   ├── frames.ts         frame builders, a port of esp32/lib/App/src/Telemetry.cpp (same record order)
 │   ├── commands.ts       command validation, a port of CommandHandler.cpp + SettingsSchema.cpp
-│   ├── device.ts         the simulated Application: scheduler, counters, time, modules, calibration
+│   ├── device.ts         the simulated Application: scheduler, counters, time, modules, I2C bus, calibration
 │   ├── inputs.ts         sensor values per group: animation (auto), held (manual) or a vehicle (vehicle)
 │   ├── attitude.ts       roll/pitch/heading <-> accelerometer and magnetometer (firmware math, both ways)
 │   ├── faults.ts         line noise and frame corruption, adjustable while running
 │   ├── access-gate.ts    Bluetooth PIN lock, a port of AccessGate.h
+│   ├── bus-guard.ts      when to park the I2C bus and when to try it again, a port of BusGuard.h
 │   ├── scenarios.ts      --scenario: modules, RTC battery, engine cycle, reboots, starting faults
 │   ├── splitter.ts       bytes → frames (split on 0x00, COBS, CRC)
 │   ├── clock.ts          injected clock + seeded RNG

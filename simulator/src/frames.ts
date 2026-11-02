@@ -19,7 +19,7 @@ export interface HourMeterSnapshot {
   totalCount: number;
   /** Run time is counting: the input is active AND the vibration confirms it (tag 3 alternator). */
   running: boolean;
-  /** The raw engine-running input (tag 10 altInput). */
+  /** The engine-running input (tag 10 altInput): its level is active or it toggles; before debounce and vibration. */
   inputActive: boolean;
   pulsesPerUnit: number;
   lastSavedEpoch: number;
@@ -39,6 +39,10 @@ export interface DeviceStatus {
   btState: number;
   lastCause: number;
   lastStage: number;
+  /** The I2C bus is parked after trouble (BusGuard.h). */
+  i2cParked: boolean;
+  /** The lines the bus recovery found held low: bit 0 SDA, bit 1 SCL (sent only while parked). */
+  i2cLines: number;
   rtcTempValid: boolean;
   rtcTempQuarterC: number;
   flags: number;
@@ -134,6 +138,7 @@ export function appendStatus(out: Rec[], st: DeviceStatus, full: boolean): void 
     rec('fwVersion', FIRMWARE_VERSION),
   );
   if (st.rtcTempValid) out.push(rec('rtcTemp', st.rtcTempQuarterC));
+  if (st.i2cParked) out.push(rec('i2cLines', st.i2cLines));
 }
 
 export function appendDerived(out: Rec[], imu: ImuOutput, vib: VibrationLevel | null): void {
@@ -213,7 +218,7 @@ export function buildAck(st: DeviceStatus, cmdSeq: number, status: number, rejec
   return { msgType: MSG.ACK, timestamp: headerTimestamp(st), records };
 }
 
-/** All settings in tag order (110..129) with the firmware's wire types. */
+/** All settings in table order (110..129, then 150 and 151) with the firmware's wire types. */
 export function appendSettings(out: Rec[], s: Settings): void {
   for (const name of Object.keys(SETTINGS)) {
     const value = s[name];

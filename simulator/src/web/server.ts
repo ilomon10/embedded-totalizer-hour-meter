@@ -68,6 +68,9 @@ export function applyClientMessage(msg: ClientMessage, ctx: WebContext): string 
     case 'faults':
       ctx.faults.set(msg.patch);
       return null;
+    case 'bus-fault':
+      device.setBusFault(msg.patch);
+      return null;
     case 'power':
       if (msg.action === 'power-cycle') device.powerOn();
       else if (msg.action === 'panic') device.panicSignal();

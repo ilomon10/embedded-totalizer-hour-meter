@@ -46,6 +46,8 @@ const st: DeviceStatus = {
   btState: 0,
   lastCause: 0,
   lastStage: 0,
+  i2cParked: false,
+  i2cLines: 0,
   rtcTempValid: true,
   rtcTempQuarterC: 117, // 29.25 C
   flags: 0,
@@ -114,6 +116,16 @@ export function catalogFrames(): CatalogFrame[] {
     devices: Device.eeprom | Device.rtc,
     flags: Flag.imuMissing | Flag.magMissing,
   };
+  // A module holds SDA low: the firmware parks the bus, every module counts as missing (the RTC's time stays, in RAM).
+  const parked: DeviceStatus = {
+    ...st,
+    devices: 0,
+    i2cParked: true,
+    i2cLines: 1,
+    rtcTempValid: false,
+    flags:
+      Flag.eepromMissing | Flag.rtcMissing | Flag.imuMissing | Flag.magMissing | Flag.timeNotBackedUp | Flag.i2cParked,
+  };
   return [
     device('telemetry', 'TELEMETRY, IMU fitted', 120, buildTelemetry(hm, st, imu, { rmsMg: 37, peakMg: 103 })),
     device('telemetry-no-imu', 'TELEMETRY, no IMU', 120, buildTelemetry(hm, noImu, null, null)),
@@ -121,6 +133,12 @@ export function catalogFrames(): CatalogFrame[] {
     device('event-calibration', 'EVENT calibration done (IMU, Ok)', 57, buildCalibrationEvent(st, 1, Ack.Ok, cal)),
     device('event-calibration-failed', 'EVENT calibration failed', 57, buildCalibrationEvent(st, 2, Ack.Failed, cal)),
     device('event-devices-changed', 'EVENT modules changed (IMU lost)', 300, buildDevicesChangedEvent(noImu)),
+    device(
+      'event-bus-parked',
+      'EVENT modules changed (I2C bus parked, SDA held low)',
+      301,
+      buildDevicesChangedEvent(parked),
+    ),
     device('imu-raw', 'IMU stream, streamMode=1 raw', 121, buildImuStream(st, imu, StreamMode.raw)),
     device('imu-filtered', 'IMU stream, streamMode=2 filtered', 121, buildImuStream(st, imu, StreamMode.filtered)),
     device('imu-both', 'IMU stream, streamMode=3 both', 121, buildImuStream(st, imu, StreamMode.both)),

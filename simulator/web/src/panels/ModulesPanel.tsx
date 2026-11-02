@@ -2,10 +2,18 @@
 // there; "detected" is what the firmware has noticed (lost after 3 missed checks,
 // about 6 s; found again within 2 s), which is what the host sees.
 import { Panel, Toggle } from '../controls.tsx';
-import { MODULES } from '../format.ts';
+import { activeFlags, MODULES } from '../format.ts';
 import type { PanelProps } from './types.ts';
 
 export function ModulesPanel({ state, send }: PanelProps) {
+  const flags = activeFlags(state.status.flags);
+  const busDown = flags.includes('i2cParked')
+    ? 'parked'
+    : flags.includes('i2cOff')
+      ? 'switched off'
+      : flags.includes('safeMode')
+        ? 'off (safe mode)'
+        : null;
   return (
     <Panel title="Modules">
       {MODULES.map((m) => {
@@ -25,7 +33,7 @@ export function ModulesPanel({ state, send }: PanelProps) {
               }`}
             >
               {detected ? '✔ detected by the firmware' : '✘ not detected'}
-              {fitted !== detected && ' · changing…'}
+              {fitted !== detected && (busDown ? ` · the I2C bus is ${busDown}` : ' · changing…')}
             </p>
           </div>
         );

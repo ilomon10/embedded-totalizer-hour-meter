@@ -1,7 +1,7 @@
 // messages.ts: what the simulator and its web UI say to each other over the
 // WebSocket at /api/ws. Shared by src/web/server.ts and web/src (type-only imports,
 // so the browser bundle pulls in no simulator code).
-import type { SimSnapshot } from '../device.ts';
+import type { BusFault, SimSnapshot } from '../device.ts';
 import type { FaultSettings } from '../faults.ts';
 import type { Group, InputValues } from '../inputs.ts';
 import type { Mount } from '../vehicle/body.ts';
@@ -12,7 +12,7 @@ import type { Controls, VehicleKind } from '../vehicle/models.ts';
 import type { RoutePlan, Waypoint } from '../vehicle/route.ts';
 import type { DriveMode, TrackPoint, VehicleSnapshot } from '../vehicle/sim.ts';
 
-export type { FaultSettings, Group, InputValues, SimSnapshot };
+export type { BusFault, FaultSettings, Group, InputValues, SimSnapshot };
 export type {
   Controls,
   DriveMode,
@@ -71,6 +71,8 @@ export type ClientMessage =
   | { type: 'counters'; runSeconds?: number; totalCount?: number }
   | { type: 'module'; module: ModuleName; fitted: boolean }
   | { type: 'faults'; patch: Partial<FaultSettings> }
+  /** A module or a short pulls an I2C line low, or the transfers time out. */
+  | { type: 'bus-fault'; patch: Partial<BusFault> }
   | { type: 'power'; action: PowerAction }
   | { type: 'calibration'; flags: number }
   /** Start a vehicle at `origin` (kind null = stop driving, back to the animation). */

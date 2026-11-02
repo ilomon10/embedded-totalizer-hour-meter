@@ -6,14 +6,18 @@ import { test } from 'bun:test';
 import { assertEquals } from './assert.ts';
 import {
   appendHourMeter,
+  appendSettings,
+  appendStatus,
   buildAck,
+  buildDevicesChangedEvent,
   buildTelemetry,
   type DeviceStatus,
   type HourMeterSnapshot,
   toI16,
   toU16,
 } from '../src/frames.ts';
-import { MSG, rec } from '../src/protocol.ts';
+import { DEFAULT_SETTINGS } from '../src/device.ts';
+import { codec, MSG, type Rec, rec } from '../src/protocol.ts';
 import { frameHex } from './helpers.ts';
 
 const FIRMWARE_TEST = new URL('../../esp32/test/test_app/test_main.cpp', import.meta.url);
@@ -42,6 +46,8 @@ const status: DeviceStatus = {
   btState: 0,
   lastCause: 0,
   lastStage: 0,
+  i2cParked: false,
+  i2cLines: 0,
   rtcTempValid: false,
   rtcTempQuarterC: 0,
   flags: 0,
@@ -78,4 +84,39 @@ test('scaling rounds like C roundf and saturates like the firmware', () => {
   assertEquals(toI16(Number.NaN, 100), 0);
   assertEquals(toU16(-1, 100), 0);
   assertEquals(toU16(359.996, 100), 36000);
+});
+
+test('the full status ends with rtcTemp (54) and i2cLines (64), and i2cLines only while the bus is parked', () => {
+  const tags = (st: DeviceStatus, full = true) => {
+    const out: Rec[] = [];
+    appendStatus(out, st, full);
+    return out.map((r) => r.tag);
+  };
+  const STATUS = [50, 53, 51, 52, 55, 56, 57, 58, 60, 61, 62, 63, 241];
+  const withTemp = { ...status, rtcTempValid: true, rtcTempQuarterC: 117 };
+  assertEquals(tags(withTemp), [...STATUS, 54]);
+  assertEquals(tags({ ...withTemp, i2cParked: true, i2cLines: 1 }), [...STATUS, 54, 64]);
+  assertEquals(tags({ ...status, i2cParked: true, i2cLines: 0 }), [...STATUS, 64], 'both lines free: still reported');
+  assertEquals(tags({ ...status, i2cParked: false, i2cLines: 3 }), STATUS, 'i2cLines alone is not enough');
+  assertEquals(tags({ ...status, i2cParked: true, i2cLines: 3 }, false), [50, 53], 'TELEMETRY never carries it');
+
+  const event = buildDevicesChangedEvent({ ...status, i2cParked: true, i2cLines: 2 });
+  const decoded = codec.decode(codec.encode({ ...event, seq: 1, deviceId: 0x1a2b3c4d }));
+  assertEquals([decoded.values.i2cLines, decoded.records.at(-1)?.fmt], [2, 'u8']);
+});
+
+test('the settings are listed in the firmware table order: 110..129, then i2c (150) and pulseInput (151) as bool', () => {
+  const out: Rec[] = [];
+  appendSettings(out, { ...DEFAULT_SETTINGS });
+  assertEquals(
+    out.map((r) => r.tag),
+    [...Array.from({ length: 20 }, (_, i) => 110 + i), 150, 151],
+  );
+  assertEquals(
+    out.slice(-2).map((r) => [r.fmt, r.value]),
+    [
+      ['bool', true],
+      ['bool', true],
+    ],
+  );
 });

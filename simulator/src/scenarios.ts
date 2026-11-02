@@ -145,9 +145,10 @@ const SCENARIOS: Record<string, { help: string; make: Factory }> = {
   },
   'safe-mode': {
     help:
-      'safe-mode               boots as after 3 unplanned restarts: no I2C (devices 0, all *Missing flags + ' +
-      'safeMode), counters from the flash copy, no IMU stream; lastCause 1, lastStage 7; a power cycle, reboot or the ' +
-      'panic signal leaves it',
+      'safe-mode               boots as after 3 unplanned restarts in a row (watchdog, crash, USB stall; never I2C ' +
+      'trouble): no I2C (devices 0, all *Missing flags + safeMode, time invalid until setTime), counters from the ' +
+      'flash copy, no IMU stream, the i2c setting cannot start the bus; lastCause 1, lastStage 7; a power cycle, ' +
+      'reboot or the panic signal leaves it',
     make: () => ({
       label: 'safe mode (no I2C)',
       configure: (opts) => {
@@ -155,6 +156,27 @@ const SCENARIOS: Record<string, { help: string; make: Factory }> = {
         opts.firstBoot = { reason: ResetReason.taskWatchdog, cause: LastCause.watchdog, stage: Stage.imu };
       },
     }),
+  },
+  'i2c-parked': {
+    help:
+      'i2c-parked[=releaseS]    a module holds SDA low from power-on: the bus is parked at boot (devices 0, flag ' +
+      'i2cParked, i2cLines 1) while the hour meter keeps counting; retried after 10 s, 20 s, 40 s ... up to 5 min, ' +
+      'never a restart. Lets go after releaseS seconds (default: never; flip "SDA held low" in the web UI)',
+    make: ([release]) => {
+      const releaseMs = release ? num(release, 0, 'i2c-parked release') * 1000 : null;
+      let released = false;
+      return {
+        label: releaseMs === null ? 'a module holds SDA low' : `a module holds SDA low for ${releaseMs / 1000} s`,
+        configure: (opts) => {
+          opts.busFault = { ...opts.busFault, sdaLow: true };
+        },
+        tick: (nowMs, dev) => {
+          if (releaseMs === null || released || nowMs < releaseMs) return;
+          released = true;
+          dev.setBusFault({ sdaLow: false });
+        },
+      };
+    },
   },
   'old-partitions': {
     help:
