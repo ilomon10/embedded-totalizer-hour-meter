@@ -8,7 +8,10 @@ namespace pins {
 // I2C bus shared by EEPROM, RTC and IMU (ESP32 default pins).
 constexpr int kI2cSda = 21;
 constexpr int kI2cScl = 22;
-constexpr uint32_t kI2cFrequencyHz = 400000;  // all three chips support 400 kHz
+// 100 kHz (standard mode): more margin for long wires and weak pull-ups on a
+// vehicle than 400 kHz. The cost: an IMU sample with the magnetometer takes
+// ~3 ms (imuSampleHz above ~300 Hz overruns), an EEPROM journal scan ~3 s.
+constexpr uint32_t kI2cFrequencyHz = 100000;
 
 // Engine inputs.
 constexpr int kAlternator = 27;  // PC817 output: LOW while the alternator charges (see docs/WIRING.md)

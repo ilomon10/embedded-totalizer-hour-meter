@@ -22,7 +22,7 @@ The build enforces what it can: `-Wall -Wextra -Werror`, `[[nodiscard]]` on ever
 ## Project-specific rules
 
 - **Persisted data carries magic + version + CRC** (`JournalRecord`, `SettingsRecord`, `LayoutHeaderRecord`), and `crc` must be the last field (enforced by `static_assert`). Corrupt data falls back to the previous copy or to defaults. It never crashes and is never silently used.
-- **Never trust the bus.** Every I2C transfer has a timeout; a stuck bus is recovered (9 clocks + STOP); NACK is an answer, not a retry reason.
+- **Never trust the bus.** Every I2C transfer has a timeout; a stuck bus is recovered (9 clocks + STOP); NACK is an answer, not a retry reason. A bus that stays bad is parked and retried later (`BusGuard`), never a reason to restart: every module is optional.
 - **Degrade, don't die.** A missing chip sets a status flag and the rest keeps working.
 - **No blocking in the loop** beyond one bounded transfer. Long operations (calibration) are state machines advanced by the loop.
 - **ISRs only count.** The pulse ISR increments a counter under a spinlock; everything else happens in the loop.

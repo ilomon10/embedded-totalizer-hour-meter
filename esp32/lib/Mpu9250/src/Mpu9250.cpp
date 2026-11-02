@@ -42,6 +42,9 @@ bool decodeMag(const uint8_t raw[7], const Vec3& adjust, Vec3& out) {
 using namespace mpu9250;
 
 Status Mpu9250::begin() {
+  if (bus_.probe(address_) != Status::Ok) {
+    return Status::DeviceMissing;  // nobody at this address: a missing module is not a bus fault
+  }
   TRY(readReg(bus_, address_, kRegWhoAmI, whoAmI_));
   if (whoAmI_ != kWhoAmI9250 && whoAmI_ != kWhoAmI9255 && whoAmI_ != kWhoAmI6500) {
     return Status::DeviceMissing;

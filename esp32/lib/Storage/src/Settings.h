@@ -69,6 +69,12 @@ struct Settings : StoredSettings {
   // Engine-running confirmation: count run time only while the IMU vibration RMS
   // is at least this (mg). 0 = off (the alternator input alone decides).
   uint16_t runVibMinMg;
+  // 1 = the I2C modules (EEPROM, RTC, IMU) are switched off: the bus is never
+  // started, the device is an hour meter only (setting `i2c`, inverted).
+  uint8_t i2cOff;
+  // 1 = the pulse input (GPIO26) is ignored: no interrupt, nothing counts
+  // (setting `pulseInput`, inverted). For a unit with only the engine input wired.
+  uint8_t pulseOff;
 };
 
 Settings defaultSettings();

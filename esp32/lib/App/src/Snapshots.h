@@ -8,7 +8,7 @@ struct HourMeterSnapshot {
   uint32_t runSeconds = 0;
   uint32_t totalCount = 0;
   bool running = false;      // engine running (input, and confirmed when runVibMinMg is set)
-  bool inputActive = false;  // raw engine-running input, before confirmation
+  bool inputActive = false;  // engine-running input (level active or toggling), before debounce and confirmation
   uint16_t pulsesPerUnit = 1;
   uint32_t lastSavedEpoch = 0;
   uint32_t journalSeq = 0;
@@ -29,4 +29,6 @@ struct DeviceStatus {
   uint8_t btState = 0;  // 0 off, 1 on, 2 client locked, 3 client unlocked
   uint8_t lastCause = 0;  // LastCause of the previous run
   uint8_t lastStage = 0;  // Stage the previous run ended in
+  bool i2cParked = false; // the I2C bus is parked after trouble (BusGuard.h)
+  uint8_t i2cLines = 0;   // i2c_lines: the lines the bus recovery found held low (sent only while parked)
 };

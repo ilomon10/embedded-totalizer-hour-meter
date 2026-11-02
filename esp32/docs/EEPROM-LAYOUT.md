@@ -30,7 +30,9 @@ At boot: header valid → use the EEPROM as is. Header invalid (new chip, other 
 
 ## Settings: two copies (A/B)
 
-`SettingsRecord` (128 B) = `magic 0x5453`, `version`, `seq`, the `Settings` struct (116 B: timing, ports, inputs, Kalman tuning, sensor calibration), `crc`.
+`SettingsRecord` (128 B) = `magic 0x5453`, `version`, `options`, `seq`, the `Settings` struct (116 B: timing, ports, inputs, Kalman tuning, sensor calibration), `runVibMinMg`, `crc`.
+
+Newer settings live in bytes that older firmware kept reserved and wrote as 0, so 0 always means the old behaviour and a record keeps `version` 2 (no reset on an update): `runVibMinMg` (2.5.0) and the `options` byte (2.7.0: bit 0 = `i2c` off, bit 1 = `pulseInput` off). The flash copies use the same record ([STORAGE.md](STORAGE.md)).
 
 - **Save** writes to the copy that is *not* currently active, with `seq + 1`. The active copy is untouched until the new one is verified.
 - **Load** picks the valid copy with the higher `seq`. If one is corrupt, the other is used. If both are, factory defaults are used (`settingsDefaults` flag).
@@ -72,7 +74,7 @@ Settings only change when a user sends a command or completes a calibration, so 
 
 In practice the device saves only while the engine runs (nothing changes otherwise), plus once on each engine stop.
 
-**Power-cut safety.** Boot scans all 992 slots (≈ 0.8 s at 400 kHz) and keeps the highest `seq` whose CRC is valid. A write torn by a power cut has a bad CRC and is ignored, so the hour meter rolls back to the previous save, at most one interval (default ≤ 60 s). It can never jump to a garbage value. The next save overwrites the damaged slot.
+**Power-cut safety.** Boot scans all 992 slots (≈ 3 s at the bus's 100 kHz; ≈ 0.8 s at the 400 kHz of firmware 2.6.0 and older) and keeps the highest `seq` whose CRC is valid. A write torn by a power cut has a bad CRC and is ignored, so the hour meter rolls back to the previous save, at most one interval (default ≤ 60 s). It can never jump to a garbage value. The next save overwrites the damaged slot.
 
 **Write verification.** Every page is read back after writing (`At24c::verify`). A mismatch reports `storageError` and is retried after one interval.
 

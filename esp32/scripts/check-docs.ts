@@ -43,7 +43,7 @@ const fail = (msg: string) => errors.push(msg);
 // ---- 1. Protocol.h tags vs configurator/src/tags.ts ----
 const protocol = read('lib/App/src/Protocol.h');
 const tagNs = protocol.slice(protocol.indexOf('namespace tag {'), protocol.indexOf('}  // namespace tag'));
-const SKIP = new Set(['kSettingFirst', 'kSettingLast', 'kSpeed', 'kFwVersion', 'kAckSeq', 'kAckStatus']);
+const SKIP = new Set(['kSettingFirst', 'kSettingLast', 'kSettingMoreFirst', 'kSettingMoreLast', 'kSpeed', 'kFwVersion', 'kAckSeq', 'kAckStatus']);
 for (const [, cname, num] of tagNs.matchAll(/constexpr uint8_t (k\w+) = (\d+);/g)) {
   if (SKIP.has(cname)) continue;
   const name = cname.replace(/^k(Cmd|Filt)?/, '').replace(/^./, (c) => c.toLowerCase());

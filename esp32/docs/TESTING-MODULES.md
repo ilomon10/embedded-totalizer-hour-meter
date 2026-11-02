@@ -56,6 +56,7 @@ Getting the current UTC epoch for `t`: `date +%s` (Linux/macOS) or `Math.floor(D
 | Symptom | Likely cause |
 |---|---|
 | Scan: "nothing answers" with a module connected | VCC/GND missing, SDA/SCL swapped, module needs pull-ups (most have them) |
+| Scan: "SDA held low" / "SCL held low" | A module (or a short) holds that line even after the bus recovery. Unplug the modules one at a time; the bench looks again at the next key. The product firmware parks the bus in this case and keeps counting (flag `i2cParked`) |
 | IMU FAIL "something at 0x68: tie AD0 to 3V3" | AD0 floating/low: the IMU sits on the RTC's address |
 | IMU WARN "no AK8963" | The board is an MPU6500 (no compass). Everything else works; heading will be unavailable |
 | IMU FAIL "values never change" | Dead or counterfeit chip |

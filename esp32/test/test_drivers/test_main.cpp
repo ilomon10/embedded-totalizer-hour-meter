@@ -238,6 +238,16 @@ static void test_mpu_begin_with_mag_and_wrong_chip() {
   TEST_ASSERT_EQUAL(Status::DeviceMissing, wrong.begin());
 }
 
+// A missing IMU is found by its address alone. A register read of an absent chip came back from the ESP32's
+// Wire as a bus fault, which marked the whole bus as failing (firmware 2.6.0 then restarted every 30 s).
+static void test_mpu_begin_missing_is_not_a_bus_fault() {
+  FakeI2cBus bus;  // nobody at 0x69
+  FakeClock clock;
+  bus.failNext(10, Status::I2cBusError);  // how a register read of an absent chip looked on the ESP32
+  Mpu9250 imu(bus, clock);
+  TEST_ASSERT_EQUAL(Status::DeviceMissing, imu.begin());  // was I2cBusError: a register read was tried
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_at24c_write_read_across_page_boundary);
@@ -254,5 +264,6 @@ int main() {
   RUN_TEST(test_mpu_decode_mag_axes_and_overflow);
   RUN_TEST(test_mpu_begin_detects_mpu6500_without_mag);
   RUN_TEST(test_mpu_begin_with_mag_and_wrong_chip);
+  RUN_TEST(test_mpu_begin_missing_is_not_a_bus_fault);
   return UNITY_END();
 }

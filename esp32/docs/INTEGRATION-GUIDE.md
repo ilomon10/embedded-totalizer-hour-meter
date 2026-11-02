@@ -2,7 +2,7 @@
 
 **Audience:** developers building an app (desktop, mobile, server, PLC gateway) that reads data from or configures the totalizer / hour-meter device over a serial port.
 **You need:** a serial port and the ability to read bytes. No SDK and no firmware knowledge are required.
-**Protocol:** SensorFrame v1 binary frames, firmware 2.6.0. The byte-level appendix is [`sensorframe/SPEC.md`](../../sensorframe/SPEC.md).
+**Protocol:** SensorFrame v1 binary frames, firmware 2.7.0. The byte-level appendix is [`sensorframe/SPEC.md`](../../sensorframe/SPEC.md).
 **Byte-exact examples:** [FRAME-CATALOG.md](FRAME-CATALOG.md) lists every frame the device sends, with hex dumps. **No hardware?** The [simulator](../../simulator/README.md) runs a fake device on a virtual serial port.
 
 | Section | Contents |
@@ -26,8 +26,8 @@ The device is installed on an engine or machine. It measures:
 
 | Quantity | Source | Notes |
 |---|---|---|
-| **Engine run time** (hour meter) | Alternator signal | Counts only while the engine runs. Survives power loss (stored in the ESP32's flash and, when fitted, the EEPROM) |
-| **Totalizer** | Pulse input (flow meter, counter) | Raw pulses plus scaled units (`pulsesPerUnit`) |
+| **Engine run time** (hour meter) | Alternator signal: the L/D+ level or a W/P phase terminal | Counts only while the engine runs. Survives power loss (stored in the ESP32's flash and, when fitted, the EEPROM) |
+| **Totalizer** | Pulse input (flow meter, counter) | Raw pulses plus scaled units (`pulsesPerUnit`). Can be switched off when nothing is wired (`pulseInput`) |
 | **Real time** | DS3231 RTC | **UTC** Unix time. The device has no timezone |
 | **Vibration** | MPU9250 accelerometer | RMS and peak in milli-g over a window. Use for engine-health trends |
 | **Orientation** | Accelerometer + gyro (Kalman filter) | Roll and pitch in degrees |
@@ -294,9 +294,9 @@ Every frame header carries `msgType`, `seq` (the device's own counter, increment
 
 | `eventKind` (tag 8) | Meaning | Records |
 |---:|---|---|
-| 1 | **Boot**: the device restarted | 1–7 and 10 (restored hour meter), 50, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 63, 241, plus 54 if the RTC is present |
+| 1 | **Boot**: the device restarted | 1–7 and 10 (restored hour meter), 50, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 63, 241, plus 54 if the RTC is present, plus 64 while the I2C bus is parked |
 | 2 | **Calibration finished** | 105 (which calibration), 9 (`calibResult`, an [ackStatus](#63-ackstatus-codes) code), plus 130–148 when successful |
-| 3 | **Modules changed**: a module was plugged in or lost while running | 55 `devices` (new set), 50, 51, 52, 53, 56, 57, 58, 60, 61, 62, 63, 241, plus 54 if the RTC is present |
+| 3 | **Modules changed**: a module was plugged in or lost while running (also when the I2C bus is parked or switched off) | 55 `devices` (new set), 50, 51, 52, 53, 56, 57, 58, 60, 61, 62, 63, 241, plus 54 if the RTC is present, plus 64 while the I2C bus is parked |
 
 A boot EVENT with `resetReason` ≠ 1 (see tag 58) means the device restarted without a power cut. Log it together with `lastCause` (tag 62) and `lastStage` (tag 63): they say why and during what. A watchdog restart while `IMU`, for example, points at the IMU wiring.
 
@@ -319,7 +319,7 @@ A boot EVENT with `resetReason` ≠ 1 (see tag 58) means the device restarted wi
 | 7 | `journalSeq` | u32 | 1 | | Save counter (increases with every save; flash and EEPROM carry the same one) |
 | 8 | `eventKind` | u8 | | | EVENT type: 1 boot, 2 calibration finished, 3 modules changed |
 | 9 | `calibResult` | u8 | | | Result of a calibration (ackStatus code) |
-| 10 | `altInput` | bool | | | The engine-running input itself, before the vibration check. `altInput` true with `alternator` false means "wire live, no engine vibration": usually a key-on wire ([WIRING](WIRING.md#pick-the-wire)) |
+| 10 | `altInput` | bool | | | The engine-running input itself, before the debounce and the vibration check: its level says "running", or it toggles at 40 Hz or more while also sitting at the running level part of the time (a W/P phase terminal, 2.7.0; noise spikes on a steady level don't count). `altInput` true with `alternator` false for longer than the debounce means "wire live, no engine vibration": usually a key-on wire ([WIRING](WIRING.md#pick-the-wire)) |
 
 ### 5.2 IMU (stream, msgType 128)
 
@@ -361,8 +361,9 @@ The **raw** values come straight from the sensor. The **filtered** values have c
 | 59 | `rejectedTag` | u8 | | | In an error ACK: which tag was refused |
 | 60 | `settingsSource` | u8 | | | 0 factory defaults, 1/2 EEPROM copy A/B, 3/4 flash copy A/B (2.6.0) |
 | 61 | `btState` | u8 | | | Bluetooth: 0 off, 1 on (no client), 2 client connected and locked, 3 client connected and unlocked |
-| 62 | `lastCause` | u8 | | | Why the device restarted last time: 0 none (power-on, brown-out), 1 watchdog (the firmware stalled for 5 s), 2 I2C bus stuck for 30 s, 3 USB transmit stalled for 10 s, 4 [panic signal](#64-panic-signal-restart-without-a-frame), 5 `reboot` command, 6 crash |
+| 62 | `lastCause` | u8 | | | Why the device restarted last time: 0 none (power-on, brown-out), 1 watchdog (the firmware stalled for 5 s), 2 I2C bus stuck for 30 s (firmware 2.6.0 and older only: 2.7.0 parks the bus instead, flag 20), 3 USB transmit stalled for 10 s, 4 [panic signal](#64-panic-signal-restart-without-a-frame), 5 `reboot` command, 6 crash |
 | 63 | `lastStage` | u8 | | | What it was doing at that moment: 0 unknown (power-on), 1 boot, 2 opening USB, 3 starting I2C, 4 EEPROM, 5 opening UART / Bluetooth, 6 RTC, 7 IMU, 8 serial / command, 9 inputs, 10 telemetry, 11 module presence check, 12 flash store (2.6.0) |
+| 64 | `i2cLines` | u8 | | | Only while the I2C bus is parked (flag 20), in the boot EVENT, EVENT kind 3 and `get` 3: bit 0 SDA held low, bit 1 SCL held low, 0 both lines free but the transfers kept timing out (2.7.0) |
 | 241 | `fwVersion` | u32 | | | `0x00MMmmpp`, e.g. `0x00020400` = 2.4.0 |
 | 242 | `ackSeq` | u16 | | | In ACK: the `seq` of your command |
 | 243 | `ackStatus` | u8 | | | In ACK: result, [see 6.3](#63-ackstatus-codes) |
@@ -389,8 +390,10 @@ The **raw** values come straight from the sensor. The **filtered** values have c
 | 15 | `rtcBatteryLost` | The time had been set, but the RTC lost it during the last power-off: its backup battery is missing or flat. Ask the user to fit one (see [9.2](#92-running-without-an-rtc-battery)). Reported from boot until the next reboot |
 | 16 | `timeNotBackedUp` | The time is valid but held only in the ESP32's RAM (no RTC, or the RTC could not store it). It will be lost at the next reboot; send `setTime` again after each boot EVENT |
 | 17 | `settingsNotSaved` | Settings were changed while there was nowhere to save them (no flash store and no EEPROM). They are active now and are saved automatically when an EEPROM is plugged in; lost if the device reboots first |
-| 18 | `safeMode` | The device restarted itself 3 times in a row without being asked (watchdog, crash, I2C stuck, USB stalled), so it booted **without I2C**: no EEPROM, RTC or IMU. The counters and settings still come from, and are saved to, the ESP32's flash (2.6.0). Read `lastCause` / `lastStage`, fix the wiring, then power-cycle, send `reboot` or the panic signal ([9.3](#93-the-device-sends-nothing)) |
+| 18 | `safeMode` | The device restarted itself 3 times in a row without being asked (watchdog, crash, USB stalled; firmware 2.6.0 and older also a stuck I2C bus), so it booted **without I2C**: no EEPROM, RTC or IMU. The counters and settings still come from, and are saved to, the ESP32's flash (2.6.0). Read `lastCause` / `lastStage`, fix the cause, then power-cycle, send `reboot` or the panic signal ([9.3](#93-the-device-sends-nothing)) |
 | 19 | `flashStoreMissing` | The ESP32's flash has no `hmdata` partition: its partition table is older than firmware 2.6.0 (an app-only update). The EEPROM is the only store. Flash the full image (`hour-meter firmware flash`, or `pio run -t upload`) to add it |
+| 20 | `i2cParked` | The I2C bus kept failing (5 s of timeouts or bus errors; a missing module only answers NACK, which is not a failure), or a line is held low. The device released the bus and counts every module as missing; the hour meter keeps counting and saving in the flash. It tries the bus again after 10 s, then 20 s, 40 s … up to every 5 min. Tag 64 says which line is held: unplug the modules one at a time, check the wiring and that the MPU9250's AD0 is tied to 3.3 V. With `flashStoreMissing` set as well, nothing is saved while parked: flash the full image (2.7.0) |
+| 21 | `i2cOff` | The `i2c` setting (tag 150) is off: the bus is never started, the device is an hour meter only. The module-missing flags are expected then (2.7.0) |
 
 ### 5.6 Calibration values (read-only)
 
@@ -435,14 +438,14 @@ packet: 01 03 2a 00 | 00 00 00 00 | 00 00 00 00 | 64 05 70 3c c6 6a | 05 6a
 | Tag | Command | Value | What it does | ACK contains |
 |---:|---|---|---|---|
 | 100 | `setTime` | u32 UTC epoch (2000–2099) | Sets the device clock and the RTC. Use `Math.floor(Date.now()/1000)` / `int(time.time())`. **Always UTC**. Accepted even without a working RTC; then `timeNotBackedUp` is set | status |
-| 101 | `get` | u8: 1 hour meter, 2 settings, 3 status, 4 calibration | Reads data | the requested tags (1–7, 10 / 110–129 / 50–58, 60–63, 241 / 130–148) |
+| 101 | `get` | u8: 1 hour meter, 2 settings, 3 status, 4 calibration | Reads data | the requested tags (1–7, 10 / 110–129, 150–151 / 50–58, 60–63, 241, plus 64 while the I2C bus is parked / 130–148) |
 | 102 | `setRunSeconds` | u32 seconds | Sets the hour meter to **any value** (e.g. installing on a machine with 1250.5 h → `round(1250.5 × 3600)` = 4501800). `0` resets the hour meter only. Saved immediately | status |
 | 103 | `setTotalCount` | u32 pulses | Sets the totalizer to **any value**. To set it in units (litres…), send `round(units × pulsesPerUnit)`; read `pulsesPerUnit` with `get` 2. `0` resets the totalizer only. Saved immediately | status |
 | 104 | `resetCounters` | u32, **must be `0x5245534E`** | Sets **both** hour meter and totalizer to 0. The magic value prevents accidents. To reset only one, use 102 or 103 with `0` | status |
 | 105 | `calibrate` | u8: 1 accel+gyro, 2 magnetometer | Starts a calibration ([procedure](#calibration-procedure)). The result arrives later as EVENT kind 2 | status (= started) |
 | 106 | `reboot` | u8 any | Saves counters, sends the ACK, restarts. A boot EVENT follows (`lastCause` 5). Also leaves safe mode | status |
 | 107 | `unlock` | u16 PIN | Unlocks a Bluetooth session ([2.1](#21-bluetooth)). Accepted and ignored on USB/UART | status (`BadPin` / `Locked` on failure) |
-| 110–129 | settings | see [§7](#7-settings-reference) | Changes and saves settings | status |
+| 110–129 / 150–151 | settings | see [§7](#7-settings-reference) | Changes and saves settings | status |
 
 Send one `get` per command. A single ACK has room for one data set.
 
@@ -496,12 +499,12 @@ port.write(new Uint8Array(64)); // 64 zero bytes
 
 ## 7. Settings reference
 
-Read all settings with `get` 2. To change one or more, send their tags in a COMMAND. Values are validated, saved to the flash and the EEPROM (power-safe), and **applied immediately** unless the table says otherwise.
+Read all settings with `get` 2 (tags 110–129, then 150–151: the first block is full). To change one or more, send their tags in a COMMAND. Values are validated, saved to the flash and the EEPROM (power-safe), and **applied immediately** unless the table says otherwise.
 
 | Tag | Name | Type | Default | Range | Controls |
 |---:|---|---|---:|---|---|
 | 110 | `telemetryIntervalMs` | u16 | 1000 | 100–60000 | TELEMETRY period |
-| 111 | `imuSampleHz` | u16 | 100 | 10–500 | IMU read + filter rate |
+| 111 | `imuSampleHz` | u16 | 100 | 10–500 | IMU read + filter rate. Since 2.7.0 the I2C bus runs at 100 kHz: above about 300 Hz the reads can't keep up (`overruns`) |
 | 112 | `imuStreamHz` | u8 | 10 | 0–100, ≤ `imuSampleHz` | IMU stream rate (0 = off) |
 | 113 | `streamMode` | u8 | 2 | 0 off, 1 raw, 2 filtered, 3 both | IMU stream content |
 | 114 | `persistIntervalS` | u16 | 60 | 10–3600 | Max time between saves while running (always saved when the engine stops) |
@@ -509,8 +512,8 @@ Read all settings with `get` 2. To change one or more, send their tags in a COMM
 | 116 | `rtcSyncIntervalS` | u16 | 60 | 1–3600 | How often the RTC is re-read |
 | 117 | `output` | u8 | 1 | 1 usb, 2 uart, 3 both | Where periodic data goes. **Applied after the ACK** |
 | 118 | `uartBaud` | u32 | 115200 | 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600 | UART-pin baud (USB stays 115200). **Applied after the ACK** |
-| 119 | `altActiveHigh` | bool | false | | Alternator input level that means running. `false` matches the standard PC817 optocoupler input (running = LOW) |
-| 120 | `altDebounceMs` | u16 | 200 | 0–5000 | Input must be stable this long to count |
+| 119 | `altActiveHigh` | bool | false | | Alternator input level that means running. `false` matches the standard PC817 optocoupler input (running = LOW). A toggling input (W/P terminal) counts as running at either setting |
+| 120 | `altDebounceMs` | u16 | 200 | 0–5000 | How long the input must say "running" (or "stopped") before it counts. Since 2.7.0 the time integrates: short flickers only delay the change, they don't restart the wait |
 | 121 | `pulseRisingEdge` | bool | false | | Count rising (true) or falling (false) edges |
 | 122 | `pulseMinIntervalUs` | u16 | 1000 | 0–65535 | Ignore pulses closer than this (debounce) |
 | 123 | `pulsesPerUnit` | u16 | 1 | 1–65535 | Scale for `totalUnits` (e.g. pulses per litre) |
@@ -520,6 +523,8 @@ Read all settings with `get` 2. To change one or more, send their tags in a COMM
 | 127 | `bluetooth` | bool | false | | Bluetooth SPP radio on/off. **Applied after the ACK** |
 | 128 | `btPin` | u16 | 1234 | 0–9999 | PIN for `unlock` on Bluetooth. **Change it at installation** |
 | 129 | `runVibMinMg` | u16 | 0 | 0–2000 mg | Engine counts as running only while `vibRms` is at least this (released below 70 %). 0 = off. Ignored without an IMU. How to pick the value: [WIRING](WIRING.md#only-a-key-on-wire-is-reachable) |
+| 150 | `i2c` | bool | true | | I2C modules (EEPROM, RTC, IMU) on/off. Off: the bus is never started, not even at boot; the hour meter runs on the ESP32's flash, and the time is kept in RAM (send `setTime` after each boot). Flag 21 (2.7.0) |
+| 151 | `pulseInput` | bool | true | | Pulse input on/off. Off: GPIO26 is ignored and the totalizer keeps its value without counting. Use it when only the engine input is wired (2.7.0) |
 
 **Bandwidth.** Make sure the data fits the port (about 1 byte per 10 baud):
 
@@ -622,11 +627,11 @@ sequenceDiagram
 5. **Check `timeValid`** before trusting timestamps. When it is false, the header timestamp is uptime (always below 946684800).
 6. **Device `seq` wraps** 65535 → 0. A jump or reset of `seq` together with a boot EVENT means the device restarted.
 7. **Hour meter after power loss.** The device saves at least every `persistIntervalS` while running and on every engine stop. After a sudden power cut, at most the last interval (default ≤ 60 s) is lost; the counter never jumps or corrupts.
-8. **Watch `statusFlags`.** Show `timeInvalid`, `rtcBatteryLost`, `eepromMissing`, `storageError` and `flashStoreMissing` to the user; they need action.
+8. **Watch `statusFlags`.** Show `timeInvalid`, `rtcBatteryLost`, `eepromMissing`, `storageError`, `flashStoreMissing` and `i2cParked` to the user; they need action. With `i2cOff` the module-missing flags are expected.
 
 ### 9.1 Modules are optional
 
-Every I2C module (EEPROM, RTC, IMU) is optional and may be plugged in or removed while the device runs. Read `devices` (tag 55) and `statusFlags` to know what is available, and listen for EVENT kind 3 to react to changes. What each missing module means:
+Every I2C module (EEPROM, RTC, IMU) is optional and may be plugged in or removed while the device runs. Read `devices` (tag 55) and `statusFlags` to know what is available, and listen for EVENT kind 3 to react to changes. A bus that keeps failing is parked (flag 20) and all modules count as missing until it works again; the `i2c` setting (tag 150) switches the bus off for good (flag 21). What each missing module means:
 
 | Missing | Still works | Not available |
 |---|---|---|
@@ -656,14 +661,14 @@ Check these in order:
 2. **Telemetry may go elsewhere.** If the `output` setting is 2 (UART pins only), USB only answers commands. Send `get` 2 over USB and look at `output` (tag 117).
 3. **Send the panic signal** ([6.4](#64-panic-signal-restart-without-a-frame)), then wait 3 s for a boot EVENT.
 4. **Hard reset:** pulse EN (RTS on DevKit boards), or power-cycle.
-5. **Read the boot EVENT.** `lastCause` and `lastStage` say what went wrong last time. `safeMode` (flag 18) means it kept failing, usually on the I2C wiring.
+5. **Read the boot EVENT.** `lastCause` and `lastStage` say what went wrong last time. `safeMode` (flag 18) means it kept restarting by itself.
 
 The device also recovers by itself:
 
 | Trouble | What the device does |
 |---|---|
 | The firmware stalls (any step, including boot) | The watchdog restarts it after 5 s (`lastCause` 1) |
-| The I2C bus keeps timing out for 30 s, even after bus recovery | Restarts (`lastCause` 2). A missing module is not trouble |
+| The I2C bus keeps failing for 5 s, even after bus recovery, or a line is held low | **No restart** (2.7.0; 2.6.0 and older restarted after 30 s, `lastCause` 2). Parks the bus (flag 20, tag 64), counts every module as missing, keeps counting, and tries the bus again after 10 s, 20 s, 40 s … up to every 5 min. A missing module is not trouble |
 | The USB transmit buffer does not drain for 10 s | Restarts (`lastCause` 3) |
 | 3 such restarts in a row | Boots in safe mode: USB, UART and counting work; I2C modules are skipped until a power-cycle, `reboot` or the panic signal |
 
@@ -686,3 +691,4 @@ The restart counter clears after 10 minutes of normal running. USB is opened bef
 | 2.4.0 | Self-recovery: watchdog armed from the first instruction of boot, USB opened before I2C, restarts on a stuck I2C bus or stalled USB, the [panic signal](#64-panic-signal-restart-without-a-frame), safe mode (flag 18), `lastCause` / `lastStage` (tags 62, 63). **Fix:** `pitch` (tag 41) now follows this guide (nose up positive); 2.3.0 and older sent it with the opposite sign |
 | 2.5.0 | Engine-running confirmation by vibration: `runVibMinMg` setting (tag 129, off by default), `altInput` (tag 10) reports the raw input. Settings stored by older firmware load unchanged |
 | 2.6.0 | Settings and counters are also stored in the ESP32's own flash (partition `hmdata`): the device keeps its hour meter without an EEPROM, and in safe mode. Every save goes to flash and EEPROM; the flash is the main store, and the first boot copies the EEPROM into the flash. `setRunSeconds` / `setTotalCount` / `resetCounters` work without an EEPROM. `settingsSource` 3/4, `lastStage` 12, flag 19 `flashStoreMissing` |
+| 2.7.0 | **No more restarts for I2C trouble:** a failing bus is parked and retried (flag 20 `i2cParked`, tag 64 `i2cLines`); `lastCause` 2 is no longer produced. **Fix:** a missing IMU was reported as a bus fault, which restarted 2.6.0 every 30 s and ended in safe mode. Settings `i2c` (tag 150, hour meter only, flag 21 `i2cOff`) and `pulseInput` (tag 151). Engine detection: integrating debounce, and a toggling W/P terminal counts as running (`altInput`). The I2C bus runs at 100 kHz. Settings stored by older firmware load unchanged |

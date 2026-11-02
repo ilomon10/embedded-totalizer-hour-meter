@@ -12,7 +12,7 @@
 // One writer size for every frame we send (SensorFrame maximum).
 using FrameWriter = SensorFrameWriter<SF_MAX_PACKET>;
 
-constexpr uint32_t kFirmwareVersion = 0x00020600;  // 0x00MMmmpp -> 2.6.0
+constexpr uint32_t kFirmwareVersion = 0x00020700;  // 0x00MMmmpp -> 2.7.0
 
 namespace msg {
 constexpr uint8_t kTelemetry = SF_MSG_TELEMETRY;  // 1: periodic hour meter + status
@@ -48,7 +48,7 @@ constexpr uint8_t kHeading = 42;  // u16 x0.01 deg, 0 = magnetic north, clockwis
 constexpr uint8_t kVibRms = 43;   // u16 mg
 constexpr uint8_t kVibPeak = 44;  // u16 mg
 constexpr uint8_t kSpeed = 45;    // RESERVED: needs a speed sensor or GPS (not from IMU)
-// --- Status 50..63 ---
+// --- Status 50..64 ---
 constexpr uint8_t kTimeValid = 50;      // bool RTC time trustworthy
 constexpr uint8_t kEpoch = 51;          // u32  UTC s
 constexpr uint8_t kUptime = 52;         // u32  s since boot
@@ -63,6 +63,7 @@ constexpr uint8_t kSettingsSource = 60; // u8   0 defaults, 1/2 EEPROM copy A/B,
 constexpr uint8_t kBtState = 61;        // u8   0 off, 1 on (no client), 2 client locked, 3 client unlocked
 constexpr uint8_t kLastCause = 62;      // u8   LastCause: why the device restarted last time
 constexpr uint8_t kLastStage = 63;      // u8   Stage: what it was doing when it restarted
+constexpr uint8_t kI2cLines = 64;       // u8   i2c_lines: the lines held low when the bus was parked (only while parked)
 // --- Commands 100..106 (host -> device) ---
 constexpr uint8_t kCmdSetTime = 100;       // u32 UTC epoch
 constexpr uint8_t kCmdGet = 101;           // u8  GetWhat
@@ -72,9 +73,11 @@ constexpr uint8_t kCmdResetCounters = 104; // u32 must equal kResetMagic
 constexpr uint8_t kCmdCalibrate = 105;     // u8  CalibKind
 constexpr uint8_t kCmdReboot = 106;        // any value
 constexpr uint8_t kCmdUnlock = 107;        // u16 PIN: unlocks a Bluetooth session (no-op on wired ports)
-// --- Settings 110..129 (see SettingsSchema.cpp for ranges) ---
+// --- Settings 110..129 and 150..151 (see SettingsSchema.cpp for ranges) ---
 constexpr uint8_t kSettingFirst = 110;
 constexpr uint8_t kSettingLast = 129;
+constexpr uint8_t kSettingMoreFirst = 150;  // the first block is full and 130.. is calibration
+constexpr uint8_t kSettingMoreLast = 151;
 // --- Calibration 130..148 (read-only, f32 unless noted) ---
 constexpr uint8_t kCalAccelBiasX = 130;  // g
 constexpr uint8_t kCalGyroBiasX = 133;   // deg/s
@@ -100,7 +103,7 @@ enum class EventKind : uint8_t { Boot = 1, CalibrationDone = 2, DevicesChanged =
 enum class LastCause : uint8_t {
   None = 0,           // power-on, brown-out, or nothing to report
   Watchdog = 1,       // loop() stalled for kWatchdogTimeoutS (see lastStage for where)
-  I2cStuck = 2,       // the I2C bus kept failing for 30 s, even after bus recovery
+  I2cStuck = 2,       // firmware <= 2.6.0 only: the I2C bus kept failing for 30 s (2.7.0 parks the bus instead)
   UsbStalled = 3,     // the USB serial TX buffer did not drain for 10 s
   PanicSignal = 4,    // a host sent the panic signal (64 zero bytes on USB / UART pins)
   RebootCommand = 5,  // the reboot command (tag 106)
@@ -164,8 +167,10 @@ constexpr uint32_t kCalibrating = 1u << 14;
 constexpr uint32_t kRtcBatteryLost = 1u << 15;   // RTC lost a previously set time over power-off: no/flat battery
 constexpr uint32_t kTimeNotBackedUp = 1u << 16;  // time valid in RAM only (no RTC / RTC not writable): lost at reboot
 constexpr uint32_t kSettingsNotSaved = 1u << 17; // settings changed with no store (no flash, no EEPROM): RAM only until one appears
-constexpr uint32_t kSafeMode = 1u << 18;         // 3 unplanned restarts in a row: I2C is skipped until the next reboot
+constexpr uint32_t kSafeMode = 1u << 18;         // 3 unplanned restarts in a row (watchdog, crash, USB stall): I2C is skipped until the next reboot
 constexpr uint32_t kFlashStoreMissing = 1u << 19; // no "hmdata" partition (old partition table): the EEPROM is the only store
+constexpr uint32_t kI2cParked = 1u << 20;         // the I2C bus kept failing: released, modules count as missing, retried later
+constexpr uint32_t kI2cOff = 1u << 21;            // the `i2c` setting is off: the bus is never started (hour meter only)
 }  // namespace status_flag
 
 namespace device_bit {

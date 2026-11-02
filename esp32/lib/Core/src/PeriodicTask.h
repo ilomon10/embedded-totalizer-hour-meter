@@ -8,6 +8,11 @@
 // The schedule is fixed-rate (next = previous + period), so it does not drift.
 // If the loop falls far behind, it skips ahead instead of firing a burst and
 // counts the miss in overruns().
+//
+// Time is kept as "microseconds since the last tick" (unsigned), so a task that
+// is not polled for a long time (its module was missing for an hour) fires at
+// the next poll instead of waiting for the 32-bit clock to come round again,
+// and periods up to 71 minutes work.
 #pragma once
 
 #include <stdint.h>
@@ -22,7 +27,7 @@ class PeriodicTask {
   // Change the period at runtime (e.g. a new setting). Takes effect from now.
   void setPeriodUs(uint32_t periodUs, uint32_t nowUs) {
     periodUs_ = (periodUs == 0) ? 1 : periodUs;
-    nextUs_ = nowUs + periodUs_;
+    lastUs_ = nowUs;
     started_ = true;
   }
 
@@ -32,26 +37,26 @@ class PeriodicTask {
   // True once per period. Safe across the 71-minute micros() wrap-around.
   bool due(uint32_t nowUs) {
     if (!started_) {
-      nextUs_ = nowUs + periodUs_;
+      lastUs_ = nowUs;
       started_ = true;
       return false;
     }
-    const int32_t late = static_cast<int32_t>(nowUs - nextUs_);
-    if (late < 0) {
+    const uint32_t elapsed = nowUs - lastUs_;  // unsigned: survives the wrap
+    if (elapsed < periodUs_) {
       return false;
     }
-    if (static_cast<uint32_t>(late) >= periodUs_ * kMaxCatchUp) {
+    if ((elapsed - periodUs_) / kMaxCatchUp >= periodUs_) {  // late by kMaxCatchUp periods or more (no overflow)
       overruns_++;
-      nextUs_ = nowUs + periodUs_;  // resynchronise; drop the missed ticks
+      lastUs_ = nowUs;  // resynchronise; drop the missed ticks
     } else {
-      nextUs_ += periodUs_;
+      lastUs_ += periodUs_;
     }
     return true;
   }
 
  private:
   uint32_t periodUs_;
-  uint32_t nextUs_ = 0;
+  uint32_t lastUs_ = 0;  // when the last tick was due
   uint32_t overruns_ = 0;
   bool started_ = false;
 };

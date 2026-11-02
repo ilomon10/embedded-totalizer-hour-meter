@@ -29,7 +29,8 @@ The device does not need the EEPROM any more. When it is fitted, it is a second 
 | Board X is swapped out, its EEPROM runs in board Y, then X comes back with it | Same history, and the EEPROM has the newer saves: X takes them at boot. If the EEPROM answers only while X runs, what Y counted is added to what X counted meanwhile. A counter set by hand on X since the EEPROM left keeps its value |
 | A new ESP32 board with the old EEPROM | The flash is empty: the EEPROM's values are used and copied into the flash |
 | Safe mode (I2C off after repeated restarts) | The counters and settings come from the flash, and saves go to the flash |
-| Restart because the I2C bus is stuck (`i2cStuck`) | The last counts are saved to the flash first; the EEPROM is skipped |
+| The I2C bus is parked after trouble (`i2cParked`, 2.7.0) or switched off (`i2c` setting) | The EEPROM counts as missing: saves go to the flash only. When the bus works again, the EEPROM comes back like one plugged in while running: same history, so it is brought up to date and nothing is added |
+| Restart because the I2C bus is stuck (`i2cStuck`, firmware 2.6.0 and older) | The last counts are saved to the flash first; the EEPROM is skipped |
 | `setRunSeconds`, `setTotalCount`, `resetCounters` without an EEPROM | They work: the flash keeps the new values |
 | Partition table older than 2.6.0 (an app-only update) | Flag `flashStoreMissing`: the EEPROM is the only store, as before 2.6.0. Flash the full image to add `hmdata` |
 | The EEPROM's scan fails halfway (a loose contact) | It counts as not fitted, and the presence check tries again 2 s later. A half-read journal is never used |

@@ -158,6 +158,26 @@ static void test_periodic_task_fixed_rate_and_overrun() {
   TEST_ASSERT_TRUE(w.due(0xFFFFFF00u + 1000u));  // wraps past 0
 }
 
+// A task that is not polled for a long time (its module was missing, the I2C
+// bus parked) fires at the next poll. Before 2.7.0 a pause of more than 36 min
+// left it waiting up to another 36 min.
+static void test_periodic_task_after_a_long_pause_and_long_periods() {
+  PeriodicTask t(2000000);  // 2 s
+  TEST_ASSERT_FALSE(t.due(0));
+  TEST_ASSERT_TRUE(t.due(2000000));
+  const uint32_t later = 2000000u + 40u * 60u * 1000000u;  // 40 min unpolled: more than 2^31 us
+  TEST_ASSERT_TRUE(t.due(later));
+  TEST_ASSERT_EQUAL_UINT32(1, t.overruns());
+  TEST_ASSERT_FALSE(t.due(later + 1999999u));
+  TEST_ASSERT_TRUE(t.due(later + 2000000u));
+  // rtcSyncIntervalS up to 3600: a period beyond 2^31 us waits its full time (it used to fire on every poll).
+  PeriodicTask hour(3600u * 1000000u);
+  TEST_ASSERT_FALSE(hour.due(0));
+  TEST_ASSERT_FALSE(hour.due(1000));
+  TEST_ASSERT_FALSE(hour.due(3599u * 1000000u));
+  TEST_ASSERT_TRUE(hour.due(3600u * 1000000u));
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_kalman1d_reduces_noise);
@@ -170,5 +190,6 @@ int main() {
   RUN_TEST(test_vibration_rms_of_sine);
   RUN_TEST(test_running_stats);
   RUN_TEST(test_periodic_task_fixed_rate_and_overrun);
+  RUN_TEST(test_periodic_task_after_a_long_pause_and_long_periods);
   return UNITY_END();
 }

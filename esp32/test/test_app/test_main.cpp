@@ -10,6 +10,8 @@
 #include "Presence.h"
 #include "AccessGate.h"
 #include "Supervisor.h"
+#include "BusGuard.h"
+#include "II2cBus.h"
 #include "RunConfirm.h"
 
 
@@ -68,17 +70,83 @@ static void test_hourmeter_persist_schedule() {
   TEST_ASSERT_EQUAL_UINT32(3, m.snapshot().totalCount);
 }
 
+// A flickering input (a bad contact, a marginal L/D+ level) follows the level it
+// has most of the time; before 2.7.0 every flicker restarted the debounce, so a
+// running engine with 30 % dropouts never started counting.
+static void test_hourmeter_flicker_follows_the_majority() {
+  HourMeter m;
+  m.configure(true, 200, 1, 60);
+  m.update(0, false);
+  for (uint32_t t = 10; t <= 2000; t += 10) m.update(t, (t / 10) % 10 < 7);  // 70 % active
+  TEST_ASSERT_TRUE(m.running());
+  for (uint32_t t = 2010; t <= 5000; t += 10) m.update(t, (t / 10) % 10 >= 3);  // 30 % dropouts
+  TEST_ASSERT_TRUE(m.running());
+  TEST_ASSERT_UINT32_WITHIN(1, 4, m.snapshot().runSeconds);
+
+  HourMeter noise;
+  noise.configure(true, 200, 1, 60);
+  noise.update(0, false);
+  for (uint32_t t = 10; t <= 5000; t += 10) noise.update(t, (t / 10) % 10 < 3);  // 30 % active: noise
+  TEST_ASSERT_FALSE(noise.running());
+  TEST_ASSERT_EQUAL_UINT32(0, noise.snapshot().runSeconds);
+}
+
+// A W/P phase terminal through the 817 module: the level the 100 Hz sampling
+// sees is random, the number of level changes is not.
+static void test_hourmeter_counts_a_toggling_alternator_signal() {
+  HourMeter m;
+  m.configure(false, 200, 1, 60);  // 817 module: LOW = running
+  m.update(0, true);               // engine off: input HIGH, no edges
+  for (uint32_t t = 10; t <= 1000; t += 10) m.update(t, true, true, 0);
+  TEST_ASSERT_FALSE(m.running());
+  for (uint32_t t = 1010; t <= 3000; t += 10) m.update(t, true, true, (t / 10) % 5 == 0 ? 1 : 0);  // 10 Hz
+  TEST_ASSERT_FALSE(m.running());
+  TEST_ASSERT_FALSE(m.snapshot().inputActive);
+  for (uint32_t t = 3010; t <= 13000; t += 10) m.update(t, (t / 10) % 2 == 0, true, 4);  // ~200 Hz
+  TEST_ASSERT_TRUE(m.running());
+  TEST_ASSERT_TRUE(m.snapshot().inputActive);
+  TEST_ASSERT_UINT32_WITHIN(1, 9, m.snapshot().runSeconds);  // 10 s less the 200 ms debounce
+  bool stopped = false;
+  uint32_t t = 13010;
+  for (; t <= 14000 && !stopped; t += 10) stopped = m.update(t, true, true, 0);  // the terminal goes quiet
+  TEST_ASSERT_TRUE(stopped);
+  TEST_ASSERT_TRUE(t <= 13010 + 400);  // the 100 ms edge window, then the 200 ms debounce
+}
+
+// Spikes on a steady level (ignition noise, a relay) change the pin for microseconds: they are counted as
+// edges but never sampled at the running level, so they never count as toggling. Edges counted before the
+// first update (during boot) have no time base and are not used either.
+static void test_hourmeter_ignores_spikes_on_a_steady_level() {
+  HourMeter m;
+  m.configure(false, 200, 1, 60);  // 817 module: LOW = running; the pin stays HIGH (engine off)
+  m.update(0, true, true, 500);
+  for (uint32_t t = 10; t <= 60000; t += 10) m.update(t, true, true, (t / 10) % 5 == 0 ? 2 : 0);  // every 50 ms
+  for (uint32_t t = 60010; t <= 61000; t += 10) m.update(t, true, true, 8);  // a burst at 800 edges/s
+  TEST_ASSERT_FALSE(m.running());
+  TEST_ASSERT_FALSE(m.snapshot().inputActive);
+  TEST_ASSERT_EQUAL_UINT32(0, m.snapshot().runSeconds);
+  TEST_ASSERT_FALSE(m.dirty());  // no run started or stopped: nothing to save
+}
+
 // ------------------------------------------------------- SettingsSchema --
 
 static void test_schema_table_is_contiguous_and_defaults_valid() {
   const Settings d = defaultSettings();
+  const size_t firstBlock = tag::kSettingLast - tag::kSettingFirst + 1;
   for (size_t i = 0; i < settings_schema::kCount; i++) {
     const SettingSpec& s = settings_schema::kSpecs[i];
-    TEST_ASSERT_EQUAL_UINT8(tag::kSettingFirst + i, s.tag);
+    const size_t expected = i < firstBlock ? tag::kSettingFirst + i : tag::kSettingMoreFirst + (i - firstBlock);
+    TEST_ASSERT_EQUAL_UINT8(expected, s.tag);
+    TEST_ASSERT_EQUAL_PTR(&s, settings_schema::find(s.tag));
     const double v = settings_schema::read(d, s.tag);
     TEST_ASSERT_TRUE_MESSAGE(v >= s.min && v <= s.max, s.name);
   }
+  TEST_ASSERT_EQUAL_UINT32(firstBlock + (tag::kSettingMoreLast - tag::kSettingMoreFirst + 1), settings_schema::kCount);
+  TEST_ASSERT_NULL(settings_schema::find(tag::kCalAccelBiasX));  // calibration is read-only
+  TEST_ASSERT_NULL(settings_schema::find(149));
   TEST_ASSERT_EQUAL_UINT8(0, settings_schema::checkCrossField(d));
+  TEST_ASSERT_TRUE(settings_schema::read(d, 150) == 1.0);  // i2c on
+  TEST_ASSERT_TRUE(settings_schema::read(d, 151) == 1.0);  // pulse input on
 }
 
 // ---------------------------------------------------- CommandHandler --
@@ -232,7 +300,8 @@ static void test_command_get_settings_and_calibration_fit() {
   x.cmd.addU8(tag::kCmdGet, static_cast<uint8_t>(GetWhat::Settings));
   x.run(dev);
   SensorFrameRecord r;
-  TEST_ASSERT_TRUE(x.find(126, r));  // last setting present -> all fitted
+  TEST_ASSERT_TRUE(x.find(tag::kSettingMoreLast, r));  // last setting present -> all fitted
+  TEST_ASSERT_TRUE(r.asBool());
   TEST_ASSERT_TRUE(x.find(118, r));
   TEST_ASSERT_EQUAL_UINT32(115200, r.asU32());
 
@@ -241,6 +310,35 @@ static void test_command_get_settings_and_calibration_fit() {
   c.cmd.addU8(tag::kCmdGet, static_cast<uint8_t>(GetWhat::Calibration));
   c.run(dev);
   TEST_ASSERT_TRUE(c.find(tag::kCalFlags, r));
+}
+
+// On the wire `i2c` and `pulseInput` say "on"; stored inverted, so 0 means on, as older firmware wrote it.
+static void test_command_i2c_and_pulse_input_switches() {
+  FakeDevice dev;
+  Exchange x;
+  x.begin(1);
+  x.cmd.addBool(150, false);
+  x.cmd.addBool(151, false);
+  x.run(dev);
+  TEST_ASSERT_EQUAL_UINT8(0, x.ackStatus());
+  TEST_ASSERT_EQUAL_UINT8(1, dev.s.i2cOff);
+  TEST_ASSERT_EQUAL_UINT8(1, dev.s.pulseOff);
+
+  Exchange g;
+  g.begin(2);
+  g.cmd.addU8(tag::kCmdGet, static_cast<uint8_t>(GetWhat::Settings));
+  g.run(dev);
+  SensorFrameRecord r;
+  TEST_ASSERT_TRUE(g.find(150, r));
+  TEST_ASSERT_FALSE(r.asBool());
+  TEST_ASSERT_TRUE(g.find(151, r));
+  TEST_ASSERT_FALSE(r.asBool());
+
+  Exchange bad;
+  bad.begin(3);
+  bad.cmd.addU8(150, 2);
+  bad.run(dev);
+  TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(AckStatus::InvalidValue), bad.ackStatus());
 }
 
 static void test_command_storage_failure_reported() {
@@ -550,25 +648,108 @@ static void test_hourmeter_counts_only_while_confirmed() {
   TEST_ASSERT_FALSE(m.running());
 }
 
+// Tag 64 is in the full status only while the bus is parked: frames of a healthy device do not change.
+static void test_status_reports_i2c_lines_only_while_parked() {
+  FrameWriter w;
+  DeviceStatus st;
+  HourMeterSnapshot hm;
+  SensorFrameView v;
+  SensorFrameRecord r;
+  telemetry::buildBootEvent(w, 1, 0x1234, hm, st);
+  TEST_ASSERT_EQUAL(SF_OK, SensorFrameView::parse(w.finish(), w.size(), v));
+  TEST_ASSERT_FALSE(v.find(tag::kI2cLines, r));
+
+  st.i2cParked = true;
+  st.i2cLines = i2c_lines::kSdaLow;
+  telemetry::buildBootEvent(w, 2, 0x1234, hm, st);
+  TEST_ASSERT_EQUAL(SF_OK, SensorFrameView::parse(w.finish(), w.size(), v));
+  TEST_ASSERT_TRUE(v.find(tag::kI2cLines, r));
+  TEST_ASSERT_EQUAL_UINT8(i2c_lines::kSdaLow, r.data[0]);
+
+  st.i2cLines = 0;  // parked after timeouts with both lines free: still reported
+  telemetry::buildDevicesChangedEvent(w, 3, 0x1234, st);
+  TEST_ASSERT_EQUAL(SF_OK, SensorFrameView::parse(w.finish(), w.size(), v));
+  TEST_ASSERT_TRUE(v.find(tag::kI2cLines, r));
+  TEST_ASSERT_EQUAL_UINT8(0, r.data[0]);
+}
+
 // ------------------------------------------------------- Self-recovery --
 
 static void test_supervisor_restarts_only_after_sustained_trouble() {
   Supervisor sup;
-  TEST_ASSERT_EQUAL(LastCause::None, sup.update(0, true, false));
-  TEST_ASSERT_EQUAL(LastCause::None, sup.update(Supervisor::kI2cStuckMs - 1, true, false));
-  TEST_ASSERT_EQUAL(LastCause::None, sup.update(Supervisor::kI2cStuckMs, false, false));  // one good transfer resets
-  TEST_ASSERT_EQUAL(LastCause::None, sup.update(Supervisor::kI2cStuckMs + 1, true, false));
-  TEST_ASSERT_EQUAL(LastCause::I2cStuck, sup.update(2 * Supervisor::kI2cStuckMs + 1, true, false));
+  TEST_ASSERT_EQUAL(LastCause::None, sup.update(0, true));
+  TEST_ASSERT_EQUAL(LastCause::None, sup.update(Supervisor::kUsbStallMs - 1, true));
+  TEST_ASSERT_EQUAL(LastCause::None, sup.update(Supervisor::kUsbStallMs, false));  // drained once: starts over
+  TEST_ASSERT_EQUAL(LastCause::None, sup.update(Supervisor::kUsbStallMs + 1, true));
+  TEST_ASSERT_EQUAL(LastCause::UsbStalled, sup.update(2 * Supervisor::kUsbStallMs + 1, true));
 
   Supervisor usb;
   const uint32_t t0 = 0xFFFFF000UL;  // across the millis() wrap
-  TEST_ASSERT_EQUAL(LastCause::None, usb.update(t0, false, true));
-  TEST_ASSERT_EQUAL(LastCause::None, usb.update(t0 + Supervisor::kUsbStallMs - 1, false, true));
-  TEST_ASSERT_EQUAL(LastCause::UsbStalled, usb.update(t0 + Supervisor::kUsbStallMs, false, true));
+  TEST_ASSERT_EQUAL(LastCause::None, usb.update(t0, true));
+  TEST_ASSERT_EQUAL(LastCause::None, usb.update(t0 + Supervisor::kUsbStallMs - 1, true));
+  TEST_ASSERT_EQUAL(LastCause::UsbStalled, usb.update(t0 + Supervisor::kUsbStallMs, true));
 
   TEST_ASSERT_FALSE(sup.healthyUptimeReached(Supervisor::kHealthyUptimeMs - 1));
   TEST_ASSERT_TRUE(sup.healthyUptimeReached(Supervisor::kHealthyUptimeMs));
   TEST_ASSERT_FALSE(sup.healthyUptimeReached(Supervisor::kHealthyUptimeMs + 1));  // once
+}
+
+// ------------------------------------------------------------ Bus guard --
+
+static void test_bus_guard_parks_after_sustained_failure_or_a_held_line() {
+  BusGuard g;
+  TEST_ASSERT_FALSE(g.shouldPark(0, true, false));
+  TEST_ASSERT_FALSE(g.shouldPark(BusGuard::kParkAfterMs - 1, true, false));
+  TEST_ASSERT_FALSE(g.shouldPark(BusGuard::kParkAfterMs, false, false));  // one working transfer (or NACK) resets
+  TEST_ASSERT_FALSE(g.shouldPark(BusGuard::kParkAfterMs + 1, true, false));
+  TEST_ASSERT_TRUE(g.shouldPark(2 * BusGuard::kParkAfterMs + 1, true, false));
+
+  BusGuard held;
+  TEST_ASSERT_TRUE(held.shouldPark(0, true, true));  // SDA or SCL held low: nothing can work, park now
+
+  BusGuard wrap;
+  const uint32_t t0 = 0xFFFFF000UL;  // across the millis() wrap
+  TEST_ASSERT_FALSE(wrap.shouldPark(t0, true, false));
+  TEST_ASSERT_TRUE(wrap.shouldPark(t0 + BusGuard::kParkAfterMs, true, false));
+}
+
+static void test_bus_guard_retries_with_a_growing_pause() {
+  BusGuard g;
+  TEST_ASSERT_FALSE(g.isParked());
+  g.parked(1000);
+  TEST_ASSERT_TRUE(g.isParked());
+  TEST_ASSERT_FALSE(g.retryDue(1000 + BusGuard::kFirstPauseMs - 1));
+  TEST_ASSERT_TRUE(g.retryDue(1000 + BusGuard::kFirstPauseMs));
+  uint32_t t = 1000 + BusGuard::kFirstPauseMs;
+  uint32_t expect = BusGuard::kFirstPauseMs;
+  for (int i = 0; i < 10; i++) {  // still held low: 20 s, 40 s ... capped at 5 min
+    g.retryFailed(t);
+    expect = expect * 2 > BusGuard::kMaxPauseMs ? BusGuard::kMaxPauseMs : expect * 2;
+    TEST_ASSERT_EQUAL_UINT32(expect, g.pauseMs());
+    TEST_ASSERT_FALSE(g.retryDue(t + expect - 1));
+    TEST_ASSERT_TRUE(g.retryDue(t + expect));
+    t += expect;
+  }
+  TEST_ASSERT_EQUAL_UINT32(BusGuard::kMaxPauseMs, g.pauseMs());
+
+  g.resumed(t);  // lines free again: in use
+  TEST_ASSERT_FALSE(g.isParked());
+  TEST_ASSERT_FALSE(g.retryDue(t + BusGuard::kMaxPauseMs));
+  g.parked(t + 1000);  // bad again soon: keeps the long pause
+  TEST_ASSERT_EQUAL_UINT32(BusGuard::kMaxPauseMs, g.pauseMs());
+  g.resumed(t + 2000);
+  g.parked(t + 2000 + BusGuard::kHealthyMs);  // after 10 good minutes: starts over
+  TEST_ASSERT_EQUAL_UINT32(BusGuard::kFirstPauseMs, g.pauseMs());
+
+  BusGuard flaky;
+  flaky.parked(0);
+  flaky.resumed(BusGuard::kFirstPauseMs);
+  flaky.parked(BusGuard::kFirstPauseMs + 5000);  // failed again 5 s after the retry
+  TEST_ASSERT_EQUAL_UINT32(2 * BusGuard::kFirstPauseMs, flaky.pauseMs());
+  flaky.reset();  // the `i2c` setting was switched: as at boot
+  TEST_ASSERT_FALSE(flaky.isParked());
+  flaky.parked(1);
+  TEST_ASSERT_EQUAL_UINT32(BusGuard::kFirstPauseMs, flaky.pauseMs());
 }
 
 static void test_panic_signal_needs_an_unbroken_zero_run() {
@@ -653,6 +834,9 @@ int main() {
   RUN_TEST(test_hourmeter_counts_only_while_running_with_debounce);
   RUN_TEST(test_hourmeter_active_low_and_restore);
   RUN_TEST(test_hourmeter_persist_schedule);
+  RUN_TEST(test_hourmeter_flicker_follows_the_majority);
+  RUN_TEST(test_hourmeter_counts_a_toggling_alternator_signal);
+  RUN_TEST(test_hourmeter_ignores_spikes_on_a_steady_level);
   RUN_TEST(test_schema_table_is_contiguous_and_defaults_valid);
   RUN_TEST(test_command_set_settings_and_ack_echoes_seq);
   RUN_TEST(test_command_all_or_nothing);
@@ -660,6 +844,7 @@ int main() {
   RUN_TEST(test_command_cross_field_rule);
   RUN_TEST(test_command_actions_and_get);
   RUN_TEST(test_command_get_settings_and_calibration_fit);
+  RUN_TEST(test_command_i2c_and_pulse_input_switches);
   RUN_TEST(test_command_storage_failure_reported);
   RUN_TEST(test_telemetry_scaling_clamps);
   RUN_TEST(test_telemetry_frames_fit_and_use_time_flag);
@@ -669,7 +854,10 @@ int main() {
   RUN_TEST(test_imu_pitch_sign_matches_gyro);
   RUN_TEST(test_run_confirm_off_missing_imu_and_hysteresis);
   RUN_TEST(test_hourmeter_counts_only_while_confirmed);
+  RUN_TEST(test_status_reports_i2c_lines_only_while_parked);
   RUN_TEST(test_supervisor_restarts_only_after_sustained_trouble);
+  RUN_TEST(test_bus_guard_parks_after_sustained_failure_or_a_held_line);
+  RUN_TEST(test_bus_guard_retries_with_a_growing_pause);
   RUN_TEST(test_panic_signal_needs_an_unbroken_zero_run);
   RUN_TEST(test_reset_history_classifies_and_enters_safe_mode);
   RUN_TEST(test_access_gate_pin_and_lockout);

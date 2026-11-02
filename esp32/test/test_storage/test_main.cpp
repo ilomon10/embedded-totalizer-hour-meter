@@ -767,11 +767,62 @@ static void test_flash_store_unavailable_after_a_failed_scan() {
   TEST_ASSERT_EQUAL(Status::NotFound, fs.append(301, 301, 0, 0, 301));
 }
 
+// The i2c and pulseInput switches (2.7.0) live in the record's options byte, which every older firmware wrote
+// as 0: an old record loads with both on, and the switches survive a reboot in the EEPROM and in the flash.
+static void test_settings_options_byte_round_trips_and_old_records_read_as_on() {
+  static_assert(offsetof(SettingsRecord, options) == 3, "options is the byte older firmware kept reserved");
+  static_assert(sizeof(SettingsRecord) == 128, "the settings slot is full");
+  Rig rig;
+  SettingsStore store(rig.eeprom);
+  Settings s = defaultSettings();
+  s.i2cOff = 1;
+  s.pulseOff = 1;
+  TEST_ASSERT_EQUAL(Status::Ok, store.save(s));  // -> A
+  SettingsStore reboot(rig.eeprom);
+  Settings loaded;
+  TEST_ASSERT_EQUAL(Status::Ok, reboot.load(loaded));
+  TEST_ASSERT_EQUAL_UINT8(1, loaded.i2cOff);
+  TEST_ASSERT_EQUAL_UINT8(1, loaded.pulseOff);
+  TEST_ASSERT_TRUE(sameSettings(s, loaded));
+
+  // What 2.6.0 wrote: the same record with the byte zero, CRC over all of it.
+  SettingsRecord old;
+  TEST_ASSERT_EQUAL(Status::Ok, rig.eeprom.get(layout::kSettingsAddrA, old));
+  TEST_ASSERT_EQUAL_HEX8(settings_options::kI2cOff | settings_options::kPulseOff, old.options);
+  old.options = 0;
+  old.crc = crcOfStructWithoutTail(old);
+  TEST_ASSERT_EQUAL(Status::Ok, rig.eeprom.put(layout::kSettingsAddrA, old));
+  SettingsStore upgraded(rig.eeprom);
+  TEST_ASSERT_EQUAL(Status::Ok, upgraded.load(loaded));
+  TEST_ASSERT_EQUAL(SettingsSource::CopyA, upgraded.source());  // not reset to defaults
+  TEST_ASSERT_EQUAL_UINT8(0, loaded.i2cOff);
+  TEST_ASSERT_EQUAL_UINT8(0, loaded.pulseOff);
+
+  // The flash keeps the same record.
+  Flash flash;
+  FlashStore fs(flash);
+  TEST_ASSERT_EQUAL(Status::Ok, fs.begin());
+  Settings onlyI2cOff = defaultSettings();
+  onlyI2cOff.i2cOff = 1;
+  TEST_ASSERT_EQUAL(Status::Ok, fs.saveSettings(onlyI2cOff, 5));
+  FlashStore flashReboot(flash);
+  TEST_ASSERT_EQUAL(Status::Ok, flashReboot.begin());
+  flashReboot.loadSettings(loaded);
+  TEST_ASSERT_EQUAL_UINT8(1, loaded.i2cOff);
+  TEST_ASSERT_EQUAL_UINT8(0, loaded.pulseOff);
+}
+
 static void test_same_settings() {
   Settings a = defaultSettings();
   Settings b = defaultSettings();
   TEST_ASSERT_TRUE(sameSettings(a, b));
   b.runVibMinMg = 30;
+  TEST_ASSERT_FALSE(sameSettings(a, b));
+  b = a;
+  b.i2cOff = 1;
+  TEST_ASSERT_FALSE(sameSettings(a, b));
+  b = a;
+  b.pulseOff = 1;
   TEST_ASSERT_FALSE(sameSettings(a, b));
   b = a;
   b.cal.gyroBiasDps.x = 0.5f;
@@ -811,6 +862,7 @@ int main() {
   RUN_TEST(test_mirror_keeps_saving_when_one_store_fails);
   RUN_TEST(test_mirror_without_any_store);
   RUN_TEST(test_flash_store_unavailable_after_a_failed_scan);
+  RUN_TEST(test_settings_options_byte_round_trips_and_old_records_read_as_on);
   RUN_TEST(test_same_settings);
   return UNITY_END();
 }

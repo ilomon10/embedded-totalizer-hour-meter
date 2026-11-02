@@ -22,6 +22,8 @@ Settings defaultSettings() {
   s.bluetooth = 0;   // off until enabled over USB / TUI
   s.btPin = 1234;    // CHANGE at installation
   s.runVibMinMg = 0; // off: the alternator input alone decides
+  s.i2cOff = 0;      // I2C modules on
+  s.pulseOff = 0;    // pulse input on
   s.kalmanQAccel = 0.0005f;
   s.kalmanQGyro = 0.01f;
   s.kalmanQMag = 0.05f;
@@ -35,5 +37,6 @@ Settings defaultSettings() {
 bool sameSettings(const Settings& a, const Settings& b) {
   const StoredSettings& sa = a;
   const StoredSettings& sb = b;
-  return memcmp(&sa, &sb, sizeof(StoredSettings)) == 0 && a.runVibMinMg == b.runVibMinMg;
+  return memcmp(&sa, &sb, sizeof(StoredSettings)) == 0 && a.runVibMinMg == b.runVibMinMg && a.i2cOff == b.i2cOff &&
+         a.pulseOff == b.pulseOff;
 }

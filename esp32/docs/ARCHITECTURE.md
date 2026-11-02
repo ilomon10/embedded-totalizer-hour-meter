@@ -8,19 +8,21 @@ How the hour-meter firmware is organised, how data flows, and where to change th
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ src/            Arduino glue: knows pins, Serial, Wire, FreeRTOS          │
 │   main.cpp ──► Application (composition root, main loop, IDeviceControl) │
-│   platform/      ArduinoClock · Inputs (pins + pulse ISR) · SerialLink    │
+│   platform/      ArduinoClock · Inputs (pins + ISRs) · SerialLink         │
 │                  (USB, UART pins, Bluetooth SPP; AccessGate PIN lock)     │
 │                  · ResetLog (breadcrumbs that survive a reset)            │
 ├──────────────────────────────────────────────────────────────────────────┤
 │ lib/App         Business logic, NO hardware access (unit-tested on PC)   │
 │   Protocol.h (all tags) · SettingsSchema · HourMeter · ImuPipeline       │
 │   CommandHandler · Telemetry · TimeKeeper · Snapshots · Supervisor       │
+│   BusGuard (park / retry the I2C bus)                                    │
 ├──────────────────────────────────────────────────────────────────────────┤
 │ lib/Storage     Journal · SettingsStore (EEPROM) · FlashStore · Mirror    │
 │ lib/Filters     Kalman1D · KalmanAngle · Compass · Vibration · Stats      │
 ├──────────────────────────────────────────────────────────────────────────┤
 │ lib/At24c  lib/Ds3231  lib/Mpu9250    chip drivers (talk only via II2cBus)│
-│ lib/I2cBus      II2cBus interface + ArduinoI2cBus (timeouts, recovery)    │
+│ lib/I2cBus      II2cBus interface + ArduinoI2cBus (timeouts, recovery,    │
+│                 parking)                                                  │
 │ lib/Core        Status · Result<T> · CHECK_ARG/TRY · IClock · PeriodicTask│
 ├──────────────────────────────────────────────────────────────────────────┤
 │ ../sensorframe  wire format: SensorFrameWriter / Reader, CRC16, COBS      │
@@ -34,15 +36,15 @@ How the hour-meter firmware is organised, how data flows, and where to change th
 | Step | What | If it fails |
 |---|---|---|
 | 1 | Enable the 5 s task watchdog | |
-| 2 | `ResetLog`: read why and where the last run ended (`lastCause`, `lastStage`); count unplanned restarts | 3 in a row: **safe mode**, steps 5, 6, 9, 10 are skipped |
+| 2 | `ResetLog`: read why and where the last run ended (`lastCause`, `lastStage`); count unplanned restarts | 3 in a row: **safe mode**, steps 5, 6, 9, 10 are skipped (also with the `i2c` setting off, read from the flash) |
 | 3 | Open USB (115200 fixed) | |
 | 4 | Flash store: find partition `hmdata`, read both settings copies, scan the counter journal | Flag `flashStoreMissing`: the EEPROM is the only store |
-| 5 | I2C bus recovery + start (400 kHz) | |
+| 5 | I2C bus recovery + start (100 kHz) | SDA or SCL still held low: the bus is **parked** (flag `i2cParked`), steps 6, 9, 10 are skipped and `BusGuard` retries it later |
 | 6 | EEPROM probe → layout header check (format if blank/foreign; watchdog raised to 30 s) → scan journal | Flag `eepromMissing`: the flash alone keeps the values |
-| 7 | `StorageMirror.adopt()`: settings from the flash, else the EEPROM; counters: the newest save of this history in either store, with an EEPROM from another history added to the counters counted from zero → `HourMeter.restore()`; the store that is behind is brought up to date ([STORAGE.md](STORAGE.md)) | Run on defaults; flags `settingsDefaults` / `journalEmpty` |
-| 8 | Open UART (`uartBaud`), Bluetooth if enabled; inputs: alternator pin, pulse interrupt | |
+| 7 | `StorageMirror.adopt()`: settings from the flash, else the EEPROM; counters: the newest save of this history in either store, with an EEPROM from another history added to the counters counted from zero → `HourMeter.restore()`; the store that is behind is brought up to date ([STORAGE.md](STORAGE.md)). Settings from an EEPROM with `i2c` off switch the bus off again | Run on defaults; flags `settingsDefaults` / `journalEmpty` |
+| 8 | Open UART (`uartBaud`), Bluetooth if enabled; inputs: alternator pin and its edge interrupt, pulse interrupt (unless `pulseInput` is off) | |
 | 9 | RTC probe, enable battery oscillator, read time | Flag `rtcMissing`; timestamps become uptime |
-| 10 | IMU WHO_AM_I, configure, magnetometer if present | Flag `imuMissing` / `magMissing` |
+| 10 | IMU probe, WHO_AM_I, configure, magnetometer if present | Flag `imuMissing` / `magMissing` |
 | 10 | Apply settings to every component, start timers | |
 | 11 | Send boot EVENT | |
 
@@ -57,13 +59,14 @@ Cooperative and non-blocking. Each task is a `PeriodicTask` (a polled `setInterv
 | Task | Period | Work |
 |---|---|---|
 | serial | every loop | Read both ports. Complete COMMAND frames go to `CommandHandler`, the ACK goes back to the sender, then deferred actions run (port change, reboot) |
-| inputs | 10 ms | Collect pulses, debounce the alternator, accumulate run time, save to the journal when due or on engine stop |
+| inputs | 10 ms | Collect pulses and the alternator's edge count, debounce the alternator (integrating; a toggling W/P signal counts as running), accumulate run time, save to the journal when due or on engine stop |
 | imu | 1/`imuSampleHz` | Read the IMU (+ mag), `ImuPipeline.process()`, finish calibration if done |
 | stream | 1/`imuStreamHz` | IMU stream frame (raw / filtered / both) |
 | telemetry | `telemetryIntervalMs` | TELEMETRY frame |
 | rtc | `rtcSyncIntervalS` | Re-read the RTC; `TimeKeeper` extrapolates with `millis()` in between; repairs an RTC that lost its time |
-| presence | 2 s | Hot-plug: probe present I2C modules (lost after 3 misses, `PresenceTracker`), try to attach missing ones (`attachEeprom/Rtc/Imu`), report changes as EVENT kind 3. Not in safe mode |
-| supervisor | every loop | `Supervisor`: restart when the I2C bus has failed for 30 s or USB TX has not drained for 10 s; restart on the panic signal (64 × `0x00` on a wired port, seen by `SerialLink`). After 10 min of normal running, the restart counter clears |
+| presence | 2 s | Hot-plug: probe present I2C modules (lost after 3 misses, `PresenceTracker`), try to attach missing ones (`attachEeprom/Rtc/Imu`), report changes as EVENT kind 3. Not in safe mode, not with `i2c` off, not while the bus is parked |
+| bus guard | every loop | `BusGuard`: park the bus when it has failed for 5 s (timeouts / bus errors; a NACK is a working bus) or a line is held low after a recovery: Wire off, pins released, every module dropped (EVENT kind 3). While parked: `begin()` again after 10 s, 20 s, 40 s … 5 min; free lines put the bus back in use and the presence check re-attaches the modules |
+| supervisor | every loop | `Supervisor`: restart when USB TX has not drained for 10 s; restart on the panic signal (64 × `0x00` on a wired port, seen by `SerialLink`). After 10 min of normal running, the restart counter clears. A bad I2C bus is **not** a restart reason (2.6.0 and older restarted after 30 s) |
 
 Every restart the firmware decides on goes through `Application::restart(cause)`: record the cause in `ResetLog`, save the counters (best effort), restart.
 
@@ -72,7 +75,8 @@ The watchdog is fed at the top of every loop. Nothing in the loop waits for long
 ## 4. Data flow: hour meter
 
 ```
-alternator pin ──► HourMeter.update(now, level)  (debounce, add elapsed ms while running)
+alternator pin ──► HourMeter.update(now, level, edges)  (level or toggling, integrating debounce,
+                                                         add elapsed ms while running)
 pulse ISR ───────► Inputs.takePulses() ─► HourMeter.addPulses(n)
                          │
        engine stopped OR persistDue (dirty && interval elapsed)

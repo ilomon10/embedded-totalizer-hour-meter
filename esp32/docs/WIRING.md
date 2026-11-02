@@ -22,7 +22,17 @@ Pin assignments are defined in [`include/BoardPins.h`](../include/BoardPins.h). 
 | AK8963 magnetometer | `0x0C` | Inside the MPU9250, reached through bypass mode (set by the firmware) |
 | AT24C32 on ZS-042 RTC boards | `0x57` | Present on many DS3231 modules. Not used, harmless |
 
-**Pull-ups:** I2C needs one set of pull-ups (2.2–4.7 kΩ to 3V3) on SDA and SCL. Most breakout modules already have them. With three modules in parallel the combined value can get low (< 1.5 kΩ); if the bus is unreliable, remove the pull-ups from some modules. Keep wires under about 30 cm at 400 kHz.
+**Pull-ups:** I2C needs one set of pull-ups (2.2–4.7 kΩ to 3V3) on SDA and SCL. Most breakout modules already have them. With three modules in parallel the combined value can get low (< 1.5 kΩ); if the bus is unreliable, remove the pull-ups from some modules. When you take a module out, check that a set of pull-ups is still left on the bus. The bus runs at 100 kHz (firmware 2.7.0); keep the wires short, under about 1 m.
+
+**When the bus misbehaves, the hour meter keeps counting.** Every module is optional: the counters and settings live in the ESP32's flash. Firmware 2.7.0 never restarts because of the bus. When it keeps failing, the device parks it (status flag `i2cParked`), counts every module as missing and tries again after 10 s, 20 s, 40 s … up to every 5 min. The status value `i2cLines` (tag 64) says what it found:
+
+| `i2cLines` | Meaning | What to do |
+|---|---|---|
+| SDA held low (1) | A module, or a short, holds the data line | Unplug the modules one at a time until the flag clears at the next retry |
+| SCL held low (2) | The same for the clock line | As above |
+| both lines free (0) | The lines are high but every transfer times out | Check the pull-ups, the wire length and GND between the modules |
+
+A module that is simply missing (or at the wrong address, like an MPU9250 with AD0 low) is not a bus fault: it shows as missing and the rest keeps working. A unit with no modules at all, or with a faulty module waiting for a replacement, can run as an **hour meter only**: set `i2c` off (tag 150) and the bus is never touched, not even at boot.
 
 **3.3 V only.** Power the modules from 3V3, not 5V: the ESP32's I2C pins are not 5 V tolerant.
 
@@ -75,8 +85,8 @@ Both engine signals go through a **2-channel PC817 optocoupler module** (the blu
 
 | Input | Pin | Default behaviour | Settings |
 |---|---|---|---|
-| Engine running | GPIO27 | **LOW = running** (CH1 conducts), 200 ms debounce | `altActiveHigh` (default `false`), `altDebounceMs`, `runVibMinMg` |
-| Totalizer pulses | GPIO26 | Falling edge (= pulse start through CH2), ≥ 1 ms apart | `pulseRisingEdge`, `pulseMinIntervalUs`, `pulsesPerUnit` |
+| Engine running | GPIO27 | **LOW = running** (CH1 conducts), or toggling at 40 Hz or more while also sitting LOW part of the time (a W/P terminal, firmware 2.7.0); 200 ms debounce | `altActiveHigh` (default `false`), `altDebounceMs`, `runVibMinMg` |
+| Totalizer pulses | GPIO26 | Falling edge (= pulse start through CH2), ≥ 1 ms apart | `pulseInput` (default on), `pulseRisingEdge`, `pulseMinIntervalUs`, `pulsesPerUnit` |
 
 **Never connect vehicle voltage directly to a GPIO.** Vehicle systems have load-dump spikes well over 40 V, and the ESP32 pins tolerate 3.6 V at most.
 
@@ -110,7 +120,7 @@ The device counts run time while this input has voltage. So it needs a wire that
 | The same charge-lamp wire, tapped **behind the dashboard** on the key side of the lamp | 0 V | battery V | battery V | ✘ counts at ACC |
 | **IG**, **R** or **S** in the alternator's small plug (from the key switch / sense) | 0 V | battery V | battery V | ✘ counts at ACC |
 | **B / B+** (thick output cable) | battery V | battery V | battery V | ✘ always counts |
-| **P** or **W** (phase / tachometer) | 0 V | 0 V | AC pulses, frequency follows RPM | ✘ not with this circuit (the input reads a steady level) |
+| **P** or **W** (phase / tachometer) | 0 V | 0 V | AC pulses, frequency follows RPM (a DC multimeter shows about half the battery voltage) | ✔ from firmware 2.7.0: the input toggles, or sits LOW behind C1, and both count as running. ✘ on 2.6.0 and older |
 | Oil-pressure **gauge sender** (not the warning switch) | | a resistance, not a switch | | ✘ |
 
 Terminal letters differ between makers, so **measure before you connect.** With a multimeter between the candidate wire and vehicle ground (chassis), take three readings:
@@ -166,7 +176,7 @@ How it behaves:
 | D1 | 1N4007, band toward the module | Reverse-polarity and negative-spike protection (the module has none) |
 | R4 | **1.5 kΩ, 0.5 W** | Keeps a **24 V** system (28.8 V charging) within the module's 24 V input rating and the on-board resistor's power limit. Works for 12 V systems too |
 | R5 | **47 kΩ** to 3V3 | Pull-up for the open-collector output. Must be weak: with the ~3 kΩ on-board series resistor, 10 kΩ would put the LOW level (≈ 0.85 V) above the ESP32's 0.8 V input threshold. The firmware also enables the internal pull-up |
-| C1 | 100 nF, GPIO27 to GND | Filters ignition noise. The firmware's 200 ms debounce handles the rest |
+| C1 | 100 nF, GPIO27 to GND | Filters ignition noise. The firmware's 200 ms debounce handles the rest: it integrates, so a flickering input follows the level it has most of the time (firmware 2.7.0) |
 | TVS (optional) | SMBJ36A from IN1 (after D1) to vehicle ground | Extra load-dump protection in harsh installations |
 
 Input current through D1 + R4 + module (≈ 3.7 V of LED drops, 3 kΩ on-board):
@@ -188,6 +198,8 @@ The output only needs about 0.1 mA (3.3 V across 47 kΩ ∥ internal pull-up), s
 Use CH2 when the totalizer or speed sensor outputs a **12/24 V** pulse: same parts as channel 1 (D2 1N4007 + R6 1.5 kΩ on the input; R7 47 kΩ pull-up and C2 to GPIO26 on the output), with **C2 = 1 nF** instead of 100 nF so fast pulses survive. Each pulse pulls GPIO26 LOW, which matches the default falling-edge counting. The PC817 is fine up to a few kHz.
 
 If the pulse sensor is an open-collector/3.3 V-safe output, skip CH2 and wire it straight to GPIO26 (internal pull-up).
+
+**Only the engine input wired?** Set `pulseInput` off (firmware 2.7.0). GPIO26 is then ignored, so noise on a loose or floating wire can't count, and the totalizer keeps its value.
 
 ### Checking it with a multimeter (ESP32 powered)
 

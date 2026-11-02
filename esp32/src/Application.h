@@ -3,19 +3,21 @@
 // TS mental model: the composition root of a Node service. It creates the
 // drivers, injects them into the logic classes, and polls timers:
 //
-//   setup(): watchdog -> USB -> flash store -> bus -> EEPROM -> newest settings + counters -> UART -> RTC -> IMU
-//            -> boot event
+//   setup(): watchdog -> USB -> flash store -> bus (unless `i2c` is off) -> EEPROM -> newest settings + counters
+//            -> UART -> RTC -> IMU -> boot event
 //   loop():  serial commands | inputs (100 Hz) | IMU (imuSampleHz) | stream | telemetry
-//            | RTC sync | presence check (hot-plug of EEPROM / RTC / IMU) | supervisor
+//            | RTC sync | I2C bus: presence check (hot-plug of EEPROM / RTC / IMU), park / retry | supervisor
 //
-// Self-recovery: a stalled loop trips the watchdog; a stuck I2C bus, a stalled
-// USB port or the panic signal restart on purpose (Supervisor.h). The next boot
+// Self-recovery: a stalled loop trips the watchdog; a stalled USB port or the
+// panic signal restart on purpose (Supervisor.h). A bad I2C bus never restarts
+// the device: it is parked and tried again later (BusGuard.h). The next boot
 // EVENT reports why (lastCause) and where (lastStage); repeated trouble ends in
 // safe mode (no I2C) so the USB port always stays usable.
 //
 // Modular: every I2C module is optional and hot-pluggable. A missing module
 // sets a status flag, the rest keeps working, and the module is attached as
 // soon as it is plugged in (an EVENT devicesChanged reports every change).
+// The `i2c` setting switches the bus off altogether: an hour meter only.
 //
 // Storage: settings and counters are kept in the ESP32's own flash AND, when
 // fitted, in the EEPROM (StorageMirror.h): the device keeps its values without
@@ -28,6 +30,7 @@
 #include "AccessGate.h"
 #include "ArduinoI2cBus.h"
 #include "At24c.h"
+#include "BusGuard.h"
 #include "CommandHandler.h"
 #include "Ds3231.h"
 #include "FlashStore.h"
@@ -109,10 +112,11 @@ class Application : public IDeviceControl {
   PeriodicTask telemetryTask_;
   PeriodicTask rtcTask_;
   PeriodicTask presenceTask_;
-  // Hot-plug state for the optional I2C modules.
+  // Hot-plug state for the optional I2C modules, and the bus they share.
   PresenceTracker eepromPresence_;
   PresenceTracker rtcPresence_;
   PresenceTracker imuPresence_;
+  BusGuard busGuard_;
   bool setupDone_ = false;
   bool devicesChanged_ = false;
   // Settings came from a store at boot, were changed since, or an EEPROM was read already: a later
@@ -142,6 +146,15 @@ class Application : public IDeviceControl {
 
   void setDevice(uint8_t bit, bool present);
   bool eepromAttached() const { return (devices_ & device_bit::kEeprom) != 0; }
+  // The bus may be used: not in safe mode, and the `i2c` setting is on.
+  bool i2cWanted() const { return !safeMode_ && settings_.i2cOff == 0; }
+  bool i2cOffInFlash() const;
+  void applyI2cMode();
+  void superviseBus(uint32_t nowMs, uint32_t nowUs);
+  void retryBus(uint32_t nowMs);
+  void parkBus(uint32_t nowMs);
+  void dropModules();
+  void loseRtc();
   bool attachEeprom();
   bool attachEepromWatched();
   void supervise(uint32_t nowMs);

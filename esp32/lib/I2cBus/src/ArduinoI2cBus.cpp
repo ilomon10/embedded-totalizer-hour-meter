@@ -7,12 +7,30 @@
 
 Status ArduinoI2cBus::begin() {
   recoverBus();
+  failing_ = false;
+  if (linesLow_ != 0 || !wireUp_) {
+    park();  // a module (or a short) holds a line, or Wire did not start: nothing on this bus can work
+    return Status::I2cBusError;
+  }
+  parked_ = false;
   return Status::Ok;
+}
+
+void ArduinoI2cBus::park() {
+  wire_.end();
+  wireUp_ = false;
+  pinMode(sda_, INPUT);
+  pinMode(scl_, INPUT);
+  parked_ = true;
+  failing_ = false;  // nothing is tried while parked
 }
 
 Status ArduinoI2cBus::write(uint8_t addr, const uint8_t* data, size_t len) {
   CHECK_ARG(data != nullptr || len == 0);
   CHECK_ARG(len <= kMaxTransfer);
+  if (parked_) {
+    return Status::I2cBusError;
+  }
   Status s = Status::I2cBusError;
   for (uint8_t attempt = 0; attempt < kMaxAttempts; attempt++) {
     s = writeOnce(addr, data, len, true);
@@ -28,6 +46,9 @@ Status ArduinoI2cBus::write(uint8_t addr, const uint8_t* data, size_t len) {
 Status ArduinoI2cBus::writeRead(uint8_t addr, const uint8_t* tx, size_t txLen, uint8_t* rx, size_t rxLen) {
   CHECK_ARG(tx != nullptr && txLen > 0 && txLen <= kMaxTransfer);
   CHECK_ARG(rx != nullptr && rxLen > 0 && rxLen <= kMaxTransfer);
+  if (parked_) {
+    return Status::I2cBusError;
+  }
   Status s = Status::I2cBusError;
   for (uint8_t attempt = 0; attempt < kMaxAttempts; attempt++) {
     s = writeReadOnce(addr, tx, txLen, rx, rxLen);
@@ -41,9 +62,15 @@ Status ArduinoI2cBus::writeRead(uint8_t addr, const uint8_t* tx, size_t txLen, u
 }
 
 Status ArduinoI2cBus::probe(uint8_t addr) {
+  if (parked_) {
+    return Status::I2cBusError;
+  }
   // No retries: a NACK here is an answer ("nobody home"), not a fault.
   const Status s = writeOnce(addr, nullptr, 0, true);
   failing_ = isRetryable(s);
+  if (!failing_) {
+    linesLow_ = 0;  // the bus answered: both lines are free
+  }
   return s;
 }
 
@@ -54,9 +81,17 @@ void ArduinoI2cBus::track(Status s) {
     errors_++;
   }
   failing_ = isRetryable(s);
+  if (!failing_) {
+    linesLow_ = 0;
+  }
 }
 
 Status ArduinoI2cBus::writeOnce(uint8_t addr, const uint8_t* data, size_t len, bool sendStop) {
+  if (!wireUp_) {
+    // Wire takes its lock in beginTransmission() and, without buffers, never gives it back: the next
+    // transfer would wait forever. A bus error instead: retried after a recovery, or the bus gets parked.
+    return Status::I2cBusError;
+  }
   wire_.beginTransmission(addr);
   if (len > 0 && wire_.write(data, len) != len) {
     return Status::I2cBusError;
@@ -68,7 +103,10 @@ Status ArduinoI2cBus::writeReadOnce(uint8_t addr, const uint8_t* tx, size_t txLe
   TRY(writeOnce(addr, tx, txLen, false));  // repeated START, no STOP
   const size_t got = wire_.requestFrom(addr, rxLen, true);
   if (got != rxLen) {
-    return Status::I2cBusError;
+    // Arduino-ESP32 2.0.x sends the write part only here, and returns 0 bytes for an address NACK and for a
+    // bus fault alike. Ask the address once more: a NACK is an answer ("nobody home"), not a bus fault.
+    const Status answer = writeOnce(addr, nullptr, 0, true);
+    return answer == Status::Ok ? Status::I2cBusError : answer;
   }
   for (size_t i = 0; i < rxLen; i++) {
     const int b = wire_.read();
@@ -99,8 +137,27 @@ void ArduinoI2cBus::recoverBus() {
   delayMicroseconds(5);
   digitalWrite(sda_, HIGH);
   delayMicroseconds(5);
-  wire_.begin(sda_, scl_, freq_);
-  wire_.setTimeOut(kTimeoutMs);
+  linesLow_ = readLinesLow();
+  wireUp_ = wire_.begin(sda_, scl_, freq_);
+  if (wireUp_) {
+    wire_.setTimeOut(kTimeoutMs);
+  }
+}
+
+// Both lines released (with the pull-ups Wire uses too): a line that still reads LOW is held by a module or a
+// short, and no transfer can work until that is fixed.
+uint8_t ArduinoI2cBus::readLinesLow() const {
+  pinMode(sda_, INPUT_PULLUP);
+  pinMode(scl_, INPUT_PULLUP);
+  delayMicroseconds(20);  // a released line rises through the pull-ups and the wiring's capacitance
+  uint8_t low = 0;
+  if (digitalRead(sda_) == LOW) {
+    low |= i2c_lines::kSdaLow;
+  }
+  if (digitalRead(scl_) == LOW) {
+    low |= i2c_lines::kSclLow;
+  }
+  return low;
 }
 
 Status ArduinoI2cBus::mapEndTransmission(uint8_t code) {

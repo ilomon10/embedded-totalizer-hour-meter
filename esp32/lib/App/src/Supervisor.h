@@ -3,10 +3,11 @@
 // The task watchdog (5 s) catches a loop() that stops. These cover the cases
 // where loop() still runs but the device is useless to its host:
 //
-//   I2C stuck:   the bus kept timing out / erroring for kI2cStuckMs, even after
-//                bus recovery. A NACK is not a failure (the module is absent).
 //   USB stalled: the USB TX buffer did not drain for kUsbStallMs.
 //   panic signal: kPanicZeroRun 0x00 bytes in a row on a wired port (PanicDetector).
+//
+// A bad I2C bus is NOT a reason to restart (firmware <= 2.6.0 restarted after
+// 30 s): the modules are optional, so the bus is parked instead (BusGuard.h).
 //
 // A restart loop is bounded: restarts that were not asked for are counted
 // across resets (reset_history), and after kSafeModeAfter in a row the device
@@ -21,15 +22,11 @@
 
 class Supervisor {
  public:
-  static constexpr uint32_t kI2cStuckMs = 30000;
   static constexpr uint32_t kUsbStallMs = 10000;
   static constexpr uint32_t kHealthyUptimeMs = 600000;  // 10 min without trouble clears the restart count
 
   // Call every loop. Returns the reason to restart now, or LastCause::None.
-  LastCause update(uint32_t nowMs, bool i2cFailing, bool usbBlocked) {
-    if (stuckFor(i2c_, i2cFailing, nowMs, kI2cStuckMs)) {
-      return LastCause::I2cStuck;
-    }
+  LastCause update(uint32_t nowMs, bool usbBlocked) {
     if (stuckFor(usb_, usbBlocked, nowMs, kUsbStallMs)) {
       return LastCause::UsbStalled;
     }
@@ -50,7 +47,6 @@ class Supervisor {
     bool active = false;
     uint32_t sinceMs = 0;
   };
-  Condition i2c_;
   Condition usb_;
   bool healthyReported_ = false;
 

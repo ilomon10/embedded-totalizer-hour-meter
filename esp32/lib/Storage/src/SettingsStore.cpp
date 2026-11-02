@@ -16,6 +16,8 @@ bool SettingsStore::readCopy(uint32_t addr, SettingsRecord& out) {
 void SettingsStore::fromRecord(const SettingsRecord& r, Settings& out) {
   static_cast<StoredSettings&>(out) = r.settings;
   out.runVibMinMg = r.runVibMinMg;
+  out.i2cOff = (r.options & settings_options::kI2cOff) != 0 ? 1 : 0;
+  out.pulseOff = (r.options & settings_options::kPulseOff) != 0 ? 1 : 0;
 }
 
 Status SettingsStore::load(Settings& out) {
@@ -51,6 +53,8 @@ SettingsRecord SettingsStore::makeRecord(const Settings& s, uint32_t seq) {
   r.seq = seq;
   r.settings = s;  // the StoredSettings part
   r.runVibMinMg = s.runVibMinMg;
+  r.options = static_cast<uint8_t>((s.i2cOff != 0 ? settings_options::kI2cOff : 0) |
+                                   (s.pulseOff != 0 ? settings_options::kPulseOff : 0));
   r.crc = crcOfStructWithoutTail(r);
   return r;
 }

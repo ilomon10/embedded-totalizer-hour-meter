@@ -66,8 +66,22 @@ const char* knownDevice(uint8_t addr) {
   }
 }
 
+// What a bus recovery found held low (ArduinoI2cBus::linesLow()).
+const char* heldLinesText(uint8_t low) {
+  if (low == (i2c_lines::kSdaLow | i2c_lines::kSclLow)) {
+    return "SDA and SCL held low: a module, a short or no pull-ups (unplug modules one at a time)";
+  }
+  if ((low & i2c_lines::kSdaLow) != 0) {
+    return "SDA held low: a module or a short holds the data line (unplug modules one at a time)";
+  }
+  return "SCL held low: a module or a short holds the clock line (unplug modules one at a time)";
+}
+
 Verdict testScan() {
   Serial.println("\n-- I2C scan (SDA 21, SCL 22) --");
+  if (gBus.parked()) {
+    return report("scan", Verdict::Fail, heldLinesText(gBus.linesLow()));
+  }
   uint8_t found = 0;
   for (uint8_t addr = 0x08; addr <= 0x77; addr++) {
     if (gBus.probe(addr) == Status::Ok) {
@@ -273,6 +287,9 @@ void handleLine(String line) {
   line.trim();
   if (line.length() == 0) {
     return;
+  }
+  if (gBus.parked()) {
+    (void)gBus.begin();  // a line was held low last time: look again (a module may have been unplugged)
   }
   switch (line[0]) {
     case 's': (void)testScan(); break;

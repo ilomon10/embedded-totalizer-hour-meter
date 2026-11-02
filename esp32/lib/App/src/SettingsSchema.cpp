@@ -27,10 +27,14 @@ const SettingSpec kSpecs[] = {
     {127, "bluetooth", SF_BOOL, 0, 1},
     {128, "btPin", SF_U16, 0, 9999},
     {129, "runVibMinMg", SF_U16, 0, 2000},
+    // Second block: 110..129 is full and 130.. is calibration.
+    {150, "i2c", SF_BOOL, 0, 1},
+    {151, "pulseInput", SF_BOOL, 0, 1},
 };
 const size_t kCount = sizeof(kSpecs) / sizeof(kSpecs[0]);
-static_assert(sizeof(kSpecs) / sizeof(kSpecs[0]) == tag::kSettingLast - tag::kSettingFirst + 1,
-              "every tag in kSettingFirst..kSettingLast needs a spec row");
+static_assert(sizeof(kSpecs) / sizeof(kSpecs[0]) == (tag::kSettingLast - tag::kSettingFirst + 1) +
+                                                        (tag::kSettingMoreLast - tag::kSettingMoreFirst + 1),
+              "every tag in kSettingFirst..kSettingLast and kSettingMoreFirst..kSettingMoreLast needs a spec row");
 
 namespace {
 constexpr uint32_t kBauds[] = {9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600};
@@ -48,10 +52,12 @@ bool isIntegerFmt(uint8_t fmt) { return fmt != SF_F32 && fmt != SF_F64; }
 }  // namespace
 
 const SettingSpec* find(uint8_t t) {
-  if (t < tag::kSettingFirst || t > tag::kSettingLast) {
-    return nullptr;
+  for (size_t i = 0; i < kCount; i++) {  // bounded: kCount rows
+    if (kSpecs[i].tag == t) {
+      return &kSpecs[i];
+    }
   }
-  return &kSpecs[t - tag::kSettingFirst];
+  return nullptr;
 }
 
 double read(const Settings& s, uint8_t t) {
@@ -76,6 +82,8 @@ double read(const Settings& s, uint8_t t) {
     case 127: return s.bluetooth;
     case 128: return s.btPin;
     case 129: return s.runVibMinMg;
+    case 150: return s.i2cOff != 0 ? 0 : 1;    // stored inverted: 0 = on, as older firmware wrote it
+    case 151: return s.pulseOff != 0 ? 0 : 1;
     default: return 0;
   }
 }
@@ -102,6 +110,8 @@ bool write(Settings& s, uint8_t t, double v) {
     case 127: s.bluetooth = static_cast<uint8_t>(v); return true;
     case 128: s.btPin = static_cast<uint16_t>(v); return true;
     case 129: s.runVibMinMg = static_cast<uint16_t>(v); return true;
+    case 150: s.i2cOff = v != 0.0 ? 0 : 1; return true;
+    case 151: s.pulseOff = v != 0.0 ? 0 : 1; return true;
     default: return false;
   }
 }

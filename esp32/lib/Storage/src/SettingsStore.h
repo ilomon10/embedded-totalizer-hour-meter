@@ -12,10 +12,16 @@
 #include "Result.h"
 #include "Settings.h"
 
+// Bits of SettingsRecord::options (firmware 2.7.0; older firmware always wrote the byte as 0).
+namespace settings_options {
+constexpr uint8_t kI2cOff = 0x01;    // Settings::i2cOff
+constexpr uint8_t kPulseOff = 0x02;  // Settings::pulseOff
+}  // namespace settings_options
+
 struct SettingsRecord {
   uint16_t magic;
   uint8_t version;
-  uint8_t reserved;
+  uint8_t options;  // settings_options bits; reserved (always 0) before firmware 2.7.0
   uint32_t seq;
   StoredSettings settings;
   uint16_t runVibMinMg;  // Settings::runVibMinMg; reserved (always 0) before firmware 2.5.0
@@ -31,7 +37,8 @@ class SettingsStore {
  public:
   static constexpr uint16_t kMagic = 0x5453;  // "ST"
   // v2: bluetooth + btPin (were reserved fields). Firmware 2.5.0 added runVibMinMg in a
-  // byte pair that v2 records already had as 0, so the version stays 2: no reset on upgrade.
+  // byte pair that v2 records already had as 0, and 2.7.0 the options byte (same story),
+  // so the version stays 2: no reset on upgrade.
   static constexpr uint8_t kVersion = 2;
 
   explicit SettingsStore(At24c& eeprom) : eeprom_(eeprom) {}

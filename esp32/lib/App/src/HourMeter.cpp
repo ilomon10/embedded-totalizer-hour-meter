@@ -3,6 +3,9 @@
 
 void HourMeter::configure(bool activeHigh, uint16_t debounceMs, uint16_t pulsesPerUnit, uint16_t persistIntervalS) {
   activeHigh_ = activeHigh;
+  if (debounceMs != debounceMs_) {
+    levelMs_ = running_ ? debounceMs : 0;  // the counter's range changed: restart it from the current state
+  }
   debounceMs_ = debounceMs;
   pulsesPerUnit_ = (pulsesPerUnit == 0) ? 1 : pulsesPerUnit;
   persistIntervalMs_ = static_cast<uint32_t>(persistIntervalS) * 1000UL;
@@ -36,29 +39,64 @@ void HourMeter::accumulate(uint32_t elapsedMs) {
   }
 }
 
-bool HourMeter::update(uint32_t nowMs, bool pinHigh, bool confirmed) {
-  inputActive_ = (pinHigh == activeHigh_);
-  const bool active = inputActive_ && confirmed;
+// Over the last kToggleWindowTicks calls: enough level changes per second, with the pin really spending time at
+// its running level, mean an AC signal (W/P terminal), not spikes on a steady level.
+bool HourMeter::toggling(uint16_t edges, bool levelActive, uint32_t elapsedMs) {
+  Tick& slot = window_[windowNext_];
+  windowEdges_ -= slot.edges;
+  windowMs_ -= slot.ms;
+  windowActive_ = static_cast<uint8_t>(windowActive_ - (slot.levelActive ? 1 : 0));
+  slot.edges = edges;
+  slot.ms = static_cast<uint16_t>(elapsedMs > kMaxTickMs ? kMaxTickMs : elapsedMs);
+  slot.levelActive = levelActive;
+  windowEdges_ += slot.edges;
+  windowMs_ += slot.ms;
+  windowActive_ = static_cast<uint8_t>(windowActive_ + (slot.levelActive ? 1 : 0));
+  windowNext_ = static_cast<uint8_t>((windowNext_ + 1) % kToggleWindowTicks);
+  return windowMs_ > 0 && windowEdges_ * 1000U >= kMinToggleEdgesPerS * windowMs_ &&
+         windowActive_ >= kMinToggleActiveTicks;
+}
+
+// The time since the previous call counts for the input that call saw (it held until now).
+void HourMeter::integrate(bool active, uint32_t elapsedMs) {
+  if (active) {
+    levelMs_ = (elapsedMs >= debounceMs_ - levelMs_) ? debounceMs_ : levelMs_ + elapsedMs;
+  } else {
+    levelMs_ = (elapsedMs >= levelMs_) ? 0 : levelMs_ - elapsedMs;
+  }
+}
+
+bool HourMeter::update(uint32_t nowMs, bool pinHigh, bool confirmed, uint16_t edges) {
+  const bool levelActive = (pinHigh == activeHigh_);
   if (!started_) {
     started_ = true;
     lastUpdateMs_ = nowMs;
-    candidate_ = active;
-    candidateSinceMs_ = nowMs;
+    inputActive_ = levelActive;  // edges counted before the first call have no time base: not used
+    const bool active = inputActive_ && confirmed;
+    lastActive_ = active;
     running_ = active;  // trust the first reading; debounce applies to changes
+    levelMs_ = active ? debounceMs_ : 0;
     return false;
   }
   const uint32_t elapsed = nowMs - lastUpdateMs_;
   lastUpdateMs_ = nowMs;
+  inputActive_ = toggling(edges, levelActive, elapsed) || levelActive;
+  const bool active = inputActive_ && confirmed;
   if (running_) {
     accumulate(elapsed);
   }
-  if (active != candidate_) {
-    candidate_ = active;
-    candidateSinceMs_ = nowMs;
+  integrate(lastActive_, elapsed);
+  lastActive_ = active;
+  bool next = running_;
+  if (debounceMs_ == 0) {
+    next = active;  // no debounce: follow the input
+  } else if (levelMs_ >= debounceMs_) {
+    next = true;
+  } else if (levelMs_ == 0) {
+    next = false;
   }
-  const bool stable = (nowMs - candidateSinceMs_) >= debounceMs_;
-  if (stable && candidate_ != running_) {
-    running_ = candidate_;
+  if (next != running_) {
+    running_ = next;
     return !running_;  // true only on running -> stopped
   }
   return false;

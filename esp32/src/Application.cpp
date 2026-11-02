@@ -33,8 +33,10 @@ Application::Application()
 
 // Boot order matters for recovery: the watchdog first (a hang anywhere below
 // reboots), then USB (fixed baud, needs no settings), the flash store, and only
-// then I2C. After kSafeModeAfter unplanned restarts in a row, I2C is skipped
-// entirely; the settings and counters still come from the flash.
+// then I2C. After kSafeModeAfter unplanned restarts in a row, or with the `i2c`
+// setting off, I2C is skipped entirely; the settings and counters still come
+// from the flash. A bus line held low parks the bus (no module this boot) and
+// it is tried again later.
 void Application::setup() {
   esp_task_wdt_init(app_config::kWatchdogTimeoutS, true);  // panic + reboot on stall
   esp_task_wdt_add(nullptr);
@@ -49,17 +51,21 @@ void Application::setup() {
   link_.onCommand(onCommand, this);
 
   initFlashStore();  // no I2C involved: works in safe mode too
-  if (!safeMode_) {
+  if (!safeMode_ && !i2cOffInFlash()) {
     reset_log::stage(Stage::I2cInit);
-    (void)bus_.begin();
-    (void)attachEepromWatched();
+    if (bus_.begin() == Status::Ok) {
+      (void)attachEepromWatched();
+    } else {
+      busGuard_.parked(clock_.nowMs());  // SDA or SCL held low: retried after BusGuard's pause
+    }
   }
   adoptStoredState();  // settings must be known before the UART pins open
+  applyI2cMode();      // settings from an EEPROM may switch the bus off
   reset_log::stage(Stage::UartOpen);
   link_.beginUart(settings_.baud, pins::kUartRx, pins::kUartTx, static_cast<OutputPort>(settings_.output));
   applyBluetooth();  // off unless the `bluetooth` setting is on
   inputs_.begin(pins::kAlternator, pins::kPulse);
-  if (!safeMode_) {
+  if (!bus_.parked()) {
     reset_log::stage(Stage::Rtc);
     (void)attachRtc(true);
     reset_log::stage(Stage::Imu);
@@ -81,6 +87,102 @@ bool Application::attachEepromWatched() {
   const bool ok = attachEeprom();
   esp_task_wdt_init(app_config::kWatchdogTimeoutS, true);
   return ok;
+}
+
+// ------------------------------------------------------------- I2C bus ----
+// In use (presence check every 2 s), parked after trouble (BusGuard.h: tried
+// again after a growing pause), or off (safe mode, `i2c` setting). Parked or
+// off, every module counts as missing and the hour meter runs on the flash.
+
+// The `i2c` setting as saved in the flash, read before the bus starts: a unit
+// switched to "hour meter only" never drives the I2C pins, not even at boot.
+bool Application::i2cOffInFlash() const {
+  if (!flashStore_.hasSettings()) {
+    return false;  // nothing saved yet: the default, on
+  }
+  Settings saved = defaultSettings();
+  flashStore_.loadSettings(saved);
+  return saved.i2cOff != 0;
+}
+
+// The `i2c` setting (or safe mode) applied to the bus: off stops it for good,
+// on starts it as at boot (the modules attach at the next presence check).
+void Application::applyI2cMode() {
+  if (!i2cWanted()) {
+    bus_.park();
+    busGuard_.reset();
+    dropModules();
+    return;
+  }
+  if (bus_.parked() && !busGuard_.isParked()) {  // it was off
+    reset_log::stage(Stage::I2cInit);
+    if (bus_.begin() != Status::Ok) {
+      busGuard_.parked(clock_.nowMs());
+    }
+  }
+}
+
+void Application::superviseBus(uint32_t nowMs, uint32_t nowUs) {
+  const bool presenceDue = presenceTask_.due(nowUs);  // polled every loop, so its schedule stays current
+  if (!i2cWanted()) {
+    return;
+  }
+  if (busGuard_.isParked()) {
+    retryBus(nowMs);
+    return;
+  }
+  if (presenceDue) {
+    reset_log::stage(Stage::Presence);
+    runPresence();
+  }
+  const bool failing = bus_.failing();
+  if (!bus_.parked() && busGuard_.shouldPark(nowMs, failing, failing && bus_.linesLow() != 0)) {
+    parkBus(nowMs);
+  }
+}
+
+// After BusGuard's pause: free lines put the bus back in use, a line still
+// held low keeps it parked for twice as long.
+void Application::retryBus(uint32_t nowMs) {
+  if (!busGuard_.retryDue(nowMs)) {
+    return;
+  }
+  reset_log::stage(Stage::I2cInit);
+  if (bus_.begin() == Status::Ok) {
+    busGuard_.resumed(nowMs);
+  } else {
+    busGuard_.retryFailed(nowMs);
+  }
+}
+
+// The bus kept failing (or a line is held low): stop using it instead of
+// restarting, which could not fix a module or a short anyway.
+void Application::parkBus(uint32_t nowMs) {
+  bus_.park();
+  busGuard_.parked(nowMs);
+  dropModules();
+}
+
+// Every module counts as missing: the counters and settings go on in the
+// flash, the time in RAM.
+void Application::dropModules() {
+  storageError_ = false;  // about the EEPROM's format or scan: no EEPROM is used now
+  eepromPresence_.markAbsent();
+  rtcPresence_.markAbsent();
+  imuPresence_.markAbsent();
+  if ((devices_ & device_bit::kRtc) != 0) {
+    loseRtc();
+  }
+  setDevice(device_bit::kEeprom | device_bit::kImu | device_bit::kMag, false);
+}
+
+void Application::loseRtc() {
+  setDevice(device_bit::kRtc, false);
+  rtcTempValid_ = false;  // tag 54 only while an RTC is there, not its last reading
+  if (time_.valid()) {  // keep the time, but it is now RAM-only
+    const uint32_t nowMs = clock_.nowMs();
+    time_.sync(time_.nowEpoch(nowMs), nowMs, TimeSource::Host);
+  }
 }
 
 // ------------------------------------------------------ modules (hot-plug) --
@@ -190,6 +292,7 @@ Status Application::saveSettingsEverywhere(const Settings& next) {
 
 void Application::adoptLateSettings(const Settings& stored) {
   const bool linkChanged = (stored.baud != settings_.baud) || (stored.output != settings_.output);
+  const bool i2cChanged = stored.i2cOff != settings_.i2cOff;
   settings_ = stored;
   settingsKnown_ = true;
   bootFlags_ &= ~status_flag::kSettingsDefaults;
@@ -198,6 +301,9 @@ void Application::adoptLateSettings(const Settings& stored) {
     link_.reconfigure(settings_.baud, static_cast<OutputPort>(settings_.output));
   }
   applyBluetooth();
+  if (i2cChanged) {
+    applyI2cMode();
+  }
 }
 
 bool Application::attachRtc(bool atBoot) {
@@ -240,19 +346,17 @@ void Application::runPresence() {
   } else {
     (void)attachEepromWatched();
   }
+  reset_log::stage(Stage::Rtc);  // each module leaves its own breadcrumb
   if (rtcPresence_.present()) {
     if (bus_.probe(i2c_addr::kRtc) == Status::Ok) {
       rtcPresence_.recordSuccess();
     } else if (rtcPresence_.recordFailure()) {
-      setDevice(device_bit::kRtc, false);
-      if (time_.valid()) {  // keep the time, but it is now RAM-only
-        const uint32_t nowMs = clock_.nowMs();
-        time_.sync(time_.nowEpoch(nowMs), nowMs, TimeSource::Host);
-      }
+      loseRtc();
     }
   } else {
     (void)attachRtc(false);
   }
+  reset_log::stage(Stage::Imu);
   if (imuPresence_.present()) {
     if (bus_.probe(i2c_addr::kImu) == Status::Ok) {
       imuPresence_.recordSuccess();
@@ -269,7 +373,7 @@ void Application::applyRuntimeSettings() {
   const uint32_t nowUs = clock_.nowUs();
   meter_.configure(settings_.altActiveHigh != 0, settings_.altDebounceMs, settings_.pulsesPerUnit,
                    settings_.persistIntervalS);
-  inputs_.configurePulse(settings_.pulseRisingEdge != 0, settings_.pulseMinIntervalUs);
+  inputs_.configurePulse(settings_.pulseOff == 0, settings_.pulseRisingEdge != 0, settings_.pulseMinIntervalUs);
   pipeline_.configure(settings_);
   imuTask_.setPeriodUs(hzToUs(settings_.imuSampleHz), nowUs);
   streamTask_.setPeriodUs(hzToUs(settings_.imuStreamHz), nowUs);
@@ -300,7 +404,7 @@ void Application::loop() {
     reset_log::stage(Stage::Inputs);
     runInputs(nowMs);
   }
-  if ((devices_ & device_bit::kImu) != 0 && imuTask_.due(nowUs)) {
+  if (imuTask_.due(nowUs) && (devices_ & device_bit::kImu) != 0) {  // polled even without an IMU: stays on schedule
     reset_log::stage(Stage::Imu);
     runImu(nowUs);
   }
@@ -315,10 +419,7 @@ void Application::loop() {
     reset_log::stage(Stage::Rtc);
     syncRtc(nowMs);
   }
-  if (!safeMode_ && presenceTask_.due(nowUs)) {
-    reset_log::stage(Stage::Presence);
-    runPresence();
-  }
+  superviseBus(nowMs, nowUs);
   supervise(nowMs);
   if (devicesChanged_) {
     devicesChanged_ = false;
@@ -331,7 +432,7 @@ void Application::runInputs(uint32_t nowMs) {
   meter_.addPulses(inputs_.takePulses());
   const bool confirmed = runConfirm_.update((devices_ & device_bit::kImu) != 0, pipeline_.hasVibration(),
                                             pipeline_.vibration().rmsMg, settings_.runVibMinMg);
-  const bool engineStopped = meter_.update(nowMs, inputs_.alternatorHigh(), confirmed);
+  const bool engineStopped = meter_.update(nowMs, inputs_.alternatorHigh(), confirmed, inputs_.takeAltEdges());
   if (engineStopped || meter_.persistDue(nowMs)) {
     (void)persistCounters(nowMs, 0);
   }
@@ -516,7 +617,7 @@ void Application::afterCommand() {
 // ----------------------------------------------------------- supervisor ----
 
 void Application::supervise(uint32_t nowMs) {
-  const LastCause why = supervisor_.update(nowMs, !safeMode_ && bus_.failing(), link_.usbTxBlocked());
+  const LastCause why = supervisor_.update(nowMs, link_.usbTxBlocked());
   if (why != LastCause::None) {
     restart(why);
   }
@@ -529,8 +630,8 @@ void Application::supervise(uint32_t nowMs) {
 void Application::restart(LastCause cause) {
   reset_log::recordCause(cause);
   if (meter_.dirty()) {
-    // Best effort. On a stuck bus the EEPROM is left out (it would only delay the restart), the flash is not.
-    (void)persistCounters(clock_.nowMs(), 0, cause != LastCause::I2cStuck);
+    // Best effort. On a failing bus the EEPROM is left out (it would only delay the restart), the flash is not.
+    (void)persistCounters(clock_.nowMs(), 0, !bus_.failing());
   }
   if (cause == LastCause::RebootCommand) {
     link_.flush();  // the ACK must leave first (a stalled USB is never flushed: it would block)
@@ -556,8 +657,12 @@ Status Application::applySettings(const Settings& next) {
   }
   linkReconfigPending_ = (next.baud != settings_.baud) || (next.output != settings_.output);
   btReconfigPending_ = btReconfigPending_ || (next.bluetooth != settings_.bluetooth);
+  const bool i2cChanged = next.i2cOff != settings_.i2cOff;
   settings_ = next;
   applyRuntimeSettings();
+  if (i2cChanged) {
+    applyI2cMode();
+  }
   return Status::Ok;
 }
 
@@ -618,6 +723,8 @@ DeviceStatus Application::status() const {
   st.btState = !link_.bluetoothOn() ? 0 : !btHadClient_ ? 1 : btGate_.unlocked() ? 3 : 2;
   st.lastCause = static_cast<uint8_t>(lastCause_);
   st.lastStage = static_cast<uint8_t>(lastStage_);
+  st.i2cParked = busGuard_.isParked();
+  st.i2cLines = st.i2cParked ? bus_.linesLow() : 0;
   st.rtcTempValid = rtcTempValid_;
   st.rtcTempQuarterC = rtcTempQ_;
   uint32_t f = bootFlags_;
@@ -638,6 +745,8 @@ DeviceStatus Application::status() const {
   f |= pipeline_.calibrating() ? status_flag::kCalibrating : 0;
   f |= safeMode_ ? status_flag::kSafeMode : 0;
   f |= !flashStore_.available() ? status_flag::kFlashStoreMissing : 0;
+  f |= st.i2cParked ? status_flag::kI2cParked : 0;
+  f |= settings_.i2cOff != 0 ? status_flag::kI2cOff : 0;
   st.flags = f;
   return st;
 }

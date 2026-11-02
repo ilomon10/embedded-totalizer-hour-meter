@@ -16,6 +16,13 @@
 #include "Check.h"
 #include "Status.h"
 
+// Which bus line a bus recovery found still held LOW after releasing it (status tag 64, i2cLines).
+// 0 = both lines high: the transfers failed for another reason (noise, a module that hangs).
+namespace i2c_lines {
+constexpr uint8_t kSdaLow = 0x01;  // a module (or a short) holds the data line
+constexpr uint8_t kSclLow = 0x02;  // a module (or a short) holds the clock line
+}  // namespace i2c_lines
+
 class II2cBus {
  public:
   // Largest single transfer any driver may request (ESP32 Wire buffer is 128 B).

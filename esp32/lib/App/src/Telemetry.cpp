@@ -61,6 +61,9 @@ bool appendStatus(FrameWriter& w, const DeviceStatus& st, bool full) {
     if (st.rtcTempValid) {
       ok = ok && w.addI16(tag::kRtcTemp, st.rtcTempQuarterC);
     }
+    if (st.i2cParked) {
+      ok = ok && w.addU8(tag::kI2cLines, st.i2cLines);
+    }
   }
   return ok;
 }
