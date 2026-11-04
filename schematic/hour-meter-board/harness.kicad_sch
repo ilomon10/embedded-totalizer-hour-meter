@@ -1,0 +1,1197 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "9a48a96f-5b9f-4aba-95d4-d5176982007e")
+	(paper "A3")
+	(title_block
+		(title "J1 harness")
+		(date "2026-11-02")
+		(rev "C")
+		(company "Hour meter main board, Micro-Fit + CAN + RS232")
+		(comment 1 "Micro-Fit 3.0 2x8 header 43045-1600 (LCSC C277731).")
+	)
+	(lib_symbols
+		(symbol "Connector_Generic:Conn_02x08_Top_Bottom"
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "J"
+				(at 1.27 10.16 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "Conn_02x08_Top_Bottom"
+				(at 1.27 -12.7 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Generic connector, double row, 02x08, top/bottom pin numbering scheme (row 1: 1...pins_per_row, row2: pins_per_row+1 ... num_pins), script generated (kicad-library-utils/schlib/autogen/connector/)"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "connector"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "Connector*:*_2x??_*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "Conn_02x08_Top_Bottom_1_1"
+				(rectangle
+					(start -1.27 8.89)
+					(end 3.81 -11.43)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(rectangle
+					(start -1.27 7.747)
+					(end 0 7.493)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 5.207)
+					(end 0 4.953)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 2.667)
+					(end 0 2.413)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 0.127)
+					(end 0 -0.127)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -2.413)
+					(end 0 -2.667)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -4.953)
+					(end 0 -5.207)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -7.493)
+					(end 0 -7.747)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -10.033)
+					(end 0 -10.287)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 3.81 7.747)
+					(end 2.54 7.493)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 3.81 5.207)
+					(end 2.54 4.953)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 3.81 2.667)
+					(end 2.54 2.413)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 3.81 0.127)
+					(end 2.54 -0.127)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 3.81 -2.413)
+					(end 2.54 -2.667)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 3.81 -4.953)
+					(end 2.54 -5.207)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 3.81 -7.493)
+					(end 2.54 -7.747)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 3.81 -10.033)
+					(end 2.54 -10.287)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at -5.08 7.62 0)
+					(length 3.81)
+					(name "Pin_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 5.08 0)
+					(length 3.81)
+					(name "Pin_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 2.54 0)
+					(length 3.81)
+					(name "Pin_3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 0 0)
+					(length 3.81)
+					(name "Pin_4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -2.54 0)
+					(length 3.81)
+					(name "Pin_5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -5.08 0)
+					(length 3.81)
+					(name "Pin_6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -7.62 0)
+					(length 3.81)
+					(name "Pin_7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -10.16 0)
+					(length 3.81)
+					(name "Pin_8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 7.62 180)
+					(length 3.81)
+					(name "Pin_9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 5.08 180)
+					(length 3.81)
+					(name "Pin_10"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "10"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 2.54 180)
+					(length 3.81)
+					(name "Pin_11"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "11"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 0 180)
+					(length 3.81)
+					(name "Pin_12"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "12"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 -2.54 180)
+					(length 3.81)
+					(name "Pin_13"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "13"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 -5.08 180)
+					(length 3.81)
+					(name "Pin_14"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "14"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 -7.62 180)
+					(length 3.81)
+					(name "Pin_15"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "15"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 -10.16 180)
+					(length 3.81)
+					(name "Pin_16"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "16"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+	)
+	(junction
+		(at 170.18 114.3)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "f00f0a16-50e1-55ec-9872-0288ccf1a55c")
+	)
+	(junction
+		(at 170.18 129.54)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "269c9107-ca25-565f-8ac8-736aee216c01")
+	)
+	(wire
+		(pts
+			(xy 139.7 119.38) (xy 185.42 119.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c2caaa4b-0531-51b6-9b08-4c3d96f58d3b")
+	)
+	(wire
+		(pts
+			(xy 139.7 121.92) (xy 185.42 121.92)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b5ce17a6-f572-589c-9530-95bbf8fe7ec9")
+	)
+	(wire
+		(pts
+			(xy 139.7 124.46) (xy 185.42 124.46)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d0d8f4fd-b09b-5bbe-9cf0-1dd884f70a88")
+	)
+	(wire
+		(pts
+			(xy 139.7 127) (xy 185.42 127)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7fc6bf59-c4da-5549-9d95-2811fbd73481")
+	)
+	(wire
+		(pts
+			(xy 170.18 114.3) (xy 185.42 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f29bda5e-1e4f-5b4e-b97c-1c86433d236f")
+	)
+	(wire
+		(pts
+			(xy 170.18 116.84) (xy 185.42 116.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "431572d5-09c5-55f8-b3de-f0611ae21458")
+	)
+	(wire
+		(pts
+			(xy 170.18 114.3) (xy 170.18 116.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "eb829056-3e8a-5a55-b091-43455b5fcbea")
+	)
+	(wire
+		(pts
+			(xy 139.7 114.3) (xy 170.18 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1120fa55-9746-535d-b50c-8fe11de5007b")
+	)
+	(wire
+		(pts
+			(xy 170.18 129.54) (xy 185.42 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "344785e0-b8ba-52db-86b6-db9825648a9b")
+	)
+	(wire
+		(pts
+			(xy 170.18 132.08) (xy 185.42 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "af15e04e-4e78-5e7a-ac29-b2605ba5f4e6")
+	)
+	(wire
+		(pts
+			(xy 170.18 129.54) (xy 170.18 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3116a265-cf94-5041-85a5-e84f0c0c1953")
+	)
+	(wire
+		(pts
+			(xy 139.7 129.54) (xy 170.18 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b1fa6757-348f-56ec-aa09-6ab3f2b13dde")
+	)
+	(wire
+		(pts
+			(xy 198.12 114.3) (xy 241.3 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "378a0fb7-57dc-56ad-a2ac-7baf81ec9f93")
+	)
+	(wire
+		(pts
+			(xy 198.12 116.84) (xy 241.3 116.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "67a407bf-b8a3-5d96-984e-d589910007c0")
+	)
+	(wire
+		(pts
+			(xy 198.12 119.38) (xy 241.3 119.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a190a640-9c36-595b-9a83-419700a2f48f")
+	)
+	(wire
+		(pts
+			(xy 198.12 121.92) (xy 241.3 121.92)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "67725f55-aa80-54e5-8c67-b2daac14b62b")
+	)
+	(wire
+		(pts
+			(xy 198.12 124.46) (xy 241.3 124.46)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "090059d6-fc42-52f0-bc59-ad1d0dbe2e9a")
+	)
+	(wire
+		(pts
+			(xy 198.12 127) (xy 241.3 127)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "42330bac-c58f-56ad-a8a9-7c8a4bd419fb")
+	)
+	(wire
+		(pts
+			(xy 198.12 129.54) (xy 241.3 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "364c6b00-ee33-5c67-ab44-be2b3e980eca")
+	)
+	(wire
+		(pts
+			(xy 198.12 132.08) (xy 241.3 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "81996685-c1ef-51a1-9dcc-daf08b454d29")
+	)
+	(hierarchical_label "RS232_TXD"
+		(shape passive)
+		(at 139.7 119.38 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "921b9b81-6308-5252-a6b7-028113576238")
+	)
+	(hierarchical_label "SENSOR_5V"
+		(shape passive)
+		(at 139.7 121.92 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "056958dc-3ac3-5aee-b43e-79137528176f")
+	)
+	(hierarchical_label "CAN_L"
+		(shape passive)
+		(at 139.7 124.46 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "c720ac53-5aca-505a-b239-99a5573e6ab0")
+	)
+	(hierarchical_label "RS485_B"
+		(shape passive)
+		(at 139.7 127 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "8fd8cac9-c37a-5611-a258-783400134f64")
+	)
+	(hierarchical_label "GND"
+		(shape passive)
+		(at 139.7 114.3 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "9783c691-5edb-5fad-8071-e5278d24c355")
+	)
+	(hierarchical_label "VEH_GND"
+		(shape passive)
+		(at 139.7 129.54 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "368489d7-e78c-528a-afab-bfba57061cbb")
+	)
+	(hierarchical_label "VIN_IN"
+		(shape passive)
+		(at 241.3 114.3 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "f9236590-3754-50ba-a570-1ed6a18be556")
+	)
+	(hierarchical_label "DOUT1"
+		(shape passive)
+		(at 241.3 116.84 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "f11660c8-bffa-5d65-a2c6-b56938264f0d")
+	)
+	(hierarchical_label "AIN1_RAW"
+		(shape passive)
+		(at 241.3 119.38 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "6817949b-faf7-5e31-95d8-57d484ed2f35")
+	)
+	(hierarchical_label "RS232_RXD"
+		(shape passive)
+		(at 241.3 121.92 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "cf527158-e0bd-5393-a69e-dcccf00dd0f1")
+	)
+	(hierarchical_label "CAN_H"
+		(shape passive)
+		(at 241.3 124.46 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "eeba9081-b5da-5618-a92d-dba1ab6551e2")
+	)
+	(hierarchical_label "RS485_A"
+		(shape passive)
+		(at 241.3 127 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "95f34f1b-d2c0-57f2-a4d7-437a7406ae07")
+	)
+	(hierarchical_label "DIN1_RAW"
+		(shape passive)
+		(at 241.3 129.54 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "4ed99ddc-cbb3-59ec-99d4-939b1f317a88")
+	)
+	(hierarchical_label "DIN2_RAW"
+		(shape passive)
+		(at 241.3 132.08 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "ea3b4ab6-2981-5833-9e79-06c7002be27d")
+	)
+	(text "J1 harness: the one connector for every vehicle wire (Molex Micro-Fit 3.0, 2 x 8)"
+		(exclude_from_sim no)
+		(at 15.24 12.7 0)
+		(effects
+			(font
+				(size 2.54 2.54)
+				(bold yes)
+			)
+			(justify left top)
+		)
+		(uuid "f58b6063-627d-5d82-8bdc-e37af98d07f1")
+	)
+	(text_box "WHAT IT DOES\nEvery field wire enters the board on J1: the supply (VIN, GND), the CAN, RS485 and RS232 buses, the analog input AIN1,\nthe digital inputs DIN1/DIN2 with their own return (DIN COM), the output DOUT1 and a 5 V sensor supply.\nThis sheet only names each pin; each signal's protection and circuit sits in the module it goes to.\n\nPINS OF THIS MODULE (its block on the top sheet)\nGND: pins 1 and 2: board ground = vehicle ground\nVIN_IN: pin 9, to the VIN input module (fuse, reverse block, TVS)\nRS485_A, RS485_B: pins 14 and 6, to the RS485 module\nCAN_H, CAN_L: pins 13 and 5, to the CAN module\nRS232_TXD, RS232_RXD: pins 3 and 12, to the RS232 module\nSENSOR_5V: pin 4, from the +5V out fuse module (F801)\nAIN1_RAW: pin 11, to the AIN1 front end\nDOUT1: pin 10, from the DOUT1 module\nDIN1_RAW, DIN2_RAW, VEH_GND: pins 15, 16 and 7/8, to the DIN inputs module\nPower and ground reach the parts on this sheet only through these pins: the ground and supply symbols drawn on this sheet are local to it."
+		(exclude_from_sim no)
+		(at 15.24 17.78 0)
+		(size 388 36.8)
+		(margins 1.5 1.5 1.5 1.5)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "6ba39608-8ff6-55e9-9039-cbd39210478b")
+	)
+	(text "front row: pins 1-8 (next to the PCB)"
+		(exclude_from_sim no)
+		(at 121.92 107.95 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "02431157-23e8-5825-86a1-5763b8b3bfd8")
+	)
+	(text "back row: pins 9-16"
+		(exclude_from_sim no)
+		(at 233.68 107.95 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "80c99a3d-5429-5dd9-be02-08b43f0b455d")
+	)
+	(text "PCB: J1 sits on the left board edge. The bus protectors D701 (RS485) and D1001 (CAN) go right at its pins.\nThe vehicle nets (VIN, DOUT1, AIN1, DIN1, DIN2, DIN COM) use the 0.8 mm Vehicle clearance; pins 7, 8, 15 and 16\nface the isolated DIN island. Every pair of neighbouring pins survives a short (see PINOUT.md)."
+		(exclude_from_sim no)
+		(at 139.7 142.24 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(color 200 60 0 1)
+			)
+			(justify left top)
+		)
+		(uuid "d8729058-0180-5b45-b0b2-17b3c7aff525")
+	)
+	(text_box "J1 PINOUT AND RATINGS  (looking into J1 from outside the case, latch on top: upper row 16 15 14 13 12 11 10 9, lower row next to the PCB 8 7 6 5 4 3 2 1)\nPin 1  GND: battery negative; carries the board supply and DOUT1's load current (up to about 1 A)\nPin 2  GND: signal return for sensors, RS232, RS485 and CAN\nPin 3  RS232 TX: RS-232 output: +/-5 V minimum, survives +/-70 V\nPin 4  +5 V out: 5 V sensor supply through fuse F801, 200 mA. The only pin that is NOT vehicle-proof: never wire it to the vehicle supply\nPin 5  CAN_L: CAN bus low (twisted pair with pin 13): -12..+12 V common mode, survives +/-58 V (+/-36 V steady)\nPin 6  RS485 B: RS-485 bus (twisted pair with pin 14): -7..+12 V, survives +/-70 V (+/-36 V steady)\nPin 7  DIN COM: isolated return of DIN1/DIN2 (VEH_GND), NOT connected to GND; +/-60 V to GND\nPin 8  DIN COM: second wire for the same return\nPin 9  VIN: supply input 9-30 V DC, 12 V nominal, 1 A fuse at the battery; survives 32 V steady and -40 V reverse\nPin 10  DOUT1: open-drain output: the load goes between a fused +12/24 V and this pin; 0.5 A, load supply up to 36 V\nPin 11  AIN1: analog input 0-30 V (4-20 mA with R904 fitted); survives +/-60 V\nPin 12  RS232 RX: RS-232 input, +/-3 to +/-25 V working, survives +/-70 V\nPin 13  CAN_H: CAN bus high\nPin 14  RS485 A: RS-485 bus A\nPin 15  DIN1: digital input 0-36 V, active above 6.7 V (alternator L / D+, oil-pressure switch); +50 / -60 V\nPin 16  DIN2: digital input 0-36 V, pulse counter up to 1 kHz; +50 / -60 V\nMating plug (not assembled, order it with the board): housing 43025-1600 (LCSC C293527) + 16 crimp terminals 43030-0007 (C293530) for 20-24 AWG; crimp with Molex 63819-0000 or a Micro-Fit / MX3.0 ratchet crimper. Wire: 20 AWG for VIN, GND and DOUT1, 22-24 AWG for signals, twisted pairs for CAN_H/CAN_L and RS485 A/B."
+		(exclude_from_sim no)
+		(at 15.24 152 0)
+		(size 389 62)
+		(margins 1.5 1.5 1.5 1.5)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "8ca618cd-d1b3-599c-aa26-aa78bdfce8a6")
+	)
+	(text_box "PARTS AND THEIR JOBS\nJ1: Molex Micro-Fit 3.0 right-angle header, 2 x 8, 3.00 mm pitch (43045-1600, LCSC C277731), through-hole, assembled by JLCPCB."
+		(exclude_from_sim no)
+		(at 15.24 222 0)
+		(size 280 8.1)
+		(margins 1.5 1.5 1.5 1.5)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "996c6ee7-0c04-559b-8692-4f6c31d5ceaf")
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_02x08_Top_Bottom")
+		(at 190.5 121.92 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "618b3d91-d4eb-4d0a-8faf-b5a21db2fe96")
+		(property "Reference" "J1"
+			(at 191.77 109.22 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "Micro-Fit 3.0 2x8"
+			(at 191.77 110.998 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_Molex:Molex_Micro-Fit_3.0_43045-1600_2x08_P3.00mm_Horizontal"
+			(at 190.5 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "https://www.molex.com/pdm_docs/sd/430450201_sd.pdf"
+			(at 190.5 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Molex Micro-Fit 3.0 header, 2x8, 3.00 mm, right-angle, through-hole; mates with receptacle 43025-1600 + crimp terminals 43030-0007"
+			(at 190.5 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C277731"
+			(at 190.5 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "430451600"
+			(at 190.5 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "8"
+			(uuid "fa457116-7107-42f5-82db-b515f43a8201")
+		)
+		(pin "11"
+			(uuid "390f6203-97ce-4c69-a88d-15e1f71b8c22")
+		)
+		(pin "10"
+			(uuid "3a6f2174-5e28-4cd8-8dc7-ecf78271a758")
+		)
+		(pin "9"
+			(uuid "e42c7644-d93f-49bb-b624-ec27cff94da6")
+		)
+		(pin "7"
+			(uuid "afae29c0-d67b-4fed-a988-5194ff448418")
+		)
+		(pin "2"
+			(uuid "38d809bc-e48a-4998-bb51-c7ad877fd562")
+		)
+		(pin "13"
+			(uuid "6a59536f-1b7e-40db-935a-d1575873a9bd")
+		)
+		(pin "3"
+			(uuid "4057013d-4c93-487a-b3e7-3345fb74a6b9")
+		)
+		(pin "4"
+			(uuid "7d01ac21-c3ee-48fe-a82a-1d9723a61a90")
+		)
+		(pin "1"
+			(uuid "b69df551-df7a-4164-b9c8-caee1916ae90")
+		)
+		(pin "15"
+			(uuid "4375f5a1-1ac1-4ce3-bcc6-f3705f451ebd")
+		)
+		(pin "5"
+			(uuid "b08b7824-ae80-4a30-8394-6454cdd41670")
+		)
+		(pin "12"
+			(uuid "9bcde427-9b79-4766-9ee5-3936d5da608d")
+		)
+		(pin "6"
+			(uuid "e127f956-47f1-4a66-8bee-67f4f4bd6309")
+		)
+		(pin "14"
+			(uuid "b47dd5fe-331b-416d-af5b-271f018be646")
+		)
+		(pin "16"
+			(uuid "e6650f8a-d8a3-4a9e-9267-6a019a70956c")
+		)
+		(instances
+			(project "hour-meter-board"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/9a48a96f-5b9f-4aba-95d4-d5176982007e"
+					(reference "J1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(embedded_fonts no)
+)

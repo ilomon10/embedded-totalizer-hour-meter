@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simulations for the Micro-Fit + CAN + RS232 board (../hour-meter-board-microfit-can), with ngspice.
+"""Simulations for the main board, Micro-Fit + CAN + RS232 (../hour-meter-board), with ngspice.
 
   python3 microfit_can.py      -> runs every scenario, prints the results, writes plots/can-*.png and plots/rs232-*.png
 

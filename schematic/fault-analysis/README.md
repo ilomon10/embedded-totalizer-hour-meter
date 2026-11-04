@@ -1,4 +1,4 @@
-# Fault analysis (rev B boards, PSU-B, the LM2596 boards, the Micro-Fit harness and the V4 module carrier)
+# Fault analysis (main board, devboard and the boards before them)
 
 SPICE simulations of the faults a vehicle installation can throw at the hour meter: supply transients, reverse polarity, shorted outputs and miswired connectors. Each case is a small ngspice deck built from the parts on the real schematics, and each result is checked against the parts' ratings.
 
@@ -7,11 +7,9 @@ python3 faults.py      # needs ngspice, numpy and matplotlib; prints the table b
 ```
 
 Which results apply to which board:
-- **100 × 90 boards and the compact board, with PSU-B:** the [results table](#results) from *Supply* to *UART / GPS port data lines*.
-- **[LM2596 board](../hour-meter-board-compact-lm2596/README.md):** the *LM2596 input stage* group instead of PSU-B's *Supply*, plus the compact board's rows.
-- **[I/O board](../hour-meter-board-compact-lm2596-io/README.md):** the LM2596 board's, plus *AIN1* and *DOUT1*.
-- **[Micro-Fit board](../hour-meter-board-microfit/README.md):** the I/O board's, plus the [J1 harness](#micro-fit-harness-j1) and the *indicator LEDs*.
-- **[V4 module carrier](../hour-meter-esp32-v4/README.md):** only the *V4 module carrier* group. It has no vehicle supply input (the DevKit's USB-C powers it), so the supply rows don't apply.
+- **[Main board](../hour-meter-board/README.md):** the *LM2596 input stage*, *Vehicle inputs*, *AIN1*, *DOUT1* and *Indicator LEDs* groups: circuits it shares with the LM2596, I/O and Micro-Fit boards it grew from. Its own ports (CAN, RS232, the RS485 protector, the 2 × 8 J1) and its power budget are in its [SIMULATION.md](../hour-meter-board/SIMULATION.md), from `microfit_can.py`.
+- **[Devboard](../hour-meter-devboard/README.md)** (the V4 module carrier): only the *V4 module carrier* group. It has no vehicle supply input (the DevKit's USB-C powers it), so the supply rows don't apply.
+- **Boards removed on 2026-11-04:** the other rows belong to the rev B boards (100 × 90 mm, 2-layer and compact) with the PSU-B supply, and the Micro-Fit board's [2 × 7 harness](#micro-fit-harness-j1). They are kept because the main board's circuits grew from them; the boards' files are in the git history at commit d35ef2d.
 
 ## Method
 
@@ -59,7 +57,7 @@ The 4-layer board, the 2-layer copy and PSU-B share these circuits. The compact 
 | Same, compact board, termination/bias jumpers fitted | Pass\* | The transceiver survives, but R704–R706 (0.37–3.1 W) burn open: replace them after the fault |
 | **UART / GPS port data lines (J801, J802)** | | |
 | A data line wired to 12 V or 24 V | **Fail** | SRV05-4 takes 3.6–10.7 A and lifts +5V to 11–22 V. These are 3.3/5 V logic ports, not battery-proof |
-| **AIN1 (J902-2, [I/O board](../hour-meter-board-compact-lm2596-io/README.md))** | | |
+| **AIN1 (J902-2 on the I/O board; J1 pin 11 on the main board)** | | |
 | Reading at 30 V | Pass | ADC pin at 2.732 V, the ideal 10 / 109.8 ratio |
 | ±60 V continuous | Pass | 0.18 / 0.54 mA into the clamp (ADS1115 input: 10 mA); 16–18 mW per 49.9k. The ADC pin sits at 3.84 V / −0.59 V, past the ±0.3 V rail limit but current-limited, as the ADS1115's input-current rating allows |
 | 24 V unclamped load dump (Test A, 202 V, 350 ms) | Pass | 99 V and 20 mJ per 49.9k (400 V overload rating); 1.6 mA into the clamp |
@@ -95,7 +93,7 @@ The 4-layer board, the 2-layer copy and PSU-B share these circuits. The compact 
 
 ## Micro-Fit harness (J1)
 
-The [Micro-Fit board](../hour-meter-board-microfit/README.md#j1-harness-connector) brings every field wire in on one 2 × 7 plug. Its logic pins (UART TX/RX and the +5 V output) now sit beside vehicle-voltage pins. Pin 1 is across from pin 8, pin 2 from pin 9, and so on:
+The Micro-Fit board (removed; the main board's 2 × 8 J1 is simulated in its [SIMULATION.md](../hour-meter-board/SIMULATION.md#4-j1-neighbouring-pins-shorted)) brings every field wire in on one 2 × 7 plug. Its logic pins (UART TX/RX and the +5 V output) now sit beside vehicle-voltage pins. Pin 1 is across from pin 8, pin 2 from pin 9, and so on:
 
 ```
 back row   8 VIN    9 AIN1   10 DOUT1   11 +5V      12 RS485 B   13 DIN1   14 DIN2
@@ -152,7 +150,7 @@ Two kinds of harness fault are covered:
 
 1. **24 V vehicles need a different supply.** A clamped load dump in a 24 V vehicle holds 58–65 V for up to 400 ms.
    - **PSU-B:** its TVS starts conducting at 40 V, so it ends up absorbing the whole event. A 24 V supply needs a 100 V-class converter and a TVS that stays off at 58 V. It plugs into the same J102, so the main boards don't change.
-   - **LM2596 boards (including Micro-Fit):** they fail the same load dump, and a 24 V jump start (36 V) too, because their SMAJ30CA conducts from 33 V. Feed them from a 24 → 12 V converter rated for 24 V vehicles, as the [LM2596 board](../hour-meter-board-compact-lm2596/README.md#input-limits) says.
+   - **LM2596 boards (including Micro-Fit):** they fail the same load dump, and a 24 V jump start (36 V) too, because their SMAJ30CA conducts from 33 V. Feed them from a 24 → 12 V converter rated for 24 V vehicles, as the main board's [PINOUT.md](../hour-meter-board/PINOUT.md#supply) says.
    - Both are fine for 12 V vehicles.
 2. **Unclamped load dump (Test A).** Not covered by any rev-B supply. Modern alternators clamp centrally.
 3. **LM2596 stage and pulse 1.** The TVS sits behind the reverse-polarity diode, so a negative pulse lands on the 40 V SS54 (about 0.2 J of avalanche, which it is not rated for). On 12 V it also pulls the regulator input negative. The fix simulated above is PSU-B's order: an SMBJ36CA on VIN_RAW ahead of D103, and a 100 V SS510 as D103. D104 can stay.

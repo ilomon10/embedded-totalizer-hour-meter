@@ -5,12 +5,12 @@ An ESP32-based **engine hour meter and totalizer** for 12/24 V vehicles and mach
 Firmware version: **2.7.0** (see `kFirmwareVersion` in [`Protocol.h`](esp32/lib/App/src/Protocol.h)).
 
 ```
- Vehicle 12/24 V ──► carrier PCB ──────────────────────────────┐
+ Vehicle 12/24 V ──► main board ───────────────────────────────┐
  L / D+ (run)─┐      PTC + reverse diode + TVS → LM2596 (5 V)  │
- Pulse input ─┴────► PC817 isolation module ──► GPIO27 / GPIO26│
+ Pulse input ─┴────► PC817 isolated inputs ───► GPIO27 / GPIO26│
                                                                ▼
-                    ┌──────────── ESP32 DevKit ────────────────────┐
-                    │ AT24C256 EEPROM · DS3231 RTC · MPU9250 IMU   │
+                    ┌──────────── ESP32 ───────────────────────────┐
+                    │ AT24C256 EEPROM · DS3231 RTC · MPU-6500 IMU  │
                     │ (I2C, all optional and hot-pluggable)        │
                     └───────────────┬──────────────────────────────┘
                                     │ SensorFrame (TLV + CRC16, COBS)
@@ -23,32 +23,30 @@ Firmware version: **2.7.0** (see `kFirmwareVersion` in [`Protocol.h`](esp32/lib/
 
 | Path | What it is |
 |---|---|
-| [`esp32/`](esp32/README.md) | PlatformIO firmware. Envs: `esp32dev` (firmware), `bench` (module test firmware), `native` (unit tests on the PC) |
+| [`esp32/`](esp32/README.md) | PlatformIO firmware. Envs: `esp32dev` (firmware for the devboard), `can-board` (the same firmware for the main board), `bench` (module test firmware), `native` (unit tests on the PC) |
 | [`configurator/`](configurator/README.md) | `hour-meter` (Bun, released as a standalone binary): full-screen TUI, live reader (`read`), single commands (`get`, `set`, ...), firmware update over USB (`firmware`) and the `DeviceClient` library |
 | [`sensorframe/`](sensorframe/README.md) | The wire format: [SPEC.md](sensorframe/SPEC.md), header-only C++ library (`arduino/`), zero-dependency npm package (`js/`), shared golden test vectors |
-| [`schematic/hour-meter-board/`](schematic/hour-meter-board/README.md) | Main board rev B (KiCad, draft): chip-down, one schematic sheet per former module, 4-layer 100 × 90 mm, JLCPCB in-stock parts, runs from 5 V |
-| [`schematic/hour-meter-board-2layer/`](schematic/hour-meter-board-2layer/README.md) | The same rev-B board routed on 2 copper layers, for a cheaper PCB. It is a KiCad *Save As* copy, so the 4-layer design stays as it is |
-| [`schematic/hour-meter-board-compact/`](schematic/hour-meter-board-compact/README.md) | The rev-B board on 80 × 70 mm and 2 layers: milled isolation slots around the vehicle inputs, fault-protected RS485, fused 5 V header pins, coin cell on the underside |
-| [`schematic/hour-meter-board-compact-lm2596/`](schematic/hour-meter-board-compact-lm2596/README.md) | The compact board on 80 × 80 mm with its 5 V supply on the board (LM2596S-ADJ instead of PSU-B) and latching JST VH field connectors |
-| [`schematic/hour-meter-board-compact-lm2596-io/`](schematic/hour-meter-board-compact-lm2596-io/README.md) | The LM2596 board on 80 × 92 mm with a Teltonika-style I/O port: AIN1 0–30 V (16-bit ADS1115), DOUT1 0.5 A self-protected low-side switch, 5 V sensor supply. The isolated vehicle inputs are named DIN1 and DIN2 |
-| [`schematic/hour-meter-board-microfit/`](schematic/hour-meter-board-microfit/README.md) | The I/O board re-laid out on 80 × 80 mm around one Teltonika-style harness plug (Molex Micro-Fit 3.0, 2 × 7). Every port is on the left edge (J1, a JST GH GPS port, Qwiic) and USB-C on the right; no pin headers; the vehicle-side circuits sit beside J1 |
-| [`schematic/hour-meter-board-microfit-can/`](schematic/hour-meter-board-microfit-can/README.md) | The Micro-Fit board with a CAN port (TJA1051T/3) and an RS232 port (MAX13223E, in place of the TTL UART), re-laid out module by module on 100 × 100 mm, 2 layers. J1 grows to a Micro-Fit 2 × 8 whose neighbouring pins can short without damage. Routed; JLCPCB order files in `production/` |
-| [`schematic/hour-meter-board-microfit-can-handroute/`](schematic/hour-meter-board-microfit-can-handroute/README.md) | The CAN board placed but not routed, for routing by hand: one KiCad group per module |
-| [`schematic/fault-analysis/`](schematic/fault-analysis/README.md) | ngspice fault simulations for the rev-B boards and PSU-B: load dump, ISO 7637 pulses, reverse polarity, shorted outputs, miswired connectors |
-| [`schematic/hour-meter-psu-b/`](schematic/hour-meter-psu-b/README.md) | Plug-on 9–36 V → 5.3 V supply (TPS54360B) for the rev-B board |
-| [`schematic/hour-meter-esp32/`](schematic/hour-meter-esp32/README.md) | Carrier PCB rev A (KiCad): schematic, 2-layer THT board for the loose modules, JLCPCB Gerbers + BOM in `production/`, generator scripts `tools-*.py`. Superseded by rev B |
-| [`schematic/hour-meter-esp32-v4/`](schematic/hour-meter-esp32-v4/README.md) | Module carrier rev C (KiCad): 88 × 71 mm, 2 layers, THT only, for parts from Indonesian shops. The ESP32 DevKit V4 (USB-C, 38 pins), the 817 module, GY-9250, DS3231 and AT24C256 plug in, and the board runs from the DevKit's USB-C. Vehicle inputs get a 15 V clamp; spare GPIO header and status LED. Gerbers, a BOM with local shop names and a 1:1 fit-check PDF are in `production/` |
-| `schematic/totalizator-hour-meter-schematic/` | Early KiCad draft (DevKit pin headers only), superseded by `hour-meter-esp32/` |
+| [`schematic/hour-meter-board/`](schematic/hour-meter-board/README.md) | Main board (KiCad): ESP32-WROOM-32E, 9–30 V supply and one Molex Micro-Fit 2 × 8 harness plug with CAN, RS232, RS485, isolated DIN1/DIN2, AIN1, DOUT1 and a 5 V sensor supply; MPU-6500 + LIS3MDL, RTC, EEPROM, USB-C, GPS and Qwiic ports. 100 × 100 mm, 2 layers, routed by hand; JLCPCB order files in `production/`, bring-up guide in `BRINGUP.md` |
+| [`schematic/hour-meter-devboard/`](schematic/hour-meter-devboard/README.md) | Devboard (KiCad): 88 × 91 mm, 2-layer, through-hole carrier for ready-made modules from Indonesian shops: ESP32 DevKit V4 (USB-C), 817 opto module, GY-9250, DS3231 ZS-042, AT24C256 and a GY-271 compass. Runs from the DevKit's USB-C; Gerbers, a BOM with local shop names, LCSC lists and a 1:1 fit-check PDF in `production/` |
+| [`schematic/fault-analysis/`](schematic/fault-analysis/README.md) | ngspice simulations: the main board's ports and harness (`microfit_can.py`), and supply transients, reverse polarity, shorted outputs and miswired connectors for the circuits both boards use (`faults.py`) |
+| `schematic/datasets/` | Datasheets (LIS3MDL, MAX13223E) |
 | [`simulator/`](simulator/README.md) | Bun device simulator: the real protocol on a virtual serial port (socat), TCP or stdio, with fault scenarios, the Bluetooth lock, and a web UI (`--web`): every value live, a 3D bench, and a truck/plane on an OpenStreetMap map with IMU-only dead reckoning. For driver development without hardware |
 | `canbus/` | `can.sh`: CANable2 (slcan) helper for can-utils: `up [rate] [--tx]`, `down`, `scan [seconds]`, `status`. Listen-only by default |
 
+Older board versions (the rev A and rev C module carriers, the rev B main board and its 2-layer, compact, LM2596, I/O and Micro-Fit versions, the auto-routed CAN board and the PSU-B supply) were removed on 2026-11-04. They are in the git history at commit d35ef2d.
+
 ## Hardware at a glance
 
-ESP32 DevKit · AT24C256 EEPROM (0x50) · DS3231 RTC (0x68) · MPU9250 IMU (**0x69**, AD0 high) · alternator input GPIO27 · pulse input GPIO26 · UART GPIO16/17 · Bluetooth Classic SPP (off by default, PIN-locked).
+Two boards run the same firmware:
 
-Engine inputs go through a 2-channel PC817 module (outputs active LOW). Wiring details and required resistor changes: [esp32/docs/WIRING.md](esp32/docs/WIRING.md).
+| Board | What it is | Firmware build |
+|---|---|---|
+| [Main board](schematic/hour-meter-board/README.md) | everything on one PCB, made and assembled by JLCPCB: 9–30 V supply, one harness plug with CAN, RS232, RS485, DIN1/DIN2, AIN1, DOUT1 and a 5 V sensor supply, MPU-6500 + LIS3MDL IMU | `pio run -e can-board` |
+| [Devboard](schematic/hour-meter-devboard/README.md) | ready-made modules on a through-hole carrier, powered from USB: ESP32 DevKit V4, 817 opto module, GY-9250, DS3231, AT24C256, GY-271 compass | `pio run -e esp32dev` (the default) |
 
-The rev-B [main board](schematic/hour-meter-board/README.md) puts all of this on one PCB from JLCPCB in-stock parts. It adds RS485, USB-C, a GPS socket and VIN sensing, uses an MPU-6500 + LIS3MDL in place of the discontinued MPU9250, and takes its 9–36 V supply from the plug-on [PSU-B](schematic/hour-meter-psu-b/README.md). Before ordering, check part stock with `./scripts/jlc-stock.ts <bom.csv>`.
+Both: AT24C256 EEPROM (0x50) · DS3231 RTC (0x68) · MPU-6500/MPU9250 IMU (**0x69**, AD0 high) · alternator input GPIO27 · pulse input GPIO26 (through PC817 optocouplers, outputs active LOW) · Bluetooth Classic SPP (off by default, PIN-locked). The UART link is GPIO16/17 on the devboard and the RS232 port on the main board. Module wiring and the required resistor changes: [esp32/docs/WIRING.md](esp32/docs/WIRING.md).
+
+Before ordering the main board, check part stock with `./scripts/jlc-stock.ts <bom.csv>`.
 
 ## Quick start
 
@@ -57,7 +55,8 @@ Prerequisites: [PlatformIO](https://platformio.org/) CLI (firmware), [Bun](https
 ```bash
 # Firmware
 cd esp32
-pio run -e esp32dev -t upload       # build + flash
+pio run -e esp32dev -t upload       # build + flash (devboard)
+pio run -e can-board -t upload      # the same, for the main board
 
 # Host tools
 cd ../configurator                  # or download hour-meter from the releases page
@@ -118,7 +117,7 @@ It warns when a part changed since the previous release but still has the same v
 | Building an app that talks to the device | [INTEGRATION-GUIDE.md](esp32/docs/INTEGRATION-GUIDE.md) + [SensorFrame SPEC.md](sensorframe/SPEC.md) |
 | Writing a driver: exact bytes of every frame | [FRAME-CATALOG.md](esp32/docs/FRAME-CATALOG.md) |
 | Developing without hardware | [simulator/README.md](simulator/README.md) |
-| Wiring the hardware | [WIRING.md](esp32/docs/WIRING.md), [rev-B main board](schematic/hour-meter-board/README.md), [rev-A carrier PCB](schematic/hour-meter-esp32/README.md), [V4 module carrier](schematic/hour-meter-esp32-v4/README.md) |
+| Wiring the hardware | [main board](schematic/hour-meter-board/README.md) and its [bring-up](schematic/hour-meter-board/BRINGUP.md), [devboard](schematic/hour-meter-devboard/README.md), [WIRING.md](esp32/docs/WIRING.md) (the devboard's modules) |
 | Working on the firmware | [ARCHITECTURE.md](esp32/docs/ARCHITECTURE.md), [CODING-STANDARD.md](esp32/docs/CODING-STANDARD.md) |
 | A TypeScript developer new to C++ | [CPP-FOR-TYPESCRIPT.md](esp32/docs/CPP-FOR-TYPESCRIPT.md) |
 | Curious how data survives power cuts | [STORAGE.md](esp32/docs/STORAGE.md), [EEPROM-LAYOUT.md](esp32/docs/EEPROM-LAYOUT.md) |

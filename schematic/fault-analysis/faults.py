@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Fault simulations for the rev-B hour meter (main board + PSU-B), with ngspice.
+"""Fault simulations for the hour meter boards, with ngspice: the circuits the main board shares with the
+rev-B boards (rev B + PSU-B, the LM2596, I/O and Micro-Fit boards; removed 2026-11-04, git d35ef2d) and the devboard's
+vehicle inputs (V4 module carrier).
 
   python3 faults.py            -> runs every scenario, prints the results table, writes plots/*.png
 
 Each scenario is a small SPICE deck built from the parts on the real schematics (values and
-LCSC parts as in hour-meter-board / hour-meter-psu-b). Semiconductor models are fitted to the
+LCSC parts as on those boards' schematics). Semiconductor models are fitted to the
 datasheet points named next to them; they are good for stresses and pass/fail margins, not for
 exact waveforms. Decks and raw waveforms go to work/ (git-ignored).
 """
@@ -608,7 +610,7 @@ def leds(results):
                         f"{i * 1e3:.2f} mA at {m.get('v(a)', 0):.2f} V; about {mcd * i / 20e-3:.0f} mcd ({mcd} mcd at 20 mA, scaled by current)"))
 
 
-# --- V4 module carrier (hour-meter-esp32-v4), per input: J1 -> D1 1N4007 -> R4 1.5k 1W -> OPTO1, D3 1N4744A
+# --- V4 module carrier (the devboard, ../hour-meter-devboard), per input: J1 -> D1 1N4007 -> R4 1.5k 1W -> OPTO1, D3 1N4744A
 #     to VEH_GND -> 817 module (about 3k + red LED + PC817 LED); output V1 (about 3k in series) -> 47k to 3V3, 100 nF
 CARRIER_V4 = """
 VD1 in d1a 0
