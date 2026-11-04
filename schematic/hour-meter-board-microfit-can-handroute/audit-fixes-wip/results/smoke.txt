@@ -1,0 +1,28 @@
+VIN     9 V idle     | 5V_PSU-out    105 mA, 3V3    91 mA, VIN    85 mA | ESP32 3.295 V, AMS1117 in 5.019 V, TJA1051 5.022 V, J1.4 5.023 V
+VIN     9 V typical  | 5V_PSU-out    247 mA, 3V3   168 mA, VIN   196 mA | ESP32 3.291 V, AMS1117 in 4.986 V, TJA1051 4.992 V, J1.4 4.888 V
+VIN     9 V maximum  | 5V_PSU-out    901 mA, 3V3   621 mA, VIN   746 mA | ESP32 3.262 V, AMS1117 in 4.906 V, TJA1051 4.926 V, J1.4 4.508 V
+VIN    12 V idle     | 5V_PSU-out    105 mA, 3V3    91 mA, VIN    64 mA | ESP32 3.295 V, AMS1117 in 5.019 V, TJA1051 5.022 V, J1.4 5.023 V
+VIN    12 V typical  | 5V_PSU-out    247 mA, 3V3   168 mA, VIN   146 mA | ESP32 3.291 V, AMS1117 in 4.986 V, TJA1051 4.992 V, J1.4 4.888 V
+VIN    12 V maximum  | 5V_PSU-out    901 mA, 3V3   621 mA, VIN   538 mA | ESP32 3.262 V, AMS1117 in 4.906 V, TJA1051 4.926 V, J1.4 4.508 V
+VIN    24 V idle     | 5V_PSU-out    105 mA, 3V3    91 mA, VIN    34 mA | ESP32 3.295 V, AMS1117 in 5.019 V, TJA1051 5.022 V, J1.4 5.023 V
+VIN    24 V typical  | 5V_PSU-out    247 mA, 3V3   168 mA, VIN    74 mA | ESP32 3.291 V, AMS1117 in 4.986 V, TJA1051 4.992 V, J1.4 4.888 V
+VIN    24 V maximum  | 5V_PSU-out    901 mA, 3V3   621 mA, VIN   260 mA | ESP32 3.262 V, AMS1117 in 4.906 V, TJA1051 4.926 V, J1.4 4.508 V
+VIN    30 V idle     | 5V_PSU-out    105 mA, 3V3    91 mA, VIN    28 mA | ESP32 3.295 V, AMS1117 in 5.019 V, TJA1051 5.022 V, J1.4 5.023 V
+VIN    30 V typical  | 5V_PSU-out    247 mA, 3V3   168 mA, VIN    60 mA | ESP32 3.291 V, AMS1117 in 4.986 V, TJA1051 4.992 V, J1.4 4.888 V
+VIN    30 V maximum  | 5V_PSU-out    901 mA, 3V3   621 mA, VIN   208 mA | ESP32 3.262 V, AMS1117 in 4.906 V, TJA1051 4.926 V, J1.4 4.508 V
+USB  4.75 V idle     | 5V_PSU-out      1 mA, 3V3    91 mA | ESP32 3.295 V, AMS1117 in 4.418 V, TJA1051 4.418 V, J1.4 4.418 V
+        OUT OF SPEC: TJA1051 VCC 4.418 (spec 4.5-5.5)
+        OUT OF SPEC: 74AHCT1G125 VCC 4.418 (spec 4.5-5.5)
+        OUT OF SPEC: AMS1117 in 4.418 (spec 4.6-15)
+        OUT OF SPEC: J1 sensor 5V 4.418 (spec 4.5-5.5)
+USB  4.75 V typical  | 5V_PSU-out      1 mA, 3V3   168 mA | ESP32 3.276 V, AMS1117 in 4.327 V, TJA1051 4.324 V, J1.4 4.219 V
+        OUT OF SPEC: TJA1051 VCC 4.324 (spec 4.5-5.5)
+        OUT OF SPEC: 74AHCT1G125 VCC 4.324 (spec 4.5-5.5)
+        OUT OF SPEC: AMS1117 in 4.327 (spec 4.6-15)
+        OUT OF SPEC: J1 sensor 5V 4.219 (spec 4.5-5.5)
+USB   5.0 V idle     | 5V_PSU-out      1 mA, 3V3    91 mA | ESP32 3.295 V, AMS1117 in 4.668 V, TJA1051 4.668 V, J1.4 4.668 V
+USB   5.0 V typical  | 5V_PSU-out      1 mA, 3V3   168 mA | ESP32 3.291 V, AMS1117 in 4.577 V, TJA1051 4.574 V, J1.4 4.469 V
+        OUT OF SPEC: AMS1117 in 4.577 (spec 4.6-15)
+        OUT OF SPEC: J1 sensor 5V 4.469 (spec 4.5-5.5)
+USB  5.25 V idle     | 5V_PSU-out      1 mA, 3V3    91 mA | ESP32 3.295 V, AMS1117 in 4.918 V, TJA1051 4.918 V, J1.4 4.918 V
+USB  5.25 V typical  | 5V_PSU-out      1 mA, 3V3   168 mA | ESP32 3.291 V, AMS1117 in 4.827 V, TJA1051 4.824 V, J1.4 4.719 V

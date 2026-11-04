@@ -1,0 +1,20 @@
+cutout piece Arc [65.5, 64.22, 66.35, 65.82]
+cutout piece Line [66.25, 65.72, 79.95, 65.82]
+cutout piece Line [66.25, 64.22, 79.95, 64.32]
+cutout piece Arc [79.85, 64.22, 80.7, 65.82]
+cutout piece Line [83.7, 46.27, 83.8, 51.57]
+cutout piece Arc [83.7, 45.52, 85.3, 46.37]
+cutout piece Line [83.7, 56.47, 83.8, 63.77]
+cutout piece Arc [83.7, 55.72, 85.3, 56.57]
+cutout piece Arc [83.7, 51.47, 85.3, 52.32]
+cutout piece Line [85.2, 46.27, 85.3, 51.57]
+cutout piece Arc [83.7, 63.67, 85.3, 64.52]
+cutout piece Line [85.2, 56.47, 85.3, 63.77]
+island copper items: 73
+island <-> other copper closer than 2 mm (approx., pad as inscribed circle):
+    (1.5, 'DIN1_RAW', 'J1.15', 'RS485_A', 'J1.14')
+    (1.5, 'VEH_GND', 'J1.7', 'RS485_B', 'J1.6')
+    (1.95, 'DIN1_RAW', 'trk', 'RS485_A', 'J1.14')
+    (1.95, 'VEH_GND', 'trk', 'RS485_B', 'J1.6')
+   GND pour F.Cu to island copper: 3.65 mm at ('J1.7', 'VEH_GND', (61.0, 62.718651))
+   GND pour B.Cu to island copper: 3.65 mm at ('J1.7', 'VEH_GND', (61.0, 62.718651))

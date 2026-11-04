@@ -1,0 +1,21 @@
+GND vias: 258
+zone F.Cu island removal mode 0 min width 0.25 thermal gap 0.4 spoke 0.4 pad conn 1
+zone B.Cu island removal mode 0 min width 0.25 thermal gap 0.4 spoke 0.4 pad conn 1
+F.Cu: GND fill 5507 mm2 = 55 % of the board, islands 18
+    island     1.3 mm2 span   2.9 mm at (102.1, 81.8): 1 vias, 0 GND pads
+    island     3.2 mm2 span   4.0 mm at (133.1, 75.3): 1 vias, 1 GND pads
+    island     3.7 mm2 span   4.0 mm at (143.5, 122.8): 2 vias, 1 GND pads
+    island     4.2 mm2 span   9.6 mm at (71.0, 67.6): 1 vias, 1 GND pads
+    island     4.7 mm2 span   3.9 mm at (103.2, 47.4): 2 vias, 1 GND pads
+    island     7.1 mm2 span   9.8 mm at (69.5, 70.0): 1 vias, 1 GND pads
+    island     7.3 mm2 span   7.8 mm at (138.8, 65.3): 2 vias, 1 GND pads
+    island    10.1 mm2 span   4.7 mm at (102.7, 51.5): 2 vias, 1 GND pads
+    island    12.4 mm2 span   8.4 mm at (86.4, 84.6): 2 vias, 1 GND pads
+    island    27.9 mm2 span  11.0 mm at (124.7, 54.7): 4 vias, 3 GND pads
+    biggest: 3442 mm2 with 153 vias
+B.Cu: GND fill 8134 mm2 = 81 % of the board, islands 1
+    biggest: 8134 mm2 with 258 vias
+points of the top GND pour farthest from any GND via/THT pin: [(13.954463793345898, (53.0, 143.2)), (13.726873633854199, (54.0, 143.2)), (13.267070277940094, (55.0, 143.2)), (12.991911243531552, (53.0, 142.2)), (12.747147043938952, (54.0, 142.2)), (12.677348057058364, (56.0, 143.2)), (12.493112172705462, (55.0, 142.2)), (12.119215682534952, (57.0, 143.2))]
+distance histogram (mm: share of top pour points): {0.0: '56%', 2.5: '32%', 5.0: '9%', 7.5: '2%', 10.0: '0%', 12.5: '0%'}
+IC / connector ground pins: distance from the pad centre to the nearest GND via
+   worst: [(8.1, 'U202.1'), (7.0, 'U301.3'), (5.9, 'U201.39'), (5.7, 'U201.39'), (5.3, 'U101.3'), (5.0, 'U201.39'), (4.7, 'U1101.12'), (4.5, 'U201.39'), (4.4, 'U101.3'), (4.3, 'U201.39'), (4.3, 'U201.39'), (4.2, 'U302.3'), (4.2, 'D104.1'), (4.1, 'U204.1')]

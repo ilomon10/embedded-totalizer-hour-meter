@@ -1,0 +1,7 @@
+copper layers: 2  thickness: 1.6 mm
+silk texts under 1.0 mm high or 0.15 mm stroke: 0
+silk lines under 0.15 mm (width: count): {0.12: 512}
+drills (mm: count): {0.25: 121, 0.3: 251, 3.2: 4, 3.0: 2, 1.02: 16, 0.65: 2, 0.6: 4, 0.2: 12, 1.5: 2}
+smallest PTH pad annular rings: [(0.19999999999999998, 'U201.39', (0.6, 0.6), (0.2, 0.2)), (0.19999999999999998, 'U201.39', (0.6, 0.6), (0.2, 0.2)), (0.19999999999999998, 'U201.39', (0.6, 0.6), (0.2, 0.2)), (0.19999999999999998, 'U201.39', (0.6, 0.6), (0.2, 0.2)), (0.19999999999999998, 'U201.39', (0.6, 0.6), (0.2, 0.2))]
+via annular ring min: 0.125
+closest hole pairs (edge gap mm, a, b, same net): [(0.45, 'via', 'via', False)]

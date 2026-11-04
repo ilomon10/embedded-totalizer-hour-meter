@@ -35,7 +35,7 @@ The schematic was redrawn on 2026-11-02 so each module can be read on its own. T
 - **Net names:** 44 net names that include a sheet name follow the new sheet names. For example, `/Opto inputs (817 module 2ch)/DIN1_R` is now `/DIN inputs/DIN1_R`. VIN_LM and AIN1_ADC now join two modules, so they became `/VIN_LM` and `/AIN1_ADC`.
 - **Net classes:** the patterns in the project file follow the new names, and every net keeps its class.
 - **PCB:** footprints are re-linked to the new sheets, and the routing is unchanged. DRC before and after: the same 278 unrouted connections and 34 items, 0 schematic parity issues.
-- **Backup:** the files from before the redraw are in `backup-before-schematic-remake/`, which git does not track.
+- **Backup:** the files from before the redraw are in `backup-before-schematic-remake/`.
 
 **Placement fixes after the redraw (2026-11-02):** checking the board against the sheets' placement rules showed that the ESP32 and USB capacitors sat far from the pins they serve. Five were moved; nothing else changed, and DRC is the same as before.
 
@@ -158,7 +158,7 @@ The fixed board was then edited by hand, in two rounds:
 
 The checks below ran on the board after both rounds (2026-11-04, 08:22 save).
 
-**Backups** in `backup-before-schematic-remake/`, which git does not track:
+**Backups** in `backup-before-schematic-remake/`:
 - `hour-meter-board-microfit-can-handroute.before-audit-fixes.kicad_pcb`: the board as routed by hand, before the fixes;
 - `hour-meter-board-microfit-can-handroute.audit-fixed-before-user-edits.kicad_pcb`: the fixed board before the hand edits.
 
@@ -177,7 +177,7 @@ The checks below ran on the board after both rounds (2026-11-04, 08:22 save).
 | Shorts at the connectors (J1 pin 4, Qwiic, GPS supply, DOUT1) | every track holds its fuse's or limiter's current; the worst warms by 39 °C until the fuse trips |
 | Circuit simulations (`fault-analysis/microfit_can.py`, `faults.py`) | unchanged from the routed board's [SIMULATION.md](../hour-meter-board-microfit-can/SIMULATION.md), including its open items |
 
-The audit scripts and their results on the fixed board are in `audit-fixes-wip/`, which git does not track.
+The audit scripts and their results on the fixed board are in `audit-fixes-wip/`, kept for reference. The scripts look for the audit's work copies of the board, which were not kept, so their paths need changing before they run again.
 
 ## Ordering
 

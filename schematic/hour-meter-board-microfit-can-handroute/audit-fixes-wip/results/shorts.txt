@@ -1,0 +1,88 @@
+loads: 3V3 624 mA, 5V 1098 mA, VIN at 9 V 782 mA (eff 0.78)
+
+== +3V3  (components 1)
+   U201.2       350 mA  R   84.6 mOhm  drop   29.6 mV (own current only)
+   U202.16       20 mA  R   38.2 mOhm  drop    0.8 mV (own current only)
+   U601.13        4 mA  R  112.5 mOhm  drop    0.4 mV (own current only)
+   U601.8         1 mA  R  100.2 mOhm  drop    0.1 mV (own current only)
+   U602.5         1 mA  R   96.9 mOhm  drop    0.1 mV (own current only)
+   U602.6         1 mA  R   96.5 mOhm  drop    0.1 mV (own current only)
+   U401.2         1 mA  R   68.4 mOhm  drop    0.1 mV (own current only)
+   U501.8         3 mA  R   78.3 mOhm  drop    0.2 mV (own current only)
+   U701.8        60 mA  R   84.6 mOhm  drop    5.1 mV (own current only)
+   U1001.5        1 mA  R   91.1 mOhm  drop    0.1 mV (own current only)
+   U1101.19      30 mA  R   76.4 mOhm  drop    2.3 mV (own current only)
+   U901.8         1 mA  R  102.3 mOhm  drop    0.1 mV (own current only)
+   J803.2       100 mA  R   93.4 mOhm  drop    9.3 mV (own current only)
+   JP801.1       50 mA  R   98.1 mOhm  drop    4.9 mV (own current only)
+   R209.1         2 mA  R   62.0 mOhm  drop    0.1 mV (own current only)
+   hottest track: 0.60 mm carrying 624 mA -> +1.1 C at (128.75, 102.3)
+   narrowest loaded track: 0.20 mm carrying 1 mA (+0.0 C) at (105.075, 61.5) (105.6, 61.6)
+   vias on the supply paths: 17
+
+== +5V  (components 1)
+   U204.3       624 mA  R   38.3 mOhm  drop   23.9 mV (own current only)
+   F801.1       200 mA  R   94.3 mOhm  drop   18.9 mV (own current only)
+   U1001.3       70 mA  R   45.6 mOhm  drop    3.2 mV (own current only)
+   U902.5         2 mA  R   63.6 mOhm  drop    0.1 mV (own current only)
+   F803.1       200 mA  R   52.6 mOhm  drop   10.5 mV (own current only)
+   U802.5         1 mA  R   49.3 mOhm  drop    0.0 mV (own current only)
+   hottest track: 0.60 mm carrying 826 mA -> +2.1 C at (118.0, 124.3)
+   narrowest loaded track: 0.60 mm carrying 1 mA (+0.0 C) at (139.325, 122.8) (140.5688, 122.8)
+   vias on the supply paths: 6
+
+== +5V_PSU  (components 1)
+   D101.2      1098 mA  R   16.2 mOhm  drop   17.7 mV (own current only)
+   R105.1         2 mA  R   12.4 mOhm  drop    0.0 mV (own current only)
+   R103.1         1 mA  R   38.4 mOhm  drop    0.0 mV (own current only)
+   hottest track: 0.60 mm carrying 1100 mA -> +4.0 C at (104.4125, 127.4)
+   narrowest loaded track: 0.30 mm carrying 1 mA (+0.0 C) at (87.025, 125.6) (87.725, 124.9)
+   vias on the supply paths: 0
+
+== LM_SW  (components 1)
+   L101.1      1098 mA  R   11.4 mOhm  drop   12.5 mV (own current only)
+   hottest track: 0.60 mm carrying 1098 mA -> +4.0 C at (83.25, 140.0)
+   narrowest loaded track: 0.60 mm carrying 1098 mA (+4.0 C) at (76.8, 137.1) (79.7, 140.0)
+   vias on the supply paths: 0
+
+== SENSOR_5V  (components 1)
+   J1.4         400 mA  R   17.4 mOhm  drop    6.9 mV (own current only)
+   hottest track: 0.60 mm carrying 400 mA -> +0.4 C at (58.4813, 71.7187)
+   narrowest loaded track: 0.60 mm carrying 400 mA (+0.4 C) at (53.9, 76.3) (53.9, 88.5)
+   vias on the supply paths: 0
+
+== VBUS  (components 1)
+   D201.2       500 mA  R    2.2 mOhm  drop    1.1 mV (own current only)
+   hottest track: 0.60 mm carrying 500 mA -> +0.7 C at (132.1, 91.2362)
+   narrowest loaded track: 0.60 mm carrying 500 mA (+0.7 C) at (132.1, 91.2362) (132.1, 91.3725)
+   vias on the supply paths: 0
+
+== VBUS_IN  (components 1)
+   F201.1       500 mA  R   36.6 mOhm  drop   18.3 mV (own current only)
+   hottest track: 0.30 mm carrying 500 mA -> +2.1 C at (140.2, 77.45)
+   narrowest loaded track: 0.30 mm carrying 500 mA (+2.1 C) at (135.15, 89.8) (135.9, 89.05)
+   vias on the supply paths: 2
+
+== VIN_IN  (components 1)
+   F101.1       782 mA  R   19.8 mOhm  drop   15.5 mV (own current only)
+   hottest track: 0.60 mm carrying 782 mA -> +1.8 C at (64.0, 80.7187)
+   narrowest loaded track: 0.60 mm carrying 782 mA (+1.8 C) at (56.9, 97.8) (64.0, 90.7)
+   vias on the supply paths: 0
+
+== VIN_RAW  (components 1)
+   D103.2       782 mA  R    3.5 mOhm  drop    2.7 mV (own current only)
+   hottest track: 0.60 mm carrying 782 mA -> +1.8 C at (56.9, 106.2375)
+   narrowest loaded track: 0.60 mm carrying 782 mA (+1.8 C) at (56.9, 106.2375) (56.9, 110.5187)
+   vias on the supply paths: 0
+
+== VIN_LM  (components 1)
+   U101.1       782 mA  R   28.5 mOhm  drop   22.3 mV (own current only)
+   hottest track: 0.60 mm carrying 782 mA -> +1.8 C at (72.9313, 135.075)
+   narrowest loaded track: 0.60 mm carrying 782 mA (+1.8 C) at (56.6, 114.8187) (56.6, 120.1)
+   vias on the supply paths: 0
+J1.4 sensor 5 V shorted: 3.0 A (LM2596 current limit (about 3 A out) until F801 (0.2 A PTC) trips, well under 1 s); path 136 mm, 0 vias; narrowest 0.60 mm on +5V at (108.3, 124.3): +39 C steady
+Qwiic 3V3 shorted: 1.5 A (AMS1117 limit (1.5 A), then its thermal shutdown cycles); path 74 mm, 4 vias; narrowest 0.30 mm on +3V3 at (126.4, 122.2): +25 C steady
+GPS VCC shorted (JP801 1-2, 3V3): 1.5 A (AMS1117 limit (1.5 A)); path 83 mm, 4 vias; narrowest 0.30 mm on +3V3 at (126.4, 122.2): +25 C steady
+GPS VCC shorted (JP801 2-3, 5 V): 3.0 A (LM2596 limit until F803 (0.2 A PTC) trips); path 65 mm, 2 vias; narrowest 0.60 mm on +5V at (111.4, 124.3): +39 C steady
+J1.10 DOUT1 shorted to VIN while on: 1.5 A (BSP75N current limit (0.7-1.5 A), thermal cycling); path 18 mm, 1 vias; narrowest 0.60 mm on DOUT1 at (64.0, 77.7187): +8 C steady
+VIN input at the F101 trip edge: 1.0 A (F101 0.5 A hold / 1 A trip); path 63 mm, 0 vias; narrowest 0.60 mm on VIN_IN at (64.0, 80.7187): +3 C steady
