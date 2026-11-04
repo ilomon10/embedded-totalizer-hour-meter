@@ -1,0 +1,412 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "3f2f24fe-c7fa-579c-a5db-4e9c383cb959")
+	(paper "A4")
+	(title_block
+		(title "+5V out fuse (F801)")
+		(date "2026-11-02")
+		(rev "C")
+		(company "Hour meter, Micro-Fit + CAN + RS232 board (hand-routing copy)")
+		(comment 1 "Resettable fuse between the board 5 V and J1 pin 4 (SENSOR_5V), 200 mA.")
+	)
+	(lib_symbols
+		(symbol "Device:Polyfuse"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "F"
+				(at -2.54 0 90)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "Polyfuse"
+				(at 2.54 0 90)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 1.27 -5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Resettable fuse, polymeric positive temperature coefficient"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "resettable fuse PTC PPTC polyfuse polyswitch"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "*polyfuse* *PTC*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "Polyfuse_0_1"
+				(polyline
+					(pts
+						(xy -1.524 2.54) (xy -1.524 1.524) (xy 1.524 -1.524) (xy 1.524 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -0.762 2.54)
+					(end 0.762 -2.54)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 2.54) (xy 0 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "Polyfuse_1_1"
+				(pin passive line
+					(at 0 3.81 270)
+					(length 1.27)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -3.81 90)
+					(length 1.27)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+	)
+	(wire
+		(pts
+			(xy 88.9 106.68) (xy 121.92 106.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "66463f72-692a-57a9-a5e1-0346da119c74")
+	)
+	(wire
+		(pts
+			(xy 129.54 106.68) (xy 165.1 106.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5f9bff8d-e634-554f-ac0f-ba9ebc4b023d")
+	)
+	(hierarchical_label "+5V"
+		(shape input)
+		(at 88.9 106.68 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "aaad7b9d-8ded-5e00-9151-0b8a597e97f0")
+	)
+	(hierarchical_label "SENSOR_5V"
+		(shape output)
+		(at 165.1 106.68 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "69e23590-1b5a-5808-a7cb-44ad4278bb16")
+	)
+	(text "+5V out fuse (F801): the fused 5 V supply for a sensor on J1 pin 4"
+		(exclude_from_sim no)
+		(at 15.24 12.7 0)
+		(effects
+			(font
+				(size 2.54 2.54)
+				(bold yes)
+			)
+			(justify left top)
+		)
+		(uuid "cc68af82-cdd7-52aa-bf08-84c922ea64c3")
+	)
+	(text_box "WHAT IT DOES\nJ1 pin 4 gives an external 5 V sensor (for example the one on AIN1) up to 200 mA from the board 5 V rail.\nF801 is a resettable fuse: a short on the sensor wire heats it and it cuts the current (trips above 0.46 A, in 0.1-0.4 s).\nIt cools down and conducts again by itself once the short is gone. The ESP32 may reset during the short.\n\nPINS OF THIS MODULE (its block on the top sheet)\n+5V (in): the board 5 V rail (5V buck module, or USB through the ESP32 + USB module)\nSENSOR_5V (out): to J1 pin 4: +5 V out, 4.8-4.9 V, 200 mA. Never connect it to the vehicle supply (5.5 V absolute maximum)\nPower and ground reach the parts on this sheet only through these pins: the ground and supply symbols drawn on this sheet are local to it."
+		(exclude_from_sim no)
+		(at 15.24 17.78 0)
+		(size 265 22.45)
+		(margins 1.5 1.5 1.5 1.5)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "07e9aeab-1dfa-5194-b95c-bf15091e7a71")
+	)
+	(text "from the board 5 V"
+		(exclude_from_sim no)
+		(at 88.9 109.22 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "6894eec8-621a-59eb-b297-54d6325c2b86")
+	)
+	(text "to J1 pin 4 (+5 V out)"
+		(exclude_from_sim no)
+		(at 147.32 109.22 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "36137246-71e3-5cee-a2bd-ba3587a71b10")
+	)
+	(text "F801's place on the PCB is not critical: anywhere on the path from +5V to\nJ1 pin 4 it protects the sensor wire. (The routed board has it right behind J1.)\nTracks to and from F801: 0.5 mm or wider (Power class)."
+		(exclude_from_sim no)
+		(at 111.76 121.92 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(color 200 60 0 1)
+			)
+			(justify left top)
+		)
+		(uuid "08a8e3b9-4808-5704-a697-d673e6bcb3d5")
+	)
+	(text_box "PARTS AND THEIR JOBS\nF801: 0.2 A resettable fuse (PTC, 1206, SMD1206P020TF): carries 200 mA, trips above 0.46 A, resets itself when it cools. Protects the board 5 V rail from a short on the sensor wire at J1 pin 4."
+		(exclude_from_sim no)
+		(at 15.24 156 0)
+		(size 155 10.15)
+		(margins 1.5 1.5 1.5 1.5)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "b098d39f-77fc-5238-8e83-05d9ae41a0c5")
+	)
+	(symbol
+		(lib_id "Device:Polyfuse")
+		(at 125.73 106.68 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "d2504e27-76e6-495c-ace9-12f35ab75731")
+		(property "Reference" "F801"
+			(at 125.73 101.6 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "0.2A"
+			(at 125.73 103.759 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Fuse:Fuse_1206_3216Metric"
+			(at 125.73 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 125.73 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resettable fuse, polymeric positive temperature coefficient"
+			(at 125.73 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C20984"
+			(at 125.73 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "SMD1206P020TF"
+			(at 125.73 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "0b6ac22c-db30-4981-9e55-c58c40f95d7d")
+		)
+		(pin "2"
+			(uuid "1b0f6c76-8eec-4c19-bb7f-b24f487c85a6")
+		)
+		(instances
+			(project "hour-meter-board-microfit-can-handroute"
+				(path "/59d580f2-180f-4c52-8215-2508c8a389e3/3f2f24fe-c7fa-579c-a5db-4e9c383cb959"
+					(reference "F801")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(embedded_fonts no)
+)

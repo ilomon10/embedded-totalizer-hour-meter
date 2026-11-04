@@ -76,7 +76,28 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [],
+      "drc_exclusions": [
+        [
+          "silk_edge_clearance|128120000|43718651|c89cb5fe-d038-4c8e-827d-7087ea2289f8|3307a850-ca37-4c25-b285-925ed843787b",
+          ""
+        ],
+        [
+          "silk_edge_clearance|83749999|46980088|b036ac06-b156-4b73-be7e-d9700fd07d1b|041bcea6-43eb-45fa-8541-0c29f925cee4",
+          ""
+        ],
+        [
+          "silk_edge_clearance|83749999|57180088|38929991-c3d6-4d0a-af84-9b4ef60e4f16|1096db54-f9a8-422c-8a25-789df81e67e4",
+          ""
+        ],
+        [
+          "silk_edge_clearance|83750000|51518651|b036ac06-b156-4b73-be7e-d9700fd07d1b|d3b7da77-f57e-4a68-8b7f-b4ddc17a0522",
+          ""
+        ],
+        [
+          "silk_edge_clearance|83750000|61718651|38929991-c3d6-4d0a-af84-9b4ef60e4f16|5d9a3cfe-3603-40c1-ba90-66dc2a24b128",
+          ""
+        ]
+      ],
       "meta": {
         "version": 2
       },
@@ -250,6 +271,10 @@
         {
           "diameter": 0.0,
           "drill": 0.0
+        },
+        {
+          "diameter": 0.5,
+          "drill": 0.25
         },
         {
           "diameter": 0.6,
@@ -498,6 +523,7 @@
       "pin_to_pin": "warning",
       "power_pin_not_driven": "error",
       "same_local_global_label": "warning",
+      "same_local_global_power": "ignore",
       "similar_label_and_power": "warning",
       "similar_labels": "warning",
       "similar_power": "warning",
@@ -617,7 +643,7 @@
       },
       {
         "netclass": "Vehicle",
-        "pattern": "/Power input (5 V + PSU header)/VIN_RAW"
+        "pattern": "/VIN input/VIN_RAW"
       },
       {
         "netclass": "Vehicle",
@@ -629,27 +655,27 @@
       },
       {
         "netclass": "Vehicle",
-        "pattern": "/Opto inputs (817 module 2ch)/DIN1_R"
+        "pattern": "/DIN inputs/DIN1_R"
       },
       {
         "netclass": "Vehicle",
-        "pattern": "/Opto inputs (817 module 2ch)/DIN2_R"
+        "pattern": "/DIN inputs/DIN2_R"
       },
       {
         "netclass": "Vehicle",
-        "pattern": "/Opto inputs (817 module 2ch)/DIN1_D"
+        "pattern": "/DIN inputs/DIN1_D"
       },
       {
         "netclass": "Vehicle",
-        "pattern": "/Opto inputs (817 module 2ch)/DIN2_D"
+        "pattern": "/DIN inputs/DIN2_D"
       },
       {
         "netclass": "Default",
-        "pattern": "/Opto inputs (817 module 2ch)/DIN1_LED"
+        "pattern": "/DIN inputs/DIN1_LED"
       },
       {
         "netclass": "Default",
-        "pattern": "/Opto inputs (817 module 2ch)/DIN2_LED"
+        "pattern": "/DIN inputs/DIN2_LED"
       },
       {
         "netclass": "Default",
@@ -661,15 +687,15 @@
       },
       {
         "netclass": "Power",
-        "pattern": "/Power input (5 V + PSU header)/+5V_PSU"
+        "pattern": "/5V buck (U101)/+5V_PSU"
       },
       {
         "netclass": "Power",
-        "pattern": "/ESP32 core + USB (DevKitC)/VBUS"
+        "pattern": "/ESP32 + USB (U201)/VBUS"
       },
       {
         "netclass": "Plane",
-        "pattern": "/ESP32 core + USB (DevKitC)/VBUS_IN"
+        "pattern": "/ESP32 + USB (U201)/VBUS_IN"
       },
       {
         "netclass": "Plane",
@@ -677,11 +703,11 @@
       },
       {
         "netclass": "Power",
-        "pattern": "/Power input (5 V + PSU header)/VIN_LM"
+        "pattern": "/VIN_LM"
       },
       {
         "netclass": "Power",
-        "pattern": "/Power input (5 V + PSU header)/LM_SW"
+        "pattern": "/5V buck (U101)/LM_SW"
       },
       {
         "netclass": "Vehicle",
@@ -689,7 +715,7 @@
       },
       {
         "netclass": "Vehicle",
-        "pattern": "/IO (AIN1, DOUT1)/AIN1_MID"
+        "pattern": "/AIN1 front end/AIN1_MID"
       },
       {
         "netclass": "Vehicle",
@@ -867,13 +893,86 @@
       {
         "filename": "hour-meter-board-microfit-can-handroute.kicad_sch",
         "name": "hour-meter-board-microfit-can-handroute",
-        "uuid": "00000000-0000-0000-0000-000000000000"
+        "uuid": "59d580f2-180f-4c52-8215-2508c8a389e3"
       }
     ],
     "used_designators": "",
     "variants": []
   },
-  "sheets": [],
+  "sheets": [
+    [
+      "59d580f2-180f-4c52-8215-2508c8a389e3",
+      "hour-meter-board-microfit-can-handroute"
+    ],
+    [
+      "9a48a96f-5b9f-4aba-95d4-d5176982007e",
+      "J1 harness"
+    ],
+    [
+      "8e9ec786-41ad-5aff-a5ce-741180703c67",
+      "VIN input"
+    ],
+    [
+      "7d36e08f-90ac-4d15-b354-173e665395cb",
+      "5V buck (U101)"
+    ],
+    [
+      "976fcd1c-d6b8-4226-8ec0-b68e789d78e6",
+      "ESP32 + USB (U201)"
+    ],
+    [
+      "9e687be1-96a8-44c3-91cc-6380e7a63011",
+      "DIN inputs"
+    ],
+    [
+      "da8532f2-696e-47f1-98b9-1159d60c743e",
+      "RS485 (U701)"
+    ],
+    [
+      "b758df76-eed6-4e48-9a5e-fd450784ea02",
+      "CAN (U1001)"
+    ],
+    [
+      "e078d472-e35c-4dd1-9d10-b940cfa02d24",
+      "RS232 (U1101)"
+    ],
+    [
+      "857217e8-d3e6-56e2-9678-dfbfe7ba1a27",
+      "AIN1 front end"
+    ],
+    [
+      "166e37c0-a201-49e9-b0e9-66d36d310b1a",
+      "AIN1 ADC (U901)"
+    ],
+    [
+      "4ac39d1f-6e36-5cef-9ad1-b72fe8fced74",
+      "DOUT1 (U903)"
+    ],
+    [
+      "3f2f24fe-c7fa-579c-a5db-4e9c383cb959",
+      "+5V out fuse (F801)"
+    ],
+    [
+      "00a030f7-5f36-4da4-aa44-fe32bff03b1e",
+      "IMU (U601, U602)"
+    ],
+    [
+      "623e21bd-4470-413b-8f4f-acd1ade828e3",
+      "EEPROM (U501)"
+    ],
+    [
+      "64abba49-fbe3-4084-a695-4fbaa01e7d57",
+      "RTC (U401)"
+    ],
+    [
+      "856cde89-2e26-51d9-824b-0b1521aa1e19",
+      "LEDs"
+    ],
+    [
+      "e086c105-532c-435e-9693-a6b914df94a2",
+      "GPS + Qwiic"
+    ]
+  ],
   "text_variables": {},
   "tuning_profiles": {
     "meta": {
