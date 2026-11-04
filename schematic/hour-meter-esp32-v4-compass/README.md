@@ -224,12 +224,14 @@ The audit then fixed three things:
 | The GND pour's corner had moved 2 mm into the vehicle zone. It came 1.5 mm from J2's vehicle-ground pin (was 3.8 mm) and 2.7 mm from D1/D2's input pads (was 4.7 mm) | Corner put back: 3.8 mm and 4.7 mm again |
 | R1's reference printed over D5's pad | Moved beside R1 |
 
-Smoke test, simulated on this board's copper:
+After the audit, the +3V3 track beside the vehicle zone was re-drawn 0.4 mm closer to the zone. It is now 4.3 mm from D1/D2's input pads (was 4.7 mm). DRC is still clean, and the closest logic copper is still the GND pour, 3.8 mm from J2's vehicle-ground pin. The production files were rebuilt from this final board.
+
+Smoke test, simulated on the final copper:
 
 | Test | Result |
 |---|---|
 | Vehicle inputs, 11 ngspice cases ([fault analysis](../fault-analysis/README.md)) | Unchanged: 10 pass. The unclamped 24 V load dump needs the P6KE18A option |
-| 3V3 to the modules (14 mA) | Within 0.8 mV of the DevKit's 3V3; within 8 mV with 100 mA drawn from J3 |
+| 3V3 to the modules (14 mA) | Within 0.8 mV of the DevKit's 3V3; within 8.2 mV with 100 mA drawn from J3 |
 | Field at the GY-271 from the supply currents | 0.07 µT (about 0.1°); 0.95 µT with 100 mA drawn from J3 |
 | I2C | SCL 229 mm and SDA 209 mm of track. Estimated rise time about 120 ns; 1000 ns is allowed at 100 kHz |
 | Part heights | Under the DevKit, at most about 7 mm (8 mm free). C3 and F1 sit outside every module. Only R1 (2.5 mm) is under the USB plug |
