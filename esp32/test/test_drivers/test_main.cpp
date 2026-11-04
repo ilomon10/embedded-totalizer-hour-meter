@@ -238,6 +238,54 @@ static void test_mpu_begin_with_mag_and_wrong_chip() {
   TEST_ASSERT_EQUAL(Status::DeviceMissing, wrong.begin());
 }
 
+// The driver hands out readings in the board's axes. The CAN board's MPU-6500 sits at 180 deg,
+// so its x and y come out negated. An MPU9250's magnetometer turns with the chip.
+static void test_mpu_readings_turned_into_board_axes() {
+  FakeI2cBus bus;
+  FakeClock clock;
+  FakeRegisterDevice mpu;
+  mpu.regs[mpu9250::kRegWhoAmI] = mpu9250::kWhoAmI6500;
+  // ax = +1 g, ay = -0.5 g, az = +0.5 g; temp 0; gx = 131 LSB = 2 dps, gy = 262 LSB = 4 dps, gz = 65 LSB.
+  const uint8_t burst[14] = {0x20, 0x00, 0xF0, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x83, 0x01, 0x06, 0x00, 0x41};
+  for (size_t i = 0; i < sizeof(burst); i++) {
+    mpu.regs[mpu9250::kRegAccelXoutH + i] = burst[i];
+  }
+  bus.attach(0x69, &mpu);
+  Mpu9250 imu(bus, clock, Mpu9250::kAddressAd0High, ChipRotation::Deg180);
+  TEST_ASSERT_EQUAL(Status::Ok, imu.begin());
+  const Result<ImuSample> s = imu.readImu();
+  TEST_ASSERT_EQUAL(Status::Ok, s.status);
+  TEST_ASSERT_FLOAT_WITHIN(1e-4, -1.0f, s.value.accelG.x);
+  TEST_ASSERT_FLOAT_WITHIN(1e-4, 0.5f, s.value.accelG.y);
+  TEST_ASSERT_FLOAT_WITHIN(1e-4, 0.5f, s.value.accelG.z);
+  TEST_ASSERT_FLOAT_WITHIN(1e-3, -2.0f, s.value.gyroDps.x);
+  TEST_ASSERT_FLOAT_WITHIN(1e-3, -4.0f, s.value.gyroDps.y);
+  TEST_ASSERT_FLOAT_WITHIN(1e-3, 65.0f / 65.5f, s.value.gyroDps.z);
+
+  FakeI2cBus bus2;
+  FakeRegisterDevice mpu9250Chip, mag;
+  mpu9250Chip.regs[mpu9250::kRegWhoAmI] = mpu9250::kWhoAmI9250;
+  mag.regs[mpu9250::kMagRegWia] = mpu9250::kMagWia;
+  for (int i = 0; i < 3; i++) {
+    mag.regs[mpu9250::kMagRegAsax + i] = 128;  // sensitivity adjustment x1
+  }
+  bus2.attach(0x69, &mpu9250Chip);
+  bus2.attach(0x0C, &mag);
+  Mpu9250 turned(bus2, clock, Mpu9250::kAddressAd0High, ChipRotation::Deg90);
+  TEST_ASSERT_EQUAL(Status::Ok, turned.begin());
+  // HX = 100, HY = 200, HZ = 300 LSB, ST2 ok: (30, 15, -45) uT in the MPU's axes.
+  const uint8_t magBurst[7] = {100, 0, 200, 0, 0x2C, 0x01, 0x10};
+  for (size_t i = 0; i < sizeof(magBurst); i++) {
+    mag.regs[mpu9250::kMagRegHxl + i] = magBurst[i];
+  }
+  mag.regs[mpu9250::kMagRegSt1] = 0x01;  // data ready
+  const Result<Vec3> m = turned.readMag();
+  TEST_ASSERT_EQUAL(Status::Ok, m.status);
+  TEST_ASSERT_FLOAT_WITHIN(1e-3, -15.0f, m.value.x);  // Deg90: board x = -(MPU y)
+  TEST_ASSERT_FLOAT_WITHIN(1e-3, 30.0f, m.value.y);   //        board y = MPU x
+  TEST_ASSERT_FLOAT_WITHIN(1e-3, -45.0f, m.value.z);
+}
+
 // A missing IMU is found by its address alone. A register read of an absent chip came back from the ESP32's
 // Wire as a bus fault, which marked the whole bus as failing (firmware 2.6.0 then restarted every 30 s).
 static void test_mpu_begin_missing_is_not_a_bus_fault() {
@@ -264,6 +312,7 @@ int main() {
   RUN_TEST(test_mpu_decode_mag_axes_and_overflow);
   RUN_TEST(test_mpu_begin_detects_mpu6500_without_mag);
   RUN_TEST(test_mpu_begin_with_mag_and_wrong_chip);
+  RUN_TEST(test_mpu_readings_turned_into_board_axes);
   RUN_TEST(test_mpu_begin_missing_is_not_a_bus_fault);
   return UNITY_END();
 }

@@ -24,7 +24,7 @@
 #include "Vibration.h"
 
 struct ImuOutput {
-  Vec3 rawAccelG, rawGyroDps, rawMagUt;   // as read from the chip
+  Vec3 rawAccelG, rawGyroDps, rawMagUt;   // as read from the chip, in the board's axes
   Vec3 accelG, gyroDps, magUt;            // calibrated + Kalman filtered
   bool hasMag = false;
   float rollDeg = 0, pitchDeg = 0, headingDeg = 0;

@@ -173,6 +173,7 @@ In the TUI, press `9`, pick a release, press `Enter` and type `FLASH` (`f` flash
 **Limits:**
 - Flashing needs Linux or macOS and the board's USB port. It does not work over `tcp://`, Bluetooth, `--demo` or the UART pins.
 - It writes only to a classic ESP32 (the chip is checked first).
+- The release images are built for the ESP32 DevKit's pins (`esp32dev`). Flash the main board (`schematic/hour-meter-board/`) with PlatformIO: `pio run -e can-board -t upload`. Later updates can use that build's file: `hour-meter firmware flash esp32/.pio/build/can-board/firmware.bin`.
 - Without a token, GitHub's API allows 60 requests an hour per IP address, and a shared office or mobile connection uses that up. The list then comes from the release feed, which holds the newest 10 releases. `GITHUB_TOKEN` adds your own quota.
 
 ## Command line

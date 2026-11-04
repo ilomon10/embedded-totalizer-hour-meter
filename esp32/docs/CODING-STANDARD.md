@@ -15,7 +15,7 @@ The build enforces what it can: `-Wall -Wextra -Werror`, `[[nodiscard]]` on ever
 | 5 | **Check inputs and invariants** | `CHECK_ARG(...)` at the top of public functions; `static_assert` for struct sizes and layout; plausibility checks on sensor data (stuck, saturated, range) |
 | 6 | **Smallest possible scope** | Helpers in anonymous namespaces; `const` locals; members `private` by default |
 | 7 | **Check every return value** | Fallible functions return `Status` or `Result<T>`, both `[[nodiscard]]`, so ignoring one is a compile error. An intentional ignore is written `(void)call();` |
-| 8 | **Limit the preprocessor** | Only `#pragma once`, `#include`, `#ifdef ARDUINO`, and two macros (`CHECK_ARG`, `TRY`). Constants are `constexpr` |
+| 8 | **Limit the preprocessor** | Only `#pragma once`, `#include`, `#ifdef ARDUINO`, and two macros (`CHECK_ARG`, `TRY`). Constants are `constexpr`. The one build setting, `HM_BOARD` (which board, from `platformio.ini`), is read once in `BoardPins.h` and turned into `constexpr` values there, so both boards' values are compiled in every build |
 | 9 | **Limit pointers** | References for required objects; raw pointers only for byte buffers and optional values. Function pointers only at the two library-callback boundaries (`SensorFrameReader`, `SerialLink`), documented there |
 | 10 | **Zero warnings, static analysis clean, tests green** before merging | `pio run`, `pio check`, `pio test -e native`, `./scripts/check-docs.ts` |
 
@@ -41,7 +41,7 @@ The build enforces what it can: `-Wall -Wextra -Werror`, `[[nodiscard]]` on ever
 
 ```bash
 cd esp32
-pio run -e esp32dev          # zero warnings (warnings are errors)
+pio run -e esp32dev -e can-board    # zero warnings (warnings are errors), both boards
 pio check -e esp32dev        # zero clang-tidy defects
 pio test -e native           # all unit tests, with sanitizers
 ./scripts/check-docs.ts      # docs, host tag table and firmware agree (needs Bun)

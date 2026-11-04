@@ -1,6 +1,7 @@
 // Orientation.h — roll/pitch from gravity, and the "up" vector from roll/pitch.
 //
-// Frame: MPU9250 axes, right-handed, z up when the board lies flat
+// Frame: the board's axes (the MPU9250's, turned by the chip's rotation on the
+// board: BoardPins.h), right-handed, z up when the board lies flat
 // (a resting accelerometer reads +1 g on z).
 #pragma once
 

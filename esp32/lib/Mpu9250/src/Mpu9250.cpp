@@ -96,7 +96,10 @@ Result<ImuSample> Mpu9250::readImu() {
   if (s != Status::Ok) {
     return Result<ImuSample>::failure(s);
   }
-  return Result<ImuSample>::success(decodeImu(raw));
+  ImuSample sample = decodeImu(raw);
+  sample.accelG = toBoardAxes(sample.accelG, rotation_);
+  sample.gyroDps = toBoardAxes(sample.gyroDps, rotation_);
+  return Result<ImuSample>::success(sample);
 }
 
 Result<Vec3> Mpu9250::readMag() {
@@ -120,5 +123,5 @@ Result<Vec3> Mpu9250::readMag() {
   if (!decodeMag(raw, magAdjust_, ut)) {
     return Result<Vec3>::failure(Status::OutOfRange);
   }
-  return Result<Vec3>::success(ut);
+  return Result<Vec3>::success(toBoardAxes(ut, rotation_));
 }

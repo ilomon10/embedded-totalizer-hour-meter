@@ -61,6 +61,8 @@ The device **pushes** data periodically, and **answers commands** you send it.
 | Receives commands | always | always | after `unlock` with the PIN ([2.1](#21-bluetooth)) |
 | Sends periodic data | if `output` is `usb` or `both` (default `usb`) | if `output` is `uart` or `both` | while an unlocked client is connected |
 
+**Main board** (the `can-board` build): its UART pins are its RS232 port, J1 pin 3 (TX) and pin 12 (RX), at RS-232 levels. The rest of the table applies.
+
 > **Opening the USB port may reboot the device.** Many ESP32 boards reset when DTR/RTS toggle. Wait for the boot EVENT (or about 2 s) before you send commands.
 
 The USB port always accepts commands at 115200, so a wrong UART or Bluetooth setting can never lock you out.
@@ -332,7 +334,7 @@ A boot EVENT with `resetReason` ≠ 1 (see tag 58) means the device restarted wi
 | 33 / 34 / 35 | `gyroX` / `gyroY` / `gyroZ` (filtered) | i16 | 0.1 | °/s |
 | 36 / 37 / 38 | `magX` / `magY` / `magZ` (filtered) | i16 | 0.1 | µT |
 
-The **raw** values come straight from the sensor. The **filtered** values have calibration offsets removed and a Kalman filter applied (less noise, slightly delayed). Axes: x and y in the board plane, z up when the board lies flat.
+The **raw** values come straight from the sensor. The **filtered** values have calibration offsets removed and a Kalman filter applied (less noise, slightly delayed). Axes: x and y in the board plane, z up when the board lies flat; x is the nose for `pitch`. On the main board, x points from the harness connector J1 toward the USB-C edge.
 
 ### 5.3 Derived values
 
@@ -691,4 +693,4 @@ The restart counter clears after 10 minutes of normal running. USB is opened bef
 | 2.4.0 | Self-recovery: watchdog armed from the first instruction of boot, USB opened before I2C, restarts on a stuck I2C bus or stalled USB, the [panic signal](#64-panic-signal-restart-without-a-frame), safe mode (flag 18), `lastCause` / `lastStage` (tags 62, 63). **Fix:** `pitch` (tag 41) now follows this guide (nose up positive); 2.3.0 and older sent it with the opposite sign |
 | 2.5.0 | Engine-running confirmation by vibration: `runVibMinMg` setting (tag 129, off by default), `altInput` (tag 10) reports the raw input. Settings stored by older firmware load unchanged |
 | 2.6.0 | Settings and counters are also stored in the ESP32's own flash (partition `hmdata`): the device keeps its hour meter without an EEPROM, and in safe mode. Every save goes to flash and EEPROM; the flash is the main store, and the first boot copies the EEPROM into the flash. `setRunSeconds` / `setTotalCount` / `resetCounters` work without an EEPROM. `settingsSource` 3/4, `lastStage` 12, flag 19 `flashStoreMissing` |
-| 2.7.0 | **No more restarts for I2C trouble:** a failing bus is parked and retried (flag 20 `i2cParked`, tag 64 `i2cLines`); `lastCause` 2 is no longer produced. **Fix:** a missing IMU was reported as a bus fault, which restarted 2.6.0 every 30 s and ended in safe mode. Settings `i2c` (tag 150, hour meter only, flag 21 `i2cOff`) and `pulseInput` (tag 151). Engine detection: integrating debounce, and a toggling W/P terminal counts as running (`altInput`). The I2C bus runs at 100 kHz. Settings stored by older firmware load unchanged |
+| 2.7.0 | **No more restarts for I2C trouble:** a failing bus is parked and retried (flag 20 `i2cParked`, tag 64 `i2cLines`); `lastCause` 2 is no longer produced. **Fix:** a missing IMU was reported as a bus fault, which restarted 2.6.0 every 30 s and ended in safe mode. Settings `i2c` (tag 150, hour meter only, flag 21 `i2cOff`) and `pulseInput` (tag 151). Engine detection: integrating debounce, and a toggling W/P terminal counts as running (`altInput`). The I2C bus runs at 100 kHz. Settings stored by older firmware load unchanged. Builds for the main board (`pio run -e can-board`): the UART link on its RS232 port, IMU readings in the board's axes |

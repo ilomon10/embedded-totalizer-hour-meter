@@ -8,6 +8,7 @@ Engine hour meter and totalizer with persistent storage, real-time clock, and an
 | Writing a driver and need exact bytes | [docs/FRAME-CATALOG.md](docs/FRAME-CATALOG.md) (every frame, annotated hex dumps) |
 | Developing without hardware | [simulator/](../simulator/README.md): a fake device on a virtual serial port (`cd ../simulator && bun run start`) |
 | Wiring the hardware | [docs/WIRING.md](docs/WIRING.md) |
+| Using the main board | the `can-board` build (below) and the board's [BRINGUP.md](../schematic/hour-meter-board/BRINGUP.md) |
 | Working on the firmware | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/CODING-STANDARD.md](docs/CODING-STANDARD.md) |
 | A TypeScript developer new to C++ | [docs/CPP-FOR-TYPESCRIPT.md](docs/CPP-FOR-TYPESCRIPT.md) |
 | Curious how data survives power cuts | [docs/STORAGE.md](docs/STORAGE.md), [docs/EEPROM-LAYOUT.md](docs/EEPROM-LAYOUT.md) |
@@ -17,13 +18,16 @@ Engine hour meter and totalizer with persistent storage, real-time clock, and an
 
 ## Hardware
 
-ESP32 DevKit · AT24C256 EEPROM (0x50) · DS3231 RTC (0x68) · MPU9250 IMU (**0x69**, AD0 high) · alternator input GPIO27 · pulse input GPIO26 · UART GPIO16/17 · Bluetooth Classic SPP (off by default, PIN-locked).
+**Devboard** ([schematic](../schematic/hour-meter-devboard/README.md)), the default `esp32dev` build: ESP32 DevKit · AT24C256 EEPROM (0x50) · DS3231 RTC (0x68) · MPU9250 IMU (**0x69**, AD0 high) · alternator input GPIO27 · pulse input GPIO26 · UART GPIO16/17 · Bluetooth Classic SPP (off by default, PIN-locked).
+
+**Main board** ([schematic](../schematic/hour-meter-board/README.md)): the same firmware, built with `-e can-board`. The UART link runs on its RS232 port (GPIO32 TX, GPIO34 RX), the GPS socket's GPIO16/17 are left alone, and the IMU readings are turned 180° into the board's axes. Its CAN, RS485, GPS, AIN1, DOUT1 and LIS3MDL compass are not used yet. Both boards' pins are in [include/BoardPins.h](include/BoardPins.h).
 
 ## Build, flash, run
 
 ```bash
 cd esp32
-pio run -e esp32dev -t upload      # build + flash
+pio run -e esp32dev -t upload      # build + flash (the devboard: ESP32 DevKit)
+pio run -e can-board -t upload     # the same, for the main board
 cd ../configurator                 # or use the hour-meter release binary
 bun install                        # once
 bun run start read /dev/ttyUSB0    # live view
@@ -53,8 +57,8 @@ cd ../configurator && bun run test     # host tool tests
 
 ```
 esp32/
-├── platformio.ini        envs: esp32dev (firmware), native (tests); strict warnings
-├── include/              BoardPins.h (pins, I2C addresses) · AppConfig.h (fixed constants)
+├── platformio.ini        envs: esp32dev and can-board (firmware), bench, native (tests); strict warnings
+├── include/              BoardPins.h (pins, I2C addresses, IMU mounting; per board) · AppConfig.h (fixed constants)
 ├── src/                  main.cpp · Application (wiring + main loop) · platform/ (Arduino adapters)
 ├── lib/
 │   ├── Core/             Status, Result<T>, CHECK_ARG/TRY, IClock, PeriodicTask, Vec3

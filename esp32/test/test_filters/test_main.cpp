@@ -67,6 +67,30 @@ static void test_orientation_roll_pitch_and_up_vector() {
   TEST_ASSERT_FLOAT_WITHIN(1e-3, -15.0f, orientation::pitchDeg(up));
 }
 
+// What a chip turned by `deg` (counter-clockwise seen from the top, as in KiCad) reads for a
+// vector b in the board's axes: b along the chip's own x and y, which point at deg and deg + 90.
+static Vec3 chipReading(const Vec3& b, float deg) {
+  const float t = deg * orientation::kDegToRad;
+  return vec3(dot(b, vec3(cosf(t), sinf(t), 0)), dot(b, vec3(-sinf(t), cosf(t), 0)), b.z);
+}
+
+static void test_chip_rotation_to_board_axes() {
+  const Vec3 b = vec3(0.3f, -0.5f, 0.81f);
+  const ChipRotation turns[4] = {ChipRotation::Deg0, ChipRotation::Deg90, ChipRotation::Deg180,
+                                 ChipRotation::Deg270};
+  for (int i = 0; i < 4; i++) {
+    const Vec3 got = toBoardAxes(chipReading(b, 90.0f * static_cast<float>(i)), turns[i]);
+    TEST_ASSERT_FLOAT_WITHIN(1e-5, b.x, got.x);
+    TEST_ASSERT_FLOAT_WITHIN(1e-5, b.y, got.y);
+    TEST_ASSERT_FLOAT_WITHIN(1e-5, b.z, got.z);
+  }
+  // The CAN board: U601 sits at 180 deg. With its USB-C edge (the board's x) lifted 30 deg, the
+  // chip reads x = -0.5 g; only the turn back gives pitch +30 deg (nose up) instead of -30.
+  const Vec3 chip = chipReading(vec3(0.5f, 0, 0.8660254f), 180.0f);
+  TEST_ASSERT_FLOAT_WITHIN(1e-3, -30.0f, orientation::pitchDeg(chip));
+  TEST_ASSERT_FLOAT_WITHIN(1e-3, 30.0f, orientation::pitchDeg(toBoardAxes(chip, ChipRotation::Deg180)));
+}
+
 // Earth field in the world frame (East, North, Up): 35 uT north, dipping 30 deg down.
 static Vec3 worldToBoard(const Vec3& w, float headingDeg) {
   // Board flat, x axis pointing `headingDeg` clockwise from north.
@@ -184,6 +208,7 @@ int main() {
   RUN_TEST(test_kalman1d_follows_step);
   RUN_TEST(test_kalman_angle_tracks_and_learns_gyro_bias);
   RUN_TEST(test_orientation_roll_pitch_and_up_vector);
+  RUN_TEST(test_chip_rotation_to_board_axes);
   RUN_TEST(test_compass_flat_headings);
   RUN_TEST(test_compass_tilt_compensated);
   RUN_TEST(test_compass_calibration_from_min_max);

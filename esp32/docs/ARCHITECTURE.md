@@ -94,12 +94,14 @@ At boot both stores are scanned, and in each the valid record with the highest `
 
 ```
 MPU9250 ─► ImuSample (g, °/s) ─┬─ − bias ─► Kalman1D ×3 ─────────────► filtered accel/gyro
-AK8963  ─► mag (µT, MPU axes) ─┼─ hard/soft iron ─► Kalman1D ×3 ─────► filtered mag ─┐
+AK8963  ─► mag (µT, as accel) ─┼─ hard/soft iron ─► Kalman1D ×3 ─────► filtered mag ─┐
                                ├─ accel angle + gyro rate ─► KalmanAngle ─► roll, pitch ─┤
                                │                                     up vector ◄─────────┘
                                │                                        └─► Compass ─► heading
                                └─ − bias (unfiltered!) ─► VibrationMeter ─► RMS, peak (mg)
 ```
+
+The driver hands out every reading in the board's axes. It turns the chip's x and y by the IMU's rotation on the board: `board::kImuRotation` in `BoardPins.h`, 180° on the main board.
 
 Calibration runs inside the same pipeline using running statistics (Welford): no samples are stored. See [CALIBRATION.md](CALIBRATION.md).
 

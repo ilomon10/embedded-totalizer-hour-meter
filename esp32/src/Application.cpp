@@ -18,7 +18,7 @@ Application::Application()
     : bus_(Wire, pins::kI2cSda, pins::kI2cScl, pins::kI2cFrequencyHz),
       eeprom_(bus_, clock_, i2c_addr::kEeprom),
       rtc_(bus_, i2c_addr::kRtc),
-      imu_(bus_, clock_, i2c_addr::kImu),
+      imu_(bus_, clock_, i2c_addr::kImu, board::kImuRotation),
       journal_(eeprom_),
       settingsStore_(eeprom_),
       flashArea_(app_config::kFlashPartition),

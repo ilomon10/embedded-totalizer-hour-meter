@@ -2,6 +2,8 @@
 
 Pin assignments are defined in [`include/BoardPins.h`](../include/BoardPins.h). Change them there only.
 
+This page wires an ESP32 DevKit with plug-in modules, as on the [devboard](../../schematic/hour-meter-devboard/README.md) (the `esp32dev` build). The [main board](../../schematic/hour-meter-board/README.md) has its own pins in the same file (the `can-board` build); see its [BRINGUP.md](../../schematic/hour-meter-board/BRINGUP.md).
+
 ## I2C bus (shared)
 
 ```
@@ -213,7 +215,7 @@ If the pulse sensor is an open-collector/3.3 V-safe output, skip CH2 and wire it
 - **LED1 lights but GPIO27 stays HIGH:** check the output wires. V1 must go to GPIO27 and the output G to ESP32 GND.
 - **GPIO27 LOW is about 0.8 V:** the pull-up is too strong. Use 47 kΩ, not 10 kΩ.
 
-KiCad schematic and carrier PCB: [`schematic/hour-meter-esp32/`](../../schematic/hour-meter-esp32/README.md).
+KiCad schematic and carrier PCB: the [devboard](../../schematic/hour-meter-devboard/README.md).
 
 ## Serial
 

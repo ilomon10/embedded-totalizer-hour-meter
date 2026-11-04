@@ -1,13 +1,16 @@
 // Mpu9250.h — MPU9250 accelerometer + gyroscope, plus its AK8963 magnetometer.
 //
 //   Mpu9250 imu(bus, clock);                    // AD0 tied HIGH -> 0x69 (0x68 is the RTC)
+//   Mpu9250 turned(bus, clock, 0x69, ChipRotation::Deg180);  // chip turned 180 deg on the board
 //   TRY(imu.begin());
 //   Result<ImuSample> s = imu.readImu();        // accel in g, gyro in deg/s
 //   Result<Vec3> m = imu.readMag();             // micro-tesla, NotReady if no new sample
 //
 // Units are physical (g, deg/s, uT) as floats; the telemetry layer scales them
-// to integers. Magnetometer axes are rotated into the accel/gyro frame here,
-// so every consumer sees one consistent right-handed frame (z up when flat).
+// to integers. Magnetometer axes are rotated into the accel/gyro frame here, and
+// all three are then turned into the board's axes by the chip's rotation on the
+// board (BoardPins.h), so every consumer sees one consistent right-handed frame
+// (z up when flat).
 //
 // Many boards sold as "MPU9250" carry an MPU6500 (no magnetometer). begin()
 // still succeeds on those and hasMag() returns false.
@@ -37,8 +40,9 @@ class Mpu9250 {
   static constexpr float kGyroLsbPerDps = 65.5f;
   static constexpr float kMagUtPerLsb = 0.15f;      // 16-bit output mode
 
-  Mpu9250(II2cBus& bus, IClock& clock, uint8_t address = kAddressAd0High)
-      : bus_(bus), clock_(clock), address_(address) {}
+  Mpu9250(II2cBus& bus, IClock& clock, uint8_t address = kAddressAd0High,
+          ChipRotation rotation = ChipRotation::Deg0)
+      : bus_(bus), clock_(clock), address_(address), rotation_(rotation) {}
 
   // Reset, configure ranges + 41 Hz DLPF, and start the magnetometer if present.
   Status begin();
@@ -53,6 +57,7 @@ class Mpu9250 {
   II2cBus& bus_;
   IClock& clock_;
   uint8_t address_;
+  ChipRotation rotation_;
   uint8_t whoAmI_ = 0;
   bool hasMag_ = false;
   Vec3 magAdjust_ = vec3(1.0f, 1.0f, 1.0f);  // factory sensitivity adjustment (ASA)
